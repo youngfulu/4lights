@@ -84,6 +84,12 @@ function generatePoints(count, minDistance) {
     return points;
 }
 
+// Emoji size settings - MUST be declared before use
+const baseEmojiSize = 24; // Base size for layer_1
+const layer2SizeMultiplier = 1 / 1.6; // Layer_2 is 1.6 times smaller
+const hoverZoom = 3.0; // Zoom factor on hover (3x bigger)
+const zoomSmoothness = 0.15; // Smoothness factor for zoom interpolation
+
 // Generate 100 points
 const points = generatePoints(100, 50);
 
@@ -137,12 +143,6 @@ canvas.addEventListener('mouseleave', handleMouseLeave);
 const parallaxStrength = 0.02; // How much points move
 const layer1Speed = 1.0; // Speed for layer_1
 const layer2Speed = 0.5; // Speed for layer_2 (slower for depth effect)
-
-// Emoji size settings
-const baseEmojiSize = 24; // Base size for layer_1
-const layer2SizeMultiplier = 1 / 1.6; // Layer_2 is 1.6 times smaller
-const hoverZoom = 3.0; // Zoom factor on hover (3x bigger)
-const zoomSmoothness = 0.15; // Smoothness factor for zoom interpolation
 
 // Draw points with parallax and emojis
 function draw() {
