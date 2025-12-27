@@ -76,6 +76,7 @@ function generatePoints(count, minDistance) {
             // Store base position
             point.baseX = point.x;
             point.baseY = point.y;
+            // Initialize current size for smooth zoom (will be set properly based on layer)
             points.push(point);
         }
     }
@@ -85,6 +86,15 @@ function generatePoints(count, minDistance) {
 
 // Generate 100 points
 const points = generatePoints(100, 50);
+
+// Initialize current sizes for all points
+points.forEach(point => {
+    if (point.layer === 'layer_1') {
+        point.currentSize = baseEmojiSize;
+    } else {
+        point.currentSize = baseEmojiSize * layer2SizeMultiplier;
+    }
+});
 
 // Check if mouse is hovering over a point
 function isPointHovered(pointX, pointY, mouseX, mouseY, size) {
@@ -131,7 +141,8 @@ const layer2Speed = 0.5; // Speed for layer_2 (slower for depth effect)
 // Emoji size settings
 const baseEmojiSize = 24; // Base size for layer_1
 const layer2SizeMultiplier = 1 / 1.6; // Layer_2 is 1.6 times smaller
-const hoverZoom = 2.0; // Zoom factor on hover
+const hoverZoom = 3.0; // Zoom factor on hover (3x bigger)
+const zoomSmoothness = 0.15; // Smoothness factor for zoom interpolation
 
 // Draw points with parallax and emojis
 function draw() {
@@ -166,9 +177,12 @@ function draw() {
             
             // Check if hovered
             const isHovered = isPointHovered(x, y, smoothMouseX, smoothMouseY, baseEmojiSize * hoverZoom / 2);
-            const emojiSize = isHovered ? baseEmojiSize * hoverZoom : baseEmojiSize;
+            const targetSize = isHovered ? baseEmojiSize * hoverZoom : baseEmojiSize;
             
-            ctx.font = `${emojiSize}px Arial`;
+            // Smoothly interpolate size
+            point.currentSize += (targetSize - point.currentSize) * zoomSmoothness;
+            
+            ctx.font = `${point.currentSize}px Arial`;
             ctx.fillText(point.emoji, x, y);
         }
     });
@@ -184,9 +198,13 @@ function draw() {
             
             // Check if hovered
             const isHovered = isPointHovered(x, y, smoothMouseX, smoothMouseY, layer2BaseSize * hoverZoom / 2);
-            const emojiSize = isHovered ? layer2BaseSize * hoverZoom : layer2BaseSize;
+            const targetSize = isHovered ? layer2BaseSize * hoverZoom : layer2BaseSize;
             
-            ctx.font = `${emojiSize}px Arial`;
+            // Smoothly interpolate size
+            if (!point.currentSize) point.currentSize = layer2BaseSize;
+            point.currentSize += (targetSize - point.currentSize) * zoomSmoothness;
+            
+            ctx.font = `${point.currentSize}px Arial`;
             ctx.fillText(point.emoji, x, y);
         }
     });
