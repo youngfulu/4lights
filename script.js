@@ -19,6 +19,9 @@ let targetMouseY = mouseY;
 let smoothMouseX = mouseX;
 let smoothMouseY = mouseY;
 
+// Emoji list
+const emojis = ['🌟', '✨', '⭐', '💫', '🔥', '💎', '🎯', '⚡', '🎨', '🎭', '🎪', '🎬', '🎮', '🎲', '🎰', '🎯', '🎪', '🎨', '🎭', '🎬', '🎮', '🎲', '🎰', '🚀', '🌙', '☀️', '⭐', '🌟', '✨', '💫', '🔥'];
+
 // Calculate bounding box (1/5 from top and bottom)
 function getBoundingBox() {
     const screenHeight = canvas.height;
@@ -48,7 +51,8 @@ function generatePoints(count, minDistance) {
                 y: Math.random() * box.height + box.y,
                 baseX: 0, // Will be set after generation
                 baseY: 0, // Will be set after generation
-                layer: (i % 2 === 0) ? 'layer_1' : 'layer_2' // odd points (1st, 3rd, 5th...) = layer_1, even points (2nd, 4th, 6th...) = layer_2
+                layer: (i % 2 === 0) ? 'layer_1' : 'layer_2', // odd points (1st, 3rd, 5th...) = layer_1, even points (2nd, 4th, 6th...) = layer_2
+                emoji: emojis[Math.floor(Math.random() * emojis.length)] // Random emoji for each point
             };
             
             validPoint = true;
@@ -81,6 +85,15 @@ function generatePoints(count, minDistance) {
 
 // Generate 100 points
 const points = generatePoints(100, 50);
+
+// Check if mouse is hovering over a point
+function isPointHovered(pointX, pointY, mouseX, mouseY, size) {
+    const distance = Math.sqrt(
+        Math.pow(pointX - mouseX, 2) + 
+        Math.pow(pointY - mouseY, 2)
+    );
+    return distance < size; // Hover radius based on emoji size
+}
 
 // Mouse move handler
 function handleMouseMove(e) {
@@ -115,7 +128,12 @@ const parallaxStrength = 0.02; // How much points move
 const layer1Speed = 1.0; // Speed for layer_1
 const layer2Speed = 0.5; // Speed for layer_2 (slower for depth effect)
 
-// Draw points with parallax
+// Emoji size settings
+const baseEmojiSize = 24; // Base size for layer_1
+const layer2SizeMultiplier = 1 / 1.6; // Layer_2 is 1.6 times smaller
+const hoverZoom = 2.0; // Zoom factor on hover
+
+// Draw points with parallax and emojis
 function draw() {
     // Smooth mouse position
     smoothMouseX += (targetMouseX - smoothMouseX) * 0.1;
@@ -136,29 +154,40 @@ function draw() {
     // ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
     // ctx.strokeRect(box.x, box.y, box.width, box.height);
     
+    // Set text alignment for emojis
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    
     // Draw layer_1 points (odd points - faster parallax)
-    ctx.fillStyle = '#fff';
     points.forEach(point => {
         if (point.layer === 'layer_1') {
             const x = point.baseX + (offsetX * layer1Speed);
             const y = point.baseY + (offsetY * layer1Speed);
             
-            ctx.beginPath();
-            ctx.arc(x, y, 2, 0, Math.PI * 2);
-            ctx.fill();
+            // Check if hovered
+            const isHovered = isPointHovered(x, y, smoothMouseX, smoothMouseY, baseEmojiSize * hoverZoom / 2);
+            const emojiSize = isHovered ? baseEmojiSize * hoverZoom : baseEmojiSize;
+            
+            ctx.font = `${emojiSize}px Arial`;
+            ctx.fillText(point.emoji, x, y);
         }
     });
     
-    // Draw layer_2 points (even points - slower parallax for depth)
-    ctx.fillStyle = '#fff';
+    // Draw layer_2 points (even points - slower parallax for depth, smaller emojis)
     points.forEach(point => {
         if (point.layer === 'layer_2') {
             const x = point.baseX + (offsetX * layer2Speed);
             const y = point.baseY + (offsetY * layer2Speed);
             
-            ctx.beginPath();
-            ctx.arc(x, y, 2, 0, Math.PI * 2);
-            ctx.fill();
+            // Layer_2 base size is 1.6 times smaller
+            const layer2BaseSize = baseEmojiSize * layer2SizeMultiplier;
+            
+            // Check if hovered
+            const isHovered = isPointHovered(x, y, smoothMouseX, smoothMouseY, layer2BaseSize * hoverZoom / 2);
+            const emojiSize = isHovered ? layer2BaseSize * hoverZoom : layer2BaseSize;
+            
+            ctx.font = `${emojiSize}px Arial`;
+            ctx.fillText(point.emoji, x, y);
         }
     });
 }
