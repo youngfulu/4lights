@@ -83,23 +83,6 @@ nav {
     background: var(--bg-color);
 }
 
-/* Alternate grid items for varied sizes - sub.global style */
-.gallery-item:nth-child(4n+1) {
-    aspect-ratio: 4 / 5;
-}
-
-.gallery-item:nth-child(4n+2) {
-    aspect-ratio: 4 / 5;
-}
-
-.gallery-item:nth-child(4n+3) {
-    aspect-ratio: 4 / 5;
-}
-
-.gallery-item:nth-child(4n+4) {
-    aspect-ratio: 4 / 5;
-}
-
 .gallery-item {
     position: relative;
     background: var(--bg-color);
