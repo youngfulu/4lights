@@ -3,23 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>4lights - Gallery</title>
+    <title>4lights</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>4lights</h1>
-        </header>
-        
-        <main class="gallery" id="gallery">
-            <!-- Gallery items will be dynamically generated -->
-        </main>
-    </div>
+    <header>
+        <nav>
+            <a href="#" class="logo">4lights</a>
+            <div class="nav-links">
+                <a href="#">Projects</a>
+                <a href="#">About</a>
+            </div>
+        </nav>
+    </header>
 
-    <!-- SimpleParallax Library -->
-    <script src="https://cdn.jsdelivr.net/npm/simple-parallax-js@5.6.2/dist/simpleParallax.min.js"></script>
-    
+    <main class="container">
+        <div class="gallery" id="gallery">
+            <!-- Gallery items will be dynamically generated -->
+        </div>
+    </main>
+
     <script src="images.js"></script>
     <script>
         // Load images from all categories
@@ -29,16 +32,34 @@
         // If no images defined, show placeholder structure
         if (allImages.length === 0) {
             // Create placeholder items for each category
-            const categories = ['installations', 'stage_design', 'interactive', 'tech', 'concept', 'LOR'];
+            const categories = [
+                'installations', 
+                'stage_design', 
+                'interactive', 
+                'tech', 
+                'concept', 
+                'LOR'
+            ];
+            
             categories.forEach((category, index) => {
                 const item = document.createElement('div');
                 item.className = 'gallery-item';
-                item.innerHTML = `
-                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='800'%3E%3Crect fill='%23111' width='800' height='800'/%3E%3Ctext fill='%23666' font-family='sans-serif' font-size='24' x='50%25' y='50%25' text-anchor='middle' dominant-baseline='middle'%3E${category}%3C/text%3E%3C/svg%3E" alt="${category}" class="thumbnail">
-                    <div class="overlay">
-                        <h2>${category.replace('_', ' ').toUpperCase()}</h2>
-                    </div>
-                `;
+                item.setAttribute('data-index', index);
+                
+                const wrapper = document.createElement('div');
+                wrapper.className = 'gallery-item-wrapper';
+                
+                const img = document.createElement('div');
+                img.className = 'gallery-image';
+                img.style.backgroundImage = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='600'%3E%3Crect fill='%231a1a1a' width='800' height='600'/%3E%3Ctext fill='%23555' font-family='sans-serif' font-size='18' x='50%25' y='50%25' text-anchor='middle' dominant-baseline='middle'%3E${category.replace('_', ' ')}%3C/text%3E%3C/svg%3E")`;
+                
+                const title = document.createElement('div');
+                title.className = 'gallery-title';
+                title.textContent = category.replace('_', ' ');
+                
+                wrapper.appendChild(img);
+                wrapper.appendChild(title);
+                item.appendChild(wrapper);
                 gallery.appendChild(item);
             });
         } else {
@@ -46,28 +67,45 @@
             allImages.forEach((imgData, index) => {
                 const item = document.createElement('div');
                 item.className = 'gallery-item';
-                item.innerHTML = `
-                    <img src="${imgData.src}" alt="${imgData.category} ${index + 1}" class="thumbnail" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'800\' height=\'800\'%3E%3Crect fill=\'%23111\' width=\'800\' height=\'800\'/%3E%3Ctext fill=\'%23666\' font-family=\'sans-serif\' font-size=\'24\' x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dominant-baseline=\'middle\'%3EImage not found%3C/text%3E%3C/svg%3E'">
-                    <div class="overlay">
-                        <h2>${imgData.category.replace('_', ' ').toUpperCase()}</h2>
-                    </div>
-                `;
+                item.setAttribute('data-index', index);
+                
+                const wrapper = document.createElement('div');
+                wrapper.className = 'gallery-item-wrapper';
+                
+                const img = document.createElement('div');
+                img.className = 'gallery-image';
+                img.style.backgroundImage = `url("${imgData.src}")`;
+                
+                const title = document.createElement('div');
+                title.className = 'gallery-title';
+                title.textContent = imgData.category.replace('_', ' ');
+                
+                wrapper.appendChild(img);
+                wrapper.appendChild(title);
+                item.appendChild(wrapper);
                 gallery.appendChild(item);
             });
         }
         
-        // Initialize parallax effect after images are loaded
-        setTimeout(() => {
-            var images = document.getElementsByClassName('thumbnail');
-            if (images.length > 0) {
-                new simpleParallax(images, {
-                    delay: 1,
-                    scale: 1.5,
-                    transition: 'cubic-bezier(0,0,0,1)'
-                });
-            }
-        }, 100);
+        // Intersection Observer for scroll animations
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+        
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+        
+        // Observe all gallery items
+        document.querySelectorAll('.gallery-item').forEach(item => {
+            observer.observe(item);
+        });
     </script>
 </body>
 </html>
-
