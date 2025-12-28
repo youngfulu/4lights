@@ -13,9 +13,9 @@ window.addEventListener('resize', resizeCanvas);
 const baseEmojiSize = 24; // Base size for layer_1
 const layer2SizeMultiplier = 1 / 1.6; // Layer_2 is 1.6 times smaller
 const hoverZoom = 2.0; // Zoom factor on hover
-const alignmentSmoothness = 0.02; // Smoothness for emoji alignment animation (2x faster than 0.01)
+const alignmentAnimationDuration = 1250; // Animation duration in milliseconds (1.25 seconds)
 const alignedSizeMultiplier = 7.0; // Size multiplier when aligned (7x larger)
-const panSmoothness = 0.033; // Smoothness factor for camera pan interpolation (3x slower)
+const panSmoothness = 0.12; // Smoothness factor for camera pan interpolation (smoother with inertia)
 const opacitySmoothness = 0.0167; // Smoothness for opacity transition (fade to 0.1 in 1 second: ~60 frames at 60fps, 0.9 / 60 ≈ 0.015, slightly faster)
 
 // Mouse/touch position
@@ -41,14 +41,17 @@ let zoomTransitionStartLevel = 1.0;
 let zoomTransitionTargetLevel = 1.0;
 let isZoomTransitioning = false;
 
-// Camera pan (drag to move view)
+// Camera pan (drag to move view) with inertia
 let cameraPanX = 0;
 let cameraPanY = 0;
 let targetCameraPanX = 0;
 let targetCameraPanY = 0;
+let panVelocityX = 0; // Pan velocity for inertia
+let panVelocityY = 0;
 let isDragging = false;
 let lastDragX = 0;
 let lastDragY = 0;
+let lastMoveTime = performance.now();
 
 // Alignment state
 let alignedEmojiIndex = null; // null = no alignment, otherwise the emoji index to align
@@ -109,7 +112,11 @@ function generatePoints(count, minDistance) {
                 targetSize: 0, // Target size for smooth size transition
                 currentSize: 0, // Current interpolated size
                 opacity: 1.0, // Current opacity (1.0 = fully visible, 0.1 = faded)
-                targetOpacity: 1.0 // Target opacity for smooth transition
+                targetOpacity: 1.0, // Target opacity for smooth transition
+                alignmentStartTime: 0, // Start time for alignment animation
+                startX: 0, // Starting X position for animation
+                startY: 0, // Starting Y position for animation
+                startSize: 0 // Starting size for animation
             };
             
             validPoint = true;
@@ -137,6 +144,10 @@ function generatePoints(count, minDistance) {
             point.originalBaseY = point.y;
             point.currentAlignedX = point.x;
             point.currentAlignedY = point.y;
+            point.alignmentStartTime = 0; // Initialize animation start time
+            point.startX = point.x;
+            point.startY = point.y;
+            point.startSize = 0; // Will be set after initialization
             // Initial size will be set after baseEmojiSize is defined
             points.push(point);
         }
@@ -153,9 +164,11 @@ points.forEach(point => {
     if (point.layer === 'layer_1') {
         point.targetSize = baseEmojiSize;
         point.currentSize = baseEmojiSize;
+        point.startSize = baseEmojiSize;
     } else {
         point.targetSize = baseEmojiSize * layer2SizeMultiplier;
         point.currentSize = baseEmojiSize * layer2SizeMultiplier;
+        point.startSize = baseEmojiSize * layer2SizeMultiplier;
     }
     point.opacity = 1.0;
     point.targetOpacity = 1.0;
@@ -175,6 +188,9 @@ function handleMouseMove(e) {
     const rect = canvas.getBoundingClientRect();
     const mouseXPos = e.clientX - rect.left;
     const mouseYPos = e.clientY - rect.top;
+    const currentTime = performance.now();
+    const deltaTime = Math.max(1, currentTime - lastMoveTime); // Prevent division by zero
+    lastMoveTime = currentTime;
     
     if (isDragging) {
         // Calculate drag delta and update camera pan target
@@ -182,11 +198,19 @@ function handleMouseMove(e) {
         const deltaY = mouseYPos - lastDragY;
         targetCameraPanX += deltaX;
         targetCameraPanY += deltaY;
+        
+        // Update velocity for inertia (pixels per millisecond)
+        panVelocityX = deltaX / deltaTime;
+        panVelocityY = deltaY / deltaTime;
+        
         lastDragX = mouseXPos;
         lastDragY = mouseYPos;
     } else {
         targetMouseX = mouseXPos;
         targetMouseY = mouseYPos;
+        // Decay velocity when not dragging
+        panVelocityX *= 0.9;
+        panVelocityY *= 0.9;
     }
 }
 
@@ -236,6 +260,7 @@ function handleMouseDown(e) {
 function handleMouseUp() {
     isDragging = false;
     canvas.style.cursor = 'default';
+    // Velocity will continue to apply inertia after drag ends
 }
 
 // Mouse wheel handler (zoom) - discrete levels
@@ -344,7 +369,10 @@ function findPointAtMouse(mouseX, mouseY) {
 function unalignEmojis() {
     if (alignedEmojiIndex === null) return;
     
-    alignedEmojis.forEach(p => {
+    // Store aligned emojis before clearing array
+    const emojisToUnalign = [...alignedEmojis];
+    
+    emojisToUnalign.forEach(p => {
         p.isAligned = false;
         p.targetX = p.originalBaseX;
         p.targetY = p.originalBaseY;
@@ -354,7 +382,13 @@ function unalignEmojis() {
         } else {
             p.targetSize = baseEmojiSize * layer2SizeMultiplier;
         }
+        // Initialize animation start values for smooth return
+        p.startX = p.currentAlignedX;
+        p.startY = p.currentAlignedY;
+        p.startSize = p.currentSize;
+        p.alignmentStartTime = performance.now();
     });
+    
     alignedEmojis = [];
     alignedEmojiIndex = null;
     
@@ -418,6 +452,11 @@ function handleEmojiClick(clickedPoint) {
             point.targetY = startY + (index * verticalSpacing); // Stacked vertically
             point.targetSize = alignedSize;
             point.targetOpacity = 1.0;
+            // Initialize animation start values
+            point.startX = point.currentAlignedX;
+            point.startY = point.currentAlignedY;
+            point.startSize = point.currentSize;
+            point.alignmentStartTime = performance.now();
         });
         
         currentZoomIndex = bestIndex;
@@ -437,6 +476,11 @@ function handleEmojiClick(clickedPoint) {
             point.targetY = centerY; // Horizontal line at center Y (world coords)
             point.targetSize = alignedSize; // Set target size for smooth transition
             point.targetOpacity = 1.0; // Selected emojis remain fully visible
+            // Initialize animation start values
+            point.startX = point.currentAlignedX;
+            point.startY = point.currentAlignedY;
+            point.startSize = point.currentSize;
+            point.alignmentStartTime = performance.now();
         });
         
         // Calculate zoom level to fit the horizontal line width on screen
@@ -501,7 +545,18 @@ function draw() {
         globalZoomLevel = zoomLevels[currentZoomIndex];
     }
     
-    // Smooth camera pan interpolation (3x slower)
+    // Smooth camera pan interpolation with inertia
+    // Apply velocity-based inertia when not dragging
+    if (!isDragging && (Math.abs(panVelocityX) > 0.01 || Math.abs(panVelocityY) > 0.01)) {
+        const inertiaStrength = 8; // Multiplier for velocity
+        targetCameraPanX += panVelocityX * inertiaStrength;
+        targetCameraPanY += panVelocityY * inertiaStrength;
+        // Decay velocity over time
+        panVelocityX *= 0.92;
+        panVelocityY *= 0.92;
+    }
+    
+    // Smooth interpolation towards target
     cameraPanX += (targetCameraPanX - cameraPanX) * panSmoothness;
     cameraPanY += (targetCameraPanY - cameraPanY) * panSmoothness;
     
@@ -523,6 +578,7 @@ function draw() {
     ctx.translate(centerX + cameraPanX, centerY + cameraPanY);
     ctx.scale(globalZoomLevel, globalZoomLevel);
     ctx.translate(-centerX, -centerY);
+    ctx.globalAlpha = 1.0; // Reset alpha for drawing within transform (will be set per-point)
     
     // Draw grid (25x25 pixels, white, opacity 0.3)
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
@@ -560,131 +616,89 @@ function draw() {
     const offsetX = (smoothMouseX - centerX) * parallaxStrength;
     const offsetY = (smoothMouseY - centerY) * parallaxStrength;
     
-    // Set text alignment for emojis
+    // Cache mouse coordinates for hover detection (calculated once per frame)
+    const scaledMouseXForHover = ((smoothMouseX - centerX - cameraPanX) / globalZoomLevel) + centerX;
+    const scaledMouseYForHover = ((smoothMouseY - centerY - cameraPanY) / globalZoomLevel) + centerY;
+    
+    // Set text alignment and color for emojis (once)
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#fff';
     
-    // Draw layer_1 points (odd points - faster parallax)
+    // Store previous font size to avoid redundant font changes
+    let lastFontSize = -1;
+    
+    // Draw all points in a single loop (PERFORMANCE: was 2 loops, now 1)
     points.forEach(point => {
-        if (point.layer === 'layer_1') {
-            // Animate opacity
-            point.opacity += (point.targetOpacity - point.opacity) * opacitySmoothness;
+        const speed = point.layer === 'layer_1' ? layer1Speed : layer2Speed;
+        
+        // Animate opacity
+        point.opacity += (point.targetOpacity - point.opacity) * opacitySmoothness;
+        
+        let x, y;
+        let emojiSize;
+        
+        if (point.isAligned || (point.alignmentStartTime > 0 && !point.isAligned)) {
+            // Time-based smooth animation with easing (1.25 seconds duration)
+            const elapsed = performance.now() - point.alignmentStartTime;
+            const progress = Math.min(elapsed / alignmentAnimationDuration, 1.0);
             
-            let x, y;
-            let emojiSize;
+            // Smooth ease-out easing function (easeOutCubic)
+            const easeProgress = 1 - Math.pow(1 - progress, 3);
             
+            // Interpolate position and size
+            point.currentAlignedX = point.startX + (point.targetX - point.startX) * easeProgress;
+            point.currentAlignedY = point.startY + (point.targetY - point.startY) * easeProgress;
+            point.currentSize = point.startSize + (point.targetSize - point.startSize) * easeProgress;
+            
+            // If aligned, use aligned position; otherwise transitioning back
             if (point.isAligned) {
-                // Animate to aligned position (horizontal line at center Y)
-                point.currentAlignedX += (point.targetX - point.currentAlignedX) * alignmentSmoothness;
-                point.currentAlignedY += (point.targetY - point.currentAlignedY) * alignmentSmoothness;
-                x = point.currentAlignedX; // No cameraPanX/Y - transform handles it
+                x = point.currentAlignedX;
                 y = point.currentAlignedY;
-                // Smoothly animate size change
-                point.currentSize += (point.targetSize - point.currentSize) * alignmentSmoothness;
                 emojiSize = point.currentSize;
             } else {
-                // Check if we need to transition back from aligned state
-                const distFromOriginalX = Math.abs(point.currentAlignedX - point.originalBaseX);
-                const distFromOriginalY = Math.abs(point.currentAlignedY - point.originalBaseY);
-                
-                if (distFromOriginalX > 0.1 || distFromOriginalY > 0.1) {
-                    // Still transitioning back to original position - animate using currentAlignedX/Y
-                    point.currentAlignedX += (point.originalBaseX - point.currentAlignedX) * alignmentSmoothness;
-                    point.currentAlignedY += (point.originalBaseY - point.currentAlignedY) * alignmentSmoothness;
-                    x = point.currentAlignedX + (offsetX * layer1Speed); // No cameraPanX/Y - transform handles it
-                    y = point.currentAlignedY + (offsetY * layer1Speed);
-                } else {
-                    // Already at original position - use original base position
-                    x = point.originalBaseX + (offsetX * layer1Speed); // No cameraPanX/Y - transform handles it
-                    y = point.originalBaseY + (offsetY * layer1Speed);
-                    // Reset currentAligned to match original
+                // Transitioning back to original - combine with parallax
+                x = point.currentAlignedX + (offsetX * speed);
+                y = point.currentAlignedY + (offsetY * speed);
+                emojiSize = point.currentSize;
+                // Reset animation start time when transition completes
+                if (progress >= 1.0) {
+                    point.alignmentStartTime = 0;
                     point.currentAlignedX = point.originalBaseX;
                     point.currentAlignedY = point.originalBaseY;
                 }
-                
-                // Smoothly animate size change when returning to original
-                point.currentSize += (point.targetSize - point.currentSize) * alignmentSmoothness;
-                
-                // Check if hovered (convert mouse coords to world coordinate system)
-                const scaledMouseXForLayer = ((smoothMouseX - centerX - cameraPanX) / globalZoomLevel) + centerX;
-                const scaledMouseYForLayer = ((smoothMouseY - centerY - cameraPanY) / globalZoomLevel) + centerY;
-                const isHovered = isPointHovered(x, y, scaledMouseXForLayer, scaledMouseYForLayer, point.currentSize * hoverZoom / 2);
-                const hoverSize = isHovered ? point.currentSize * hoverZoom : point.currentSize;
-                emojiSize = hoverSize;
             }
+        } else {
+            // Normal state - use original position with parallax
+            x = point.originalBaseX + (offsetX * speed);
+            y = point.originalBaseY + (offsetY * speed);
             
-            // Apply opacity
-            ctx.save();
-            ctx.globalAlpha = point.opacity;
-            ctx.font = `${emojiSize}px Arial`;
-            ctx.fillText(point.emoji, x, y);
-            ctx.restore();
+            // Smoothly animate size change
+            point.currentSize += (point.targetSize - point.currentSize) * 0.1;
+            
+            // Check if hovered (using cached coordinates)
+            const isHovered = isPointHovered(x, y, scaledMouseXForHover, scaledMouseYForHover, point.currentSize * hoverZoom / 2);
+            const hoverSize = isHovered ? point.currentSize * hoverZoom : point.currentSize;
+            emojiSize = hoverSize;
         }
+        
+        // PERFORMANCE: Only set font when size changes (avoid redundant font updates)
+        if (Math.abs(emojiSize - lastFontSize) > 0.5) {
+            ctx.font = `${emojiSize}px Arial`;
+            lastFontSize = emojiSize;
+        }
+        
+        // PERFORMANCE: Use globalAlpha directly (more efficient than save/restore)
+        // Only change globalAlpha if it's different (optimization)
+        if (Math.abs(ctx.globalAlpha - point.opacity) > 0.01) {
+            ctx.globalAlpha = point.opacity;
+        }
+        ctx.fillText(point.emoji, x, y);
     });
     
-    // Draw layer_2 points (even points - slower parallax for depth, smaller emojis)
-    points.forEach(point => {
-        if (point.layer === 'layer_2') {
-            // Animate opacity
-            point.opacity += (point.targetOpacity - point.opacity) * opacitySmoothness;
-            
-            // Layer_2 base size is 1.6 times smaller
-            const layer2BaseSize = baseEmojiSize * layer2SizeMultiplier;
-            
-            let x, y;
-            let emojiSize;
-            
-            if (point.isAligned) {
-                // Animate to aligned position (horizontal line at center Y)
-                point.currentAlignedX += (point.targetX - point.currentAlignedX) * alignmentSmoothness;
-                point.currentAlignedY += (point.targetY - point.currentAlignedY) * alignmentSmoothness;
-                x = point.currentAlignedX; // No cameraPanX/Y - transform handles it
-                y = point.currentAlignedY;
-                // Smoothly animate size change
-                point.currentSize += (point.targetSize - point.currentSize) * alignmentSmoothness;
-                emojiSize = point.currentSize;
-            } else {
-                // Check if we need to transition back from aligned state
-                const distFromOriginalX = Math.abs(point.currentAlignedX - point.originalBaseX);
-                const distFromOriginalY = Math.abs(point.currentAlignedY - point.originalBaseY);
-                
-                if (distFromOriginalX > 0.1 || distFromOriginalY > 0.1) {
-                    // Still transitioning back to original position - animate using currentAlignedX/Y
-                    point.currentAlignedX += (point.originalBaseX - point.currentAlignedX) * alignmentSmoothness;
-                    point.currentAlignedY += (point.originalBaseY - point.currentAlignedY) * alignmentSmoothness;
-                    x = point.currentAlignedX + (offsetX * layer2Speed); // No cameraPanX/Y - transform handles it
-                    y = point.currentAlignedY + (offsetY * layer2Speed);
-                } else {
-                    // Already at original position - use original base position
-                    x = point.originalBaseX + (offsetX * layer2Speed); // No cameraPanX/Y - transform handles it
-                    y = point.originalBaseY + (offsetY * layer2Speed);
-                    // Reset currentAligned to match original
-                    point.currentAlignedX = point.originalBaseX;
-                    point.currentAlignedY = point.originalBaseY;
-                }
-                
-                // Smoothly animate size change when returning to original
-                point.currentSize += (point.targetSize - point.currentSize) * alignmentSmoothness;
-                
-                // Check if hovered (convert mouse coords to world coordinate system)
-                const scaledMouseXForLayer = ((smoothMouseX - centerX - cameraPanX) / globalZoomLevel) + centerX;
-                const scaledMouseYForLayer = ((smoothMouseY - centerY - cameraPanY) / globalZoomLevel) + centerY;
-                const isHovered = isPointHovered(x, y, scaledMouseXForLayer, scaledMouseYForLayer, point.currentSize * hoverZoom / 2);
-                const hoverSize = isHovered ? point.currentSize * hoverZoom : point.currentSize;
-                emojiSize = hoverSize;
-            }
-            
-            // Apply opacity
-            ctx.save();
-            ctx.globalAlpha = point.opacity;
-            ctx.font = `${emojiSize}px Arial`;
-            ctx.fillText(point.emoji, x, y);
-            ctx.restore();
-        }
-    });
-    
-    // Restore transform after drawing
+    // Restore transform and reset globalAlpha after drawing
     ctx.restore();
+    ctx.globalAlpha = 1.0;
 }
 
 // Animation loop
