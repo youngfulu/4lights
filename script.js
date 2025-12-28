@@ -15,7 +15,7 @@ const layer2SizeMultiplier = 1 / 1.6; // Layer_2 is 1.6 times smaller
 const hoverZoom = 2.0; // Zoom factor on hover
 const alignmentAnimationDuration = 1250; // Animation duration in milliseconds (1.25 seconds)
 const alignedSizeMultiplier = 7.0; // Size multiplier when aligned (7x larger)
-const panSmoothness = 0.12; // Smoothness factor for camera pan interpolation (smoother with inertia)
+const panSmoothness = 0.18; // Smoothness factor for camera pan interpolation (more responsive, less laggy)
 const opacitySmoothness = 0.0167; // Smoothness for opacity transition (fade to 0.1 in 1 second: ~60 frames at 60fps, 0.9 / 60 ≈ 0.015, slightly faster)
 
 // Mouse/touch position
@@ -190,34 +190,38 @@ function isPointHovered(pointX, pointY, mouseX, mouseY, size) {
     return distance < size; // Hover radius based on emoji size
 }
 
-// Mouse move handler
+// Mouse move handler (optimized for performance)
 function handleMouseMove(e) {
     const rect = canvas.getBoundingClientRect();
     const mouseXPos = e.clientX - rect.left;
     const mouseYPos = e.clientY - rect.top;
-    const currentTime = performance.now();
-    const deltaTime = Math.max(1, currentTime - lastMoveTime); // Prevent division by zero
-    lastMoveTime = currentTime;
     
     if (isDragging) {
-        // Calculate drag delta and update camera pan target
+        // Calculate drag delta and update camera pan target directly (more responsive)
         const deltaX = mouseXPos - lastDragX;
         const deltaY = mouseYPos - lastDragY;
         targetCameraPanX += deltaX;
         targetCameraPanY += deltaY;
         
-        // Update velocity for inertia (pixels per millisecond)
+        // Update velocity for inertia (only when dragging, use frame-based calculation)
+        const currentTime = performance.now();
+        const deltaTime = Math.max(16, currentTime - lastMoveTime); // Cap at ~60fps
+        lastMoveTime = currentTime;
         panVelocityX = deltaX / deltaTime;
         panVelocityY = deltaY / deltaTime;
         
         lastDragX = mouseXPos;
         lastDragY = mouseYPos;
+        
+        // Directly update camera pan for immediate response (no smooth interpolation while dragging)
+        cameraPanX = targetCameraPanX;
+        cameraPanY = targetCameraPanY;
     } else {
         targetMouseX = mouseXPos;
         targetMouseY = mouseYPos;
-        // Decay velocity when not dragging
-        panVelocityX *= 0.9;
-        panVelocityY *= 0.9;
+        // Decay velocity when not dragging (only needed for inertia after drag ends)
+        panVelocityX *= 0.85;
+        panVelocityY *= 0.85;
     }
 }
 
@@ -250,18 +254,36 @@ function handleTouchMove(e) {
         const touchY = e.touches[0].clientY - rect.top;
         
         // Handle mobile vertical scroll when emojis are aligned
-        if (isMobile && alignedEmojiIndex !== null && isMobileScrolling) {
-            const deltaY = touchY - touchStartY;
-            const screenHeight = canvas.height;
-            // Convert touch delta to scroll position (0 to 1)
-            const scrollDelta = -deltaY / (screenHeight * 2); // Adjust sensitivity
-            targetMobileScrollPosition = Math.max(0, Math.min(1, touchStartScrollPosition + scrollDelta));
-            scrollIndicatorVisible = true;
-            scrollIndicatorFadeTime = performance.now() + 3000;
+        if (isMobile && alignedEmojiIndex !== null) {
+            // Check if this is a vertical scroll gesture (if not already scrolling, detect it)
+            if (!isMobileScrolling) {
+                const deltaY = Math.abs(touchY - touchStartY);
+                // If vertical movement is significant, start scrolling
+                if (deltaY > 10) {
+                    isMobileScrolling = true;
+                    scrollIndicatorVisible = true;
+                    scrollIndicatorFadeTime = performance.now() + 3000;
+                }
+            }
+            
+            if (isMobileScrolling) {
+                const deltaY = touchY - touchStartY;
+                const screenHeight = canvas.height;
+                // Convert touch delta to scroll position (0 to 1) - more sensitive
+                const scrollDelta = -deltaY / (screenHeight * 1.5); // More sensitive scrolling
+                targetMobileScrollPosition = Math.max(0, Math.min(1, touchStartScrollPosition + scrollDelta));
+                scrollIndicatorVisible = true;
+                scrollIndicatorFadeTime = performance.now() + 3000;
+            } else {
+                // Normal touch movement for parallax
+                targetMouseX = e.touches[0].clientX - rect.left;
+                targetMouseY = e.touches[0].clientY - rect.top;
+            }
         } else {
-        targetMouseX = e.touches[0].clientX - rect.left;
-        targetMouseY = e.touches[0].clientY - rect.top;
-    }
+            // Desktop touch or no alignment - normal touch movement
+            targetMouseX = e.touches[0].clientX - rect.left;
+            targetMouseY = e.touches[0].clientY - rect.top;
+        }
     }
 }
 
@@ -524,11 +546,14 @@ function handleEmojiClick(clickedPoint) {
         mobileScrollPosition = 0;
         targetMobileScrollPosition = 0;
         
-        // Show scroll indicator if content exceeds screen
+        // Show scroll indicator if content exceeds screen (in world coordinates, account for zoom)
         const totalContentHeight = totalHeight + (topPadding * 2);
         const screenHeight = canvas.height;
-        scrollIndicatorVisible = totalContentHeight > screenHeight;
-        scrollIndicatorFadeTime = performance.now() + 3000; // Hide after 3 seconds of inactivity
+        const scaledContentHeight = totalContentHeight * zoomLevels[bestIndex]; // Account for zoom
+        scrollIndicatorVisible = scaledContentHeight > screenHeight;
+        if (scrollIndicatorVisible) {
+            scrollIndicatorFadeTime = performance.now() + 3000; // Hide after 3 seconds of inactivity
+        }
     } else {
         // Desktop: Single horizontal line
         const totalWidth = (totalEmojis - 1) * minSpacing; // Width in world coordinates
@@ -585,9 +610,15 @@ function handleEmojiClick(clickedPoint) {
 
 // Draw points with parallax and emojis
 function draw() {
-    // Smooth mouse position
-    smoothMouseX += (targetMouseX - smoothMouseX) * 0.1;
-    smoothMouseY += (targetMouseY - smoothMouseY) * 0.1;
+    // Smooth mouse position (optimized - only when not dragging for better performance)
+    if (!isDragging) {
+        smoothMouseX += (targetMouseX - smoothMouseX) * 0.1;
+        smoothMouseY += (targetMouseY - smoothMouseY) * 0.1;
+    } else {
+        // Direct update while dragging for better responsiveness
+        smoothMouseX = targetMouseX;
+        smoothMouseY = targetMouseY;
+    }
     
     // Smooth camera zoom interpolation with 1.5 second fade
     if (isZoomTransitioning) {
@@ -634,19 +665,22 @@ function draw() {
         scrollIndicatorVisible = false;
         
         // Smooth camera pan interpolation with inertia (desktop only when not in mobile aligned mode)
-        // Apply velocity-based inertia when not dragging
-        if (!isDragging && (Math.abs(panVelocityX) > 0.01 || Math.abs(panVelocityY) > 0.01)) {
-            const inertiaStrength = 8; // Multiplier for velocity
-            targetCameraPanX += panVelocityX * inertiaStrength;
-            targetCameraPanY += panVelocityY * inertiaStrength;
-            // Decay velocity over time
-            panVelocityX *= 0.92;
-            panVelocityY *= 0.92;
+        // Only apply smooth interpolation if not currently dragging (dragging uses direct update)
+        if (!isDragging) {
+            // Apply velocity-based inertia when not dragging (only if there's significant velocity)
+            if (Math.abs(panVelocityX) > 0.1 || Math.abs(panVelocityY) > 0.1) {
+                const inertiaStrength = 6; // Reduced multiplier for smoother, less aggressive inertia
+                targetCameraPanX += panVelocityX * inertiaStrength;
+                targetCameraPanY += panVelocityY * inertiaStrength;
+                // Decay velocity over time
+                panVelocityX *= 0.90;
+                panVelocityY *= 0.90;
+            }
+            
+            // Smooth interpolation towards target (only when not dragging)
+            cameraPanX += (targetCameraPanX - cameraPanX) * panSmoothness;
+            cameraPanY += (targetCameraPanY - cameraPanY) * panSmoothness;
         }
-        
-        // Smooth interpolation towards target
-        cameraPanX += (targetCameraPanX - cameraPanX) * panSmoothness;
-        cameraPanY += (targetCameraPanY - cameraPanY) * panSmoothness;
     }
     
     // Clear canvas with black background
