@@ -57,6 +57,13 @@ let lastMoveTime = performance.now();
 let alignedEmojiIndex = null; // null = no alignment, otherwise the emoji index to align
 let alignedEmojis = []; // Array of emoji objects that are currently aligned
 
+// Mobile vertical scroll state
+let mobileScrollPosition = 0; // Current scroll position (0 = top, 1 = bottom)
+let targetMobileScrollPosition = 0; // Target scroll position
+let isMobileScrolling = false; // Whether user is currently scrolling
+let scrollIndicatorVisible = false; // Whether scroll indicator is visible
+let scrollIndicatorFadeTime = 0; // Time when scroll indicator should fade
+
 // Emoji list
 const emojis = ['🌟', '✨', '⭐', '💫', '🔥', '💎', '🎯', '⚡', '🎨', '🎭', '🎪', '🎬', '🎮', '🎲', '🎰', '🎯', '🎪', '🎨', '🎭', '🎬', '🎮', '🎲', '🎰', '🚀', '🌙', '☀️', '⭐', '🌟', '✨', '💫', '🔥'];
 
@@ -214,14 +221,53 @@ function handleMouseMove(e) {
     }
 }
 
+// Touch start handler for mobile scroll
+let touchStartY = 0;
+let touchStartScrollPosition = 0;
+
+function handleTouchStart(e) {
+    if (e.touches.length > 0) {
+        touchStartY = e.touches[0].clientY;
+        touchStartScrollPosition = mobileScrollPosition;
+        
+        // Check if we're in mobile aligned mode
+        const isMobile = window.innerWidth < 768 || ('ontouchstart' in window);
+        if (isMobile && alignedEmojiIndex !== null) {
+            isMobileScrolling = true;
+            scrollIndicatorVisible = true;
+            scrollIndicatorFadeTime = performance.now() + 3000;
+        }
+    }
+}
+
 // Touch move handler
 function handleTouchMove(e) {
     e.preventDefault();
+    const isMobile = window.innerWidth < 768 || ('ontouchstart' in window);
+    
     if (e.touches.length > 0) {
         const rect = canvas.getBoundingClientRect();
+        const touchY = e.touches[0].clientY - rect.top;
+        
+        // Handle mobile vertical scroll when emojis are aligned
+        if (isMobile && alignedEmojiIndex !== null && isMobileScrolling) {
+            const deltaY = touchY - touchStartY;
+            const screenHeight = canvas.height;
+            // Convert touch delta to scroll position (0 to 1)
+            const scrollDelta = -deltaY / (screenHeight * 2); // Adjust sensitivity
+            targetMobileScrollPosition = Math.max(0, Math.min(1, touchStartScrollPosition + scrollDelta));
+            scrollIndicatorVisible = true;
+            scrollIndicatorFadeTime = performance.now() + 3000;
+        } else {
         targetMouseX = e.touches[0].clientX - rect.left;
         targetMouseY = e.touches[0].clientY - rect.top;
     }
+    }
+}
+
+// Touch end handler
+function handleTouchEnd(e) {
+    isMobileScrolling = false;
 }
 
 // Mouse leave handler (reset to center)
@@ -296,7 +342,9 @@ canvas.addEventListener('mousedown', handleMouseDown);
 canvas.addEventListener('mousemove', handleMouseMove);
 canvas.addEventListener('mouseup', handleMouseUp);
 canvas.addEventListener('wheel', handleWheel, { passive: false });
+canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
 canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
 canvas.addEventListener('mouseleave', handleMouseLeave);
 
 // Parallax effect parameters
@@ -392,6 +440,11 @@ function unalignEmojis() {
     alignedEmojis = [];
     alignedEmojiIndex = null;
     
+    // Reset mobile scroll state
+    mobileScrollPosition = 0;
+    targetMobileScrollPosition = 0;
+    scrollIndicatorVisible = false;
+    
     // Reset zoom to default (base level)
     currentZoomIndex = 2; // Base level index (1.0)
     startZoomTransition();
@@ -443,13 +496,16 @@ function handleEmojiClick(clickedPoint) {
         // Calculate spacing between emojis vertically (fit to width, space vertically)
         const verticalSpacing = alignedSize * 1.2; // 20% padding between emojis vertically
         const totalHeight = (totalEmojis - 1) * verticalSpacing;
-        const startY = centerY - totalHeight / 2; // Center all emojis vertically
         
         // Position emojis vertically (centered horizontally)
+        // Start from top with padding to focus on upper emoji
+        const topPadding = 80; // Padding from top to focus on first emoji
+        const startY = centerY - (totalHeight / 2) + topPadding; // Start higher to focus on first emoji
+        
         alignedEmojis.forEach((point, index) => {
             point.isAligned = true;
             point.targetX = centerX; // All emojis centered horizontally
-            point.targetY = startY + (index * verticalSpacing); // Stacked vertically
+            point.targetY = startY + (index * verticalSpacing); // Stacked vertically from top
             point.targetSize = alignedSize;
             point.targetOpacity = 1.0;
             // Initialize animation start values
@@ -462,9 +518,17 @@ function handleEmojiClick(clickedPoint) {
         currentZoomIndex = bestIndex;
         startZoomTransition();
         
-        // Reset camera pan to center the vertical stack
+        // Reset camera pan and scroll position to focus on upper emoji
         targetCameraPanX = 0;
         targetCameraPanY = 0;
+        mobileScrollPosition = 0;
+        targetMobileScrollPosition = 0;
+        
+        // Show scroll indicator if content exceeds screen
+        const totalContentHeight = totalHeight + (topPadding * 2);
+        const screenHeight = canvas.height;
+        scrollIndicatorVisible = totalContentHeight > screenHeight;
+        scrollIndicatorFadeTime = performance.now() + 3000; // Hide after 3 seconds of inactivity
     } else {
         // Desktop: Single horizontal line
         const totalWidth = (totalEmojis - 1) * minSpacing; // Width in world coordinates
@@ -545,20 +609,45 @@ function draw() {
         globalZoomLevel = zoomLevels[currentZoomIndex];
     }
     
-    // Smooth camera pan interpolation with inertia
-    // Apply velocity-based inertia when not dragging
-    if (!isDragging && (Math.abs(panVelocityX) > 0.01 || Math.abs(panVelocityY) > 0.01)) {
-        const inertiaStrength = 8; // Multiplier for velocity
-        targetCameraPanX += panVelocityX * inertiaStrength;
-        targetCameraPanY += panVelocityY * inertiaStrength;
-        // Decay velocity over time
-        panVelocityX *= 0.92;
-        panVelocityY *= 0.92;
+    // Mobile vertical scroll interpolation (mobile only)
+    const isMobile = window.innerWidth < 768 || ('ontouchstart' in window);
+    if (isMobile && alignedEmojiIndex !== null) {
+        mobileScrollPosition += (targetMobileScrollPosition - mobileScrollPosition) * 0.15; // Smooth scroll
+        
+        // Calculate scroll offset and apply to camera pan Y
+        // Calculate total height of aligned emojis in world coordinates
+        const alignedSize = baseEmojiSize * alignedSizeMultiplier;
+        const verticalSpacing = alignedSize * 1.2;
+        const totalHeight = (alignedEmojis.length - 1) * verticalSpacing;
+        const maxScrollOffset = Math.max(0, totalHeight - canvas.height + 300); // Max scroll distance
+        const scrollOffset = mobileScrollPosition * maxScrollOffset;
+        
+        // Apply scroll offset to camera pan Y (negative because scrolling down moves content up)
+        targetCameraPanY = -scrollOffset;
+        cameraPanY += (targetCameraPanY - cameraPanY) * panSmoothness;
+        
+        // Update scroll indicator visibility
+        if (performance.now() > scrollIndicatorFadeTime && !isMobileScrolling) {
+            scrollIndicatorVisible = false;
+        }
+    } else {
+        scrollIndicatorVisible = false;
+        
+        // Smooth camera pan interpolation with inertia (desktop only when not in mobile aligned mode)
+        // Apply velocity-based inertia when not dragging
+        if (!isDragging && (Math.abs(panVelocityX) > 0.01 || Math.abs(panVelocityY) > 0.01)) {
+            const inertiaStrength = 8; // Multiplier for velocity
+            targetCameraPanX += panVelocityX * inertiaStrength;
+            targetCameraPanY += panVelocityY * inertiaStrength;
+            // Decay velocity over time
+            panVelocityX *= 0.92;
+            panVelocityY *= 0.92;
+        }
+        
+        // Smooth interpolation towards target
+        cameraPanX += (targetCameraPanX - cameraPanX) * panSmoothness;
+        cameraPanY += (targetCameraPanY - cameraPanY) * panSmoothness;
     }
-    
-    // Smooth interpolation towards target
-    cameraPanX += (targetCameraPanX - cameraPanX) * panSmoothness;
-    cameraPanY += (targetCameraPanY - cameraPanY) * panSmoothness;
     
     // Clear canvas with black background
     ctx.fillStyle = '#000';
@@ -699,6 +788,37 @@ function draw() {
     // Restore transform and reset globalAlpha after drawing
     ctx.restore();
     ctx.globalAlpha = 1.0;
+    
+    // Draw mobile scroll indicator (Apple-style, minimalistic, on the left)
+    if (isMobile && alignedEmojiIndex !== null && scrollIndicatorVisible) {
+        const indicatorWidth = 2.5; // Thin line
+        const indicatorPadding = 8; // Padding from left edge
+        const indicatorHeight = 60; // Height of the scroll indicator
+        const indicatorMinY = 50; // Minimum Y position (top padding)
+        const indicatorMaxY = canvas.height - 50 - indicatorHeight; // Maximum Y position
+        
+        // Calculate indicator position based on scroll position
+        const indicatorY = indicatorMinY + (mobileScrollPosition * (indicatorMaxY - indicatorMinY));
+        
+        // Draw scroll indicator with fade effect (Apple-style: rounded corners, subtle)
+        const fadeOpacity = Math.min(1.0, (scrollIndicatorFadeTime - performance.now()) / 1000);
+        ctx.fillStyle = `rgba(255, 255, 255, ${0.4 * fadeOpacity})`; // Semi-transparent white, subtle
+        
+        // Draw rounded rectangle (Apple-style minimalistic) - simple rounded rect
+        const radius = 1.25;
+        ctx.beginPath();
+        ctx.moveTo(indicatorPadding + radius, indicatorY);
+        ctx.lineTo(indicatorPadding + indicatorWidth - radius, indicatorY);
+        ctx.quadraticCurveTo(indicatorPadding + indicatorWidth, indicatorY, indicatorPadding + indicatorWidth, indicatorY + radius);
+        ctx.lineTo(indicatorPadding + indicatorWidth, indicatorY + indicatorHeight - radius);
+        ctx.quadraticCurveTo(indicatorPadding + indicatorWidth, indicatorY + indicatorHeight, indicatorPadding + indicatorWidth - radius, indicatorY + indicatorHeight);
+        ctx.lineTo(indicatorPadding + radius, indicatorY + indicatorHeight);
+        ctx.quadraticCurveTo(indicatorPadding, indicatorY + indicatorHeight, indicatorPadding, indicatorY + indicatorHeight - radius);
+        ctx.lineTo(indicatorPadding, indicatorY + radius);
+        ctx.quadraticCurveTo(indicatorPadding, indicatorY, indicatorPadding + radius, indicatorY);
+        ctx.closePath();
+        ctx.fill();
+    }
 }
 
 // Animation loop
