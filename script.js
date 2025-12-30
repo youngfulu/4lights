@@ -1109,33 +1109,52 @@ function draw() {
                     text = text.substring(0, lastDot);
                 }
                 
-                // Draw text with width equal to image width (18px fixed size, not scaled)
+                // Draw text with width equal to image width (scaled with zoom)
                 ctx.save();
                 ctx.globalAlpha = 1.0;
                 ctx.fillStyle = '#fff';
-                ctx.font = '18px Arial';
+                
+                // Scale text size with zoom
+                const scaledTextSize = 18 * globalZoomLevel;
+                ctx.font = `${scaledTextSize}px Arial`;
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'top';
                 
-                // Measure text to ensure it fits within image width
-                const textMetrics = ctx.measureText(text);
+                // Image width in screen coordinates
                 const imageScreenWidth = drawWidth * globalZoomLevel;
                 
-                // Draw text (centered, constrained to image width)
-                if (textMetrics.width <= imageScreenWidth) {
-                    // Text fits, draw normally
-                    ctx.fillText(text, screenX, textY);
-                } else {
-                    // Text too wide, truncate with ellipsis
-                    let truncatedText = text;
-                    while (ctx.measureText(truncatedText + '...').width > imageScreenWidth && truncatedText.length > 0) {
-                        truncatedText = truncatedText.slice(0, -1);
+                // Word wrap text to fit within image width
+                const words = text.split(' ');
+                const lines = [];
+                let currentLine = '';
+                
+                words.forEach(word => {
+                    const testLine = currentLine ? `${currentLine} ${word}` : word;
+                    const metrics = ctx.measureText(testLine);
+                    
+                    if (metrics.width <= imageScreenWidth || currentLine === '') {
+                        // Word fits on current line, or it's the first word
+                        currentLine = testLine;
+                    } else {
+                        // Word doesn't fit, start new line
+                        if (currentLine) {
+                            lines.push(currentLine);
+                        }
+                        currentLine = word;
                     }
-                    if (truncatedText.length < text.length) {
-                        truncatedText += '...';
-                    }
-                    ctx.fillText(truncatedText, screenX, textY);
+                });
+                
+                // Add the last line
+                if (currentLine) {
+                    lines.push(currentLine);
                 }
+                
+                // Draw each line
+                const lineHeight = scaledTextSize * 1.2; // Line spacing
+                lines.forEach((line, index) => {
+                    ctx.fillText(line, screenX, textY + (index * lineHeight));
+                });
+                
                 ctx.restore();
             }
         });
