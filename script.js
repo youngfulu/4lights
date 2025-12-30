@@ -1109,19 +1109,22 @@ function draw() {
                     text = text.substring(0, lastDot);
                 }
                 
-                // Draw text with width equal to image width (scaled with zoom)
+                // Draw text with width equal to image width (fixed 18px, left-aligned, wraps to new lines)
                 ctx.save();
                 ctx.globalAlpha = 1.0;
                 ctx.fillStyle = '#fff';
                 
-                // Scale text size with zoom
-                const scaledTextSize = 18 * globalZoomLevel;
-                ctx.font = `${scaledTextSize}px Arial`;
-                ctx.textAlign = 'center';
+                // Fixed text size (NOT scaled)
+                const textSize = 18;
+                ctx.font = `${textSize}px Arial`;
+                ctx.textAlign = 'left'; // Left alignment
                 ctx.textBaseline = 'top';
                 
                 // Image width in screen coordinates
                 const imageScreenWidth = drawWidth * globalZoomLevel;
+                
+                // Calculate left edge of text (aligned to left edge of image)
+                const textLeftX = screenX - (imageScreenWidth / 2);
                 
                 // Word wrap text to fit within image width
                 const words = text.split(' ');
@@ -1149,10 +1152,10 @@ function draw() {
                     lines.push(currentLine);
                 }
                 
-                // Draw each line
-                const lineHeight = scaledTextSize * 1.2; // Line spacing
+                // Draw each line (left-aligned)
+                const lineHeight = textSize * 1.2; // Line spacing
                 lines.forEach((line, index) => {
-                    ctx.fillText(line, screenX, textY + (index * lineHeight));
+                    ctx.fillText(line, textLeftX, textY + (index * lineHeight));
                 });
                 
                 ctx.restore();
