@@ -417,7 +417,7 @@ function handleMouseUp() {
     // Velocity will continue to apply inertia after drag ends
 }
 
-// Mouse wheel handler (zoom) - macOS-style continuous zoom in selection mode
+// Mouse wheel handler (zoom) - smooth, gradual, mouse-relative zoom in selection mode
 function handleWheel(e) {
     e.preventDefault();
     
@@ -425,50 +425,50 @@ function handleWheel(e) {
     const mouseX = e.clientX - rect.left;
     const mouseY = e.clientY - rect.top;
     
-    // If in image selection mode, use macOS-style continuous zoom
+    // If in image selection mode, use smooth gradual zoom towards mouse position
     if (alignedEmojiIndex !== null) {
         const centerX = canvas.width / 2;
         const centerY = canvas.height / 2;
         
-        // Calculate world position under mouse cursor (before zoom)
+        // Calculate world position under mouse cursor (using current zoom)
         const worldX = ((mouseX - centerX - cameraPanX) / globalZoomLevel) + centerX;
         const worldY = ((mouseY - centerY - cameraPanY) / globalZoomLevel) + centerY;
         
-        // macOS-style zoom: continuous zoom factor based on scroll delta
+        // Smooth gradual zoom: use exponential scaling based on scroll delta
         // Negative deltaY = zoom in, positive = zoom out
-        // Use exponential zoom for smooth, natural feel
-        const zoomSpeed = 0.001; // Adjust this for zoom sensitivity
-        const zoomFactor = 1.0 - (e.deltaY * zoomSpeed);
+        // Use a smaller factor for more gradual zoom
+        const zoomSensitivity = 0.0008; // Adjust for zoom speed (smaller = more gradual)
+        const zoomDelta = -e.deltaY * zoomSensitivity;
         
-        // Calculate new zoom level
-        let newZoom = globalZoomLevel * zoomFactor;
+        // Calculate target zoom level (exponential scaling for natural feel)
+        let newTargetZoom = targetZoomLevel * (1.0 + zoomDelta);
         
         // Clamp to min/max zoom
-        newZoom = Math.max(minZoom, Math.min(maxZoom, newZoom));
+        newTargetZoom = Math.max(minZoom, Math.min(maxZoom, newTargetZoom));
         
         // If zoom didn't change (hit limit), don't update
-        if (newZoom === globalZoomLevel) {
+        if (Math.abs(newTargetZoom - targetZoomLevel) < 0.001) {
             return;
         }
         
-        // Calculate new camera pan to keep world position under mouse at same screen position
-        // Formula: pan = mousePos - center - (worldPos - center) * zoom
-        const newPanX = mouseX - centerX - (worldX - centerX) * newZoom;
-        const newPanY = mouseY - centerY - (worldY - centerY) * newZoom;
+        // Update target zoom (will be smoothly interpolated in draw loop)
+        targetZoomLevel = newTargetZoom;
+        isZoomTransitioning = false; // Disable discrete zoom transition, use smooth interpolation
         
-        // Update zoom and pan immediately (no transition for smooth macOS feel)
-        globalZoomLevel = newZoom;
-        targetZoomLevel = newZoom;
-        cameraPanX = newPanX;
-        cameraPanY = newPanY;
-        targetCameraPanX = newPanX;
-        targetCameraPanY = newPanY;
+        // Calculate target camera pan to keep world position under mouse at same screen position
+        // This will be smoothly interpolated as zoom changes
+        const targetPanX = mouseX - centerX - (worldX - centerX) * newTargetZoom;
+        const targetPanY = mouseY - centerY - (worldY - centerY) * newTargetZoom;
+        
+        // Update target pan (will be smoothly interpolated)
+        targetCameraPanX = targetPanX;
+        targetCameraPanY = targetPanY;
         
         // Update currentZoomIndex to closest discrete level (for compatibility)
         let closestIndex = 0;
-        let minDiff = Math.abs(zoomLevels[0] - newZoom);
+        let minDiff = Math.abs(zoomLevels[0] - newTargetZoom);
         for (let i = 1; i < zoomLevels.length; i++) {
-            const diff = Math.abs(zoomLevels[i] - newZoom);
+            const diff = Math.abs(zoomLevels[i] - newTargetZoom);
             if (diff < minDiff) {
                 minDiff = diff;
                 closestIndex = i;
