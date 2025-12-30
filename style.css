@@ -19,19 +19,19 @@ body {
     height: 100%;
 }
 
-.close-button {
+.back-button {
     position: fixed;
     top: 20px;
     right: 20px;
-    width: 44px;
-    height: 44px;
+    padding: 8px 16px;
     background: rgba(255, 255, 255, 0.1);
     border: 1px solid rgba(255, 255, 255, 0.3);
-    border-radius: 50%;
+    border-radius: 4px;
     color: #fff;
-    font-size: 28px;
-    font-weight: 300;
-    line-height: 1;
+    font-size: 14px;
+    font-weight: 400;
+    font-family: Arial, sans-serif;
+    text-transform: lowercase;
     cursor: pointer;
     z-index: 1000;
     display: flex;
@@ -41,17 +41,11 @@ body {
     -webkit-tap-highlight-color: transparent;
 }
 
-.close-button:hover {
+.back-button:hover {
     background: rgba(255, 255, 255, 0.2);
     border-color: rgba(255, 255, 255, 0.5);
 }
 
-.close-button:active {
+.back-button:active {
     background: rgba(255, 255, 255, 0.15);
-}
-
-@media (min-width: 768px) {
-    .close-button {
-        display: none !important;
-    }
 }

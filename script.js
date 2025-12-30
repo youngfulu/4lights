@@ -376,15 +376,28 @@ function handleMouseDown(e) {
     
     const clickedPoint = findPointAtMouse(mouseX, mouseY);
     
-    // If emojis are aligned, any click anywhere should unalign them
+    // Allow navigation (dragging) when images are aligned
     if (alignedEmojiIndex !== null) {
-        unalignEmojis();
-        e.preventDefault();
+        // If clicking on an aligned image, allow drag navigation
+        if (clickedPoint && clickedPoint.isAligned) {
+            // Start dragging for navigation
+            isDragging = true;
+            lastDragX = mouseX;
+            lastDragY = mouseY;
+            canvas.style.cursor = 'grabbing';
+        } else {
+            // Click on empty space - start dragging for navigation
+            isDragging = true;
+            lastDragX = mouseX;
+            lastDragY = mouseY;
+            canvas.style.cursor = 'grabbing';
+        }
     } else if (clickedPoint && !isDragging) {
-        // Normal click on emoji (only when nothing is aligned)
+        // Normal click on image (only when nothing is aligned)
         handleEmojiClick(clickedPoint);
-        e.preventDefault(); // Prevent drag when clicking emoji
+        e.preventDefault(); // Prevent drag when clicking image
     } else {
+        // Start dragging for navigation
         isDragging = true;
         lastDragX = mouseX;
         lastDragY = mouseY;
@@ -544,8 +557,8 @@ function unalignEmojis() {
         p.targetOpacity = 1.0;
     });
     
-    // Update close button visibility
-    updateCloseButtonVisibility();
+    // Update back button visibility
+    updateBackButtonVisibility();
 }
 
 // Handle emoji click - align all emojis with same index
@@ -685,8 +698,8 @@ function handleEmojiClick(clickedPoint) {
         }
     });
     
-    // Update close button visibility
-    updateCloseButtonVisibility();
+    // Update back button visibility
+    updateBackButtonVisibility();
 }
 
 // Draw points with parallax and emojis
@@ -976,24 +989,24 @@ function animate() {
     requestAnimationFrame(animate);
 }
 
-// Close button functionality
-function updateCloseButtonVisibility() {
-    const closeButton = document.getElementById('closeButton');
-    if (!closeButton) return;
+// Back button functionality
+function updateBackButtonVisibility() {
+    const backButton = document.getElementById('backButton');
+    if (!backButton) return;
     
-    const isMobile = window.innerWidth < 768 || ('ontouchstart' in window);
-    if (isMobile && alignedEmojiIndex !== null) {
-        closeButton.style.display = 'flex';
+    // Show back button when images are aligned (both mobile and desktop)
+    if (alignedEmojiIndex !== null) {
+        backButton.style.display = 'flex';
     } else {
-        closeButton.style.display = 'none';
+        backButton.style.display = 'none';
     }
 }
 
-// Initialize close button after DOM is ready
+// Initialize back button after DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
-    const closeButton = document.getElementById('closeButton');
-    if (closeButton) {
-        closeButton.addEventListener('click', () => {
+    const backButton = document.getElementById('backButton');
+    if (backButton) {
+        backButton.addEventListener('click', () => {
             unalignEmojis();
         });
     }
