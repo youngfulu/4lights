@@ -53,6 +53,11 @@ let lastDragX = 0;
 let lastDragY = 0;
 let lastMoveTime = performance.now();
 
+// Store initial camera position for reset
+const initialCameraPanX = 0;
+const initialCameraPanY = 0;
+const initialZoomIndex = 2; // Base zoom level index
+
 // Alignment state
 let alignedEmojiIndex = null; // null = no alignment, otherwise the emoji index to align
 let alignedEmojis = []; // Array of emoji objects that are currently aligned
