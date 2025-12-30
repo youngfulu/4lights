@@ -101,8 +101,15 @@ function loadImages() {
     pathsToLoad.forEach((path, index) => {
         const img = new Image();
         img.onload = () => {
+            // Store image dimensions for aspect ratio calculation
+            imageCache[path] = {
+                img: img,
+                width: img.naturalWidth,
+                height: img.naturalHeight,
+                aspectRatio: img.naturalWidth / img.naturalHeight
+            };
             imagesLoaded++;
-            console.log(`Loaded image ${imagesLoaded}/${totalImages}: ${path}`);
+            console.log(`Loaded image ${imagesLoaded}/${totalImages}: ${path} (${img.naturalWidth}x${img.naturalHeight})`);
             if (imagesLoaded === totalImages) {
                 console.log(`All ${imagesLoaded} images loaded successfully!`);
             }
@@ -120,7 +127,6 @@ function loadImages() {
             img.crossOrigin = 'anonymous';
         }
         img.src = path;
-        imageCache[path] = img;
     });
     
     console.log(`Attempting to load ${pathsToLoad.length} images from "Imgae test " directory...`);
