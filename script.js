@@ -16,7 +16,7 @@ const hoverZoom = 2.0; // Zoom factor on hover
 const alignmentAnimationDuration = 1250; // Animation duration in milliseconds (1.25 seconds)
 const alignedSizeMultiplier = 7.0; // Size multiplier when aligned (7x larger)
 const panSmoothness = 0.18; // Smoothness factor for camera pan interpolation (more responsive, less laggy)
-const opacitySmoothness = 0.0167; // Smoothness for opacity transition (fade to 0.1 in 1 second: ~60 frames at 60fps, 0.9 / 60 ≈ 0.015, slightly faster)
+const opacitySmoothness = 0.0334; // Smoothness for opacity transition (fade to 0.1 in 0.5 seconds: 2x faster than before)
 
 // Mouse/touch position
 let mouseX = canvas.width / 2;
@@ -548,8 +548,16 @@ function unalignEmojis() {
     targetMobileScrollPosition = 0;
     scrollIndicatorVisible = false;
     
+    // Reset camera to original startup position
+    targetCameraPanX = initialCameraPanX;
+    targetCameraPanY = initialCameraPanY;
+    cameraPanX = initialCameraPanX;
+    cameraPanY = initialCameraPanY;
+    panVelocityX = 0;
+    panVelocityY = 0;
+    
     // Reset zoom to default (base level)
-    currentZoomIndex = 2; // Base level index (1.0)
+    currentZoomIndex = initialZoomIndex; // Base level index (1.0)
     startZoomTransition();
     
     // Reset opacity for all images
