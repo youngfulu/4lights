@@ -64,32 +64,22 @@ let isMobileScrolling = false; // Whether user is currently scrolling
 let scrollIndicatorVisible = false; // Whether scroll indicator is visible
 let scrollIndicatorFadeTime = 0; // Time when scroll indicator should fade
 
-// Image list - load from images.js if available
-let imagePaths = [];
-
-// Initialize image paths from images.js
-function initializeImagePaths() {
-    // Check if images.js provides image paths
-    if (typeof getAllImages === 'function') {
-        const allImages = getAllImages();
-        if (allImages && allImages.length > 0) {
-            imagePaths = allImages.map(img => img.src);
-            console.log(`Loaded ${imagePaths.length} image paths from images.js`);
-            return;
-        }
-    }
-    
-    // Fallback: Use placeholder paths (user needs to add images to images.js)
-    console.warn('No images found in images.js. Please add image paths to images.js');
-    // Create some default paths for testing
-    imagePaths = [];
-    for (let i = 1; i <= 31; i++) {
-        imagePaths.push(`images/img${i}.jpg`);
-    }
-}
-
-// Initialize image paths (will be called after images.js loads)
-initializeImagePaths();
+// Image list - use images from "Imgae test " directory
+const imagePaths = [
+    'Imgae test /575104183_10234916968638578_3714106829795647330_n.jpg',
+    'Imgae test /IMG_3088.PNG',
+    'Imgae test /photo_2023-09-15_22-34-48.jpg',
+    'Imgae test /Screenshot 2025-11-06 at 16.03.53.png',
+    'Imgae test /Screenshot 2025-11-08 at 02.26.28.png',
+    'Imgae test /Screenshot 2025-11-08 at 03.27.57.png',
+    'Imgae test /Screenshot 2025-11-20 at 00.49.08.png',
+    'Imgae test /Screenshot 2025-11-20 at 15.07.33.png',
+    'Imgae test /Screenshot 2025-12-07 at 15.08.15.png',
+    'Imgae test /Screenshot 2025-12-07 at 15.08.19.png',
+    'Imgae test /Screenshot 2025-12-13 at 17.16.14.png',
+    'Imgae test /Screenshot 2025-12-14 at 22.28.14.png',
+    'Imgae test /Screenshot 2025-12-22 at 14.53.33.png'
+];
 
 // Image cache - stores loaded Image objects
 const imageCache = {};
@@ -98,18 +88,13 @@ let totalImages = 0;
 
 // Load all images with better error handling
 function loadImages() {
-    // Re-initialize paths in case images.js loaded after this
-    if (imagePaths.length === 0) {
-        initializeImagePaths();
-    }
-    
     const uniquePaths = [...new Set(imagePaths)]; // Remove duplicates
     const pathsToLoad = uniquePaths.slice(0, 100); // Limit to 100 images max
     totalImages = pathsToLoad.length;
     imagesLoaded = 0;
     
     if (pathsToLoad.length === 0) {
-        console.warn('No image paths to load. Please add images to images.js');
+        console.warn('No image paths to load.');
         return;
     }
     
@@ -117,8 +102,9 @@ function loadImages() {
         const img = new Image();
         img.onload = () => {
             imagesLoaded++;
+            console.log(`Loaded image ${imagesLoaded}/${totalImages}: ${path}`);
             if (imagesLoaded === totalImages) {
-                console.log(`Loaded ${imagesLoaded}/${totalImages} images successfully`);
+                console.log(`All ${imagesLoaded} images loaded successfully!`);
             }
         };
         img.onerror = () => {
@@ -133,13 +119,11 @@ function loadImages() {
         imageCache[path] = img;
     });
     
-    console.log(`Attempting to load ${pathsToLoad.length} images...`);
+    console.log(`Attempting to load ${pathsToLoad.length} images from "Imgae test " directory...`);
 }
 
-// Start loading images after a short delay to ensure images.js is loaded
-setTimeout(() => {
-    loadImages();
-}, 100);
+// Start loading images
+loadImages();
 
 // Calculate bounding box (1/5 from top and bottom)
 function getBoundingBox() {
