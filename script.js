@@ -421,17 +421,61 @@ function handleMouseUp() {
 function handleWheel(e) {
     e.preventDefault();
     
-    if (e.deltaY < 0) {
-        // Zoom in - move to next higher level
-        if (currentZoomIndex < zoomLevels.length - 1) {
-            currentZoomIndex++;
-            startZoomTransition();
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+    
+    // If in image selection mode, zoom relative to mouse position
+    if (alignedEmojiIndex !== null) {
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+        
+        // Calculate world position under mouse cursor
+        const worldX = ((mouseX - centerX - cameraPanX) / globalZoomLevel) + centerX;
+        const worldY = ((mouseY - centerY - cameraPanY) / globalZoomLevel) + centerY;
+        
+        let newZoomIndex = currentZoomIndex;
+        if (e.deltaY < 0) {
+            // Zoom in - move to next higher level
+            if (currentZoomIndex < zoomLevels.length - 1) {
+                newZoomIndex = currentZoomIndex + 1;
+            } else {
+                return; // Already at max zoom
+            }
+        } else {
+            // Zoom out - move to next lower level
+            if (currentZoomIndex > 0) {
+                newZoomIndex = currentZoomIndex - 1;
+            } else {
+                return; // Already at min zoom
+            }
         }
+        
+        const newZoom = zoomLevels[newZoomIndex];
+        
+        // Calculate new camera pan to keep world position under mouse at same screen position
+        const newPanX = mouseX - centerX - (worldX - centerX) * newZoom;
+        const newPanY = mouseY - centerY - (worldY - centerY) * newZoom;
+        
+        // Update zoom and pan
+        currentZoomIndex = newZoomIndex;
+        targetCameraPanX = newPanX;
+        targetCameraPanY = newPanY;
+        startZoomTransition();
     } else {
-        // Zoom out - move to next lower level
-        if (currentZoomIndex > 0) {
-            currentZoomIndex--;
-            startZoomTransition();
+        // Normal zoom (not in selection mode) - zoom from center
+        if (e.deltaY < 0) {
+            // Zoom in - move to next higher level
+            if (currentZoomIndex < zoomLevels.length - 1) {
+                currentZoomIndex++;
+                startZoomTransition();
+            }
+        } else {
+            // Zoom out - move to next lower level
+            if (currentZoomIndex > 0) {
+                currentZoomIndex--;
+                startZoomTransition();
+            }
         }
     }
 }
@@ -560,6 +604,12 @@ function unalignEmojis() {
     cameraPanY = initialCameraPanY;
     panVelocityX = 0;
     panVelocityY = 0;
+    
+    // Reset mouse position to center (original screen space position)
+    targetMouseX = canvas.width / 2;
+    targetMouseY = canvas.height / 2;
+    smoothMouseX = targetMouseX;
+    smoothMouseY = targetMouseY;
     
     // Reset zoom to default (base level)
     currentZoomIndex = initialZoomIndex; // Base level index (1.0)
