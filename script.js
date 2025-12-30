@@ -437,7 +437,7 @@ function handleWheel(e) {
         // Smooth gradual zoom: use exponential scaling based on scroll delta
         // Negative deltaY = zoom in, positive = zoom out
         // Use a smaller factor for more gradual zoom
-        const zoomSensitivity = 0.0008; // Adjust for zoom speed (smaller = more gradual)
+        const zoomSensitivity = 0.01; // Adjust for zoom speed (higher = more responsive)
         const zoomDelta = -e.deltaY * zoomSensitivity;
         
         // Calculate target zoom level (exponential scaling for natural feel)
