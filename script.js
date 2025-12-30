@@ -417,7 +417,7 @@ function handleMouseUp() {
     // Velocity will continue to apply inertia after drag ends
 }
 
-// Mouse wheel handler (zoom) - discrete levels
+// Mouse wheel handler (zoom) - macOS-style continuous zoom in selection mode
 function handleWheel(e) {
     e.preventDefault();
     
@@ -425,45 +425,58 @@ function handleWheel(e) {
     const mouseX = e.clientX - rect.left;
     const mouseY = e.clientY - rect.top;
     
-    // If in image selection mode, zoom relative to mouse position
+    // If in image selection mode, use macOS-style continuous zoom
     if (alignedEmojiIndex !== null) {
         const centerX = canvas.width / 2;
         const centerY = canvas.height / 2;
         
-        // Calculate world position under mouse cursor
+        // Calculate world position under mouse cursor (before zoom)
         const worldX = ((mouseX - centerX - cameraPanX) / globalZoomLevel) + centerX;
         const worldY = ((mouseY - centerY - cameraPanY) / globalZoomLevel) + centerY;
         
-        let newZoomIndex = currentZoomIndex;
-        if (e.deltaY < 0) {
-            // Zoom in - move to next higher level
-            if (currentZoomIndex < zoomLevels.length - 1) {
-                newZoomIndex = currentZoomIndex + 1;
-            } else {
-                return; // Already at max zoom
-            }
-        } else {
-            // Zoom out - move to next lower level
-            if (currentZoomIndex > 0) {
-                newZoomIndex = currentZoomIndex - 1;
-            } else {
-                return; // Already at min zoom
-            }
+        // macOS-style zoom: continuous zoom factor based on scroll delta
+        // Negative deltaY = zoom in, positive = zoom out
+        // Use exponential zoom for smooth, natural feel
+        const zoomSpeed = 0.001; // Adjust this for zoom sensitivity
+        const zoomFactor = 1.0 - (e.deltaY * zoomSpeed);
+        
+        // Calculate new zoom level
+        let newZoom = globalZoomLevel * zoomFactor;
+        
+        // Clamp to min/max zoom
+        newZoom = Math.max(minZoom, Math.min(maxZoom, newZoom));
+        
+        // If zoom didn't change (hit limit), don't update
+        if (newZoom === globalZoomLevel) {
+            return;
         }
         
-        const newZoom = zoomLevels[newZoomIndex];
-        
         // Calculate new camera pan to keep world position under mouse at same screen position
+        // Formula: pan = mousePos - center - (worldPos - center) * zoom
         const newPanX = mouseX - centerX - (worldX - centerX) * newZoom;
         const newPanY = mouseY - centerY - (worldY - centerY) * newZoom;
         
-        // Update zoom and pan
-        currentZoomIndex = newZoomIndex;
+        // Update zoom and pan immediately (no transition for smooth macOS feel)
+        globalZoomLevel = newZoom;
+        targetZoomLevel = newZoom;
+        cameraPanX = newPanX;
+        cameraPanY = newPanY;
         targetCameraPanX = newPanX;
         targetCameraPanY = newPanY;
-        startZoomTransition();
+        
+        // Update currentZoomIndex to closest discrete level (for compatibility)
+        let closestIndex = 0;
+        let minDiff = Math.abs(zoomLevels[0] - newZoom);
+        for (let i = 1; i < zoomLevels.length; i++) {
+            const diff = Math.abs(zoomLevels[i] - newZoom);
+            if (diff < minDiff) {
+                minDiff = diff;
+                closestIndex = i;
+            }
+        }
+        currentZoomIndex = closestIndex;
     } else {
-        // Normal zoom (not in selection mode) - zoom from center
+        // Normal zoom (not in selection mode) - discrete levels from center
         if (e.deltaY < 0) {
             // Zoom in - move to next higher level
             if (currentZoomIndex < zoomLevels.length - 1) {
