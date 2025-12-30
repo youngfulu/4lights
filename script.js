@@ -1056,6 +1056,75 @@ function draw() {
     ctx.restore();
     ctx.globalAlpha = 1.0;
     
+    // Draw text blocks under aligned images (on top layer, after transform)
+    if (alignedEmojiIndex !== null) {
+        ctx.fillStyle = '#fff';
+        ctx.font = '18px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        
+        alignedEmojis.forEach(point => {
+            if (point.isAligned) {
+                // Get image dimensions
+                const imageData = imageCache[point.imagePath];
+                let drawWidth, drawHeight;
+                
+                if (imageData && imageData.img && imageData.img.complete) {
+                    const aspectRatio = imageData.aspectRatio;
+                    const imageSize = point.currentSize;
+                    
+                    if (aspectRatio >= 1) {
+                        drawWidth = imageSize;
+                        drawHeight = imageSize / aspectRatio;
+                    } else {
+                        drawHeight = imageSize;
+                        drawWidth = imageSize * aspectRatio;
+                    }
+                } else {
+                    // Fallback for missing images
+                    drawWidth = point.currentSize;
+                    drawHeight = point.currentSize;
+                }
+                
+                // Calculate screen position of aligned image
+                const centerX = canvas.width / 2;
+                const centerY = canvas.height / 2;
+                const screenX = (point.currentAlignedX - centerX) * globalZoomLevel + centerX + cameraPanX;
+                const screenY = (point.currentAlignedY - centerY) * globalZoomLevel + centerY + cameraPanY;
+                
+                // Calculate text position (below image)
+                const imageBottomY = screenY + (drawHeight / 2) * globalZoomLevel;
+                const textY = imageBottomY + (10 * globalZoomLevel); // 10px spacing below image
+                
+                // Extract text from image path (filename without extension)
+                let text = point.imagePath;
+                // Remove directory path
+                const lastSlash = text.lastIndexOf('/');
+                if (lastSlash !== -1) {
+                    text = text.substring(lastSlash + 1);
+                }
+                // Remove file extension
+                const lastDot = text.lastIndexOf('.');
+                if (lastDot !== -1) {
+                    text = text.substring(0, lastDot);
+                }
+                
+                // Draw text with width equal to image width
+                const textWidth = drawWidth * globalZoomLevel;
+                ctx.save();
+                ctx.globalAlpha = 1.0;
+                ctx.fillStyle = '#fff';
+                ctx.font = `${18 * globalZoomLevel}px Arial`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'top';
+                
+                // Draw text (will wrap if needed, but we'll keep it simple)
+                ctx.fillText(text, screenX, textY);
+                ctx.restore();
+            }
+        });
+    }
+    
     // Draw mobile scroll indicator (Apple-style, minimalistic, on the left)
     if (isMobile && alignedEmojiIndex !== null && scrollIndicatorVisible) {
         const indicatorWidth = 2.5; // Thin line
