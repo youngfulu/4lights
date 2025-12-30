@@ -1094,7 +1094,7 @@ function draw() {
                 
                 // Calculate text position (below image)
                 const imageBottomY = screenY + (drawHeight / 2) * globalZoomLevel;
-                const textY = imageBottomY + (10 * globalZoomLevel); // 10px spacing below image
+                const textY = imageBottomY + 10; // 10px fixed spacing below image (not scaled)
                 
                 // Extract text from image path (filename without extension)
                 let text = point.imagePath;
