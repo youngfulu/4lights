@@ -114,7 +114,11 @@ function loadImages() {
                 console.log(`Finished loading attempt: ${imagesLoaded}/${totalImages} images loaded`);
             }
         };
-        img.crossOrigin = 'anonymous'; // Allow CORS if needed
+        // Don't set crossOrigin for local file:// protocol - it causes CORS errors
+        // Only set it if using http/https protocol
+        if (window.location.protocol === 'http:' || window.location.protocol === 'https:') {
+            img.crossOrigin = 'anonymous';
+        }
         img.src = path;
         imageCache[path] = img;
     });
