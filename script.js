@@ -64,45 +64,82 @@ let isMobileScrolling = false; // Whether user is currently scrolling
 let scrollIndicatorVisible = false; // Whether scroll indicator is visible
 let scrollIndicatorFadeTime = 0; // Time when scroll indicator should fade
 
-// Image list - update these paths with your actual image files
-// Images should be placed in the images directory
-const imagePaths = [
-    'images/img1.jpg', 'images/img2.jpg', 'images/img3.jpg', 'images/img4.jpg',
-    'images/img5.jpg', 'images/img6.jpg', 'images/img7.jpg', 'images/img8.jpg',
-    'images/img9.jpg', 'images/img10.jpg', 'images/img11.jpg', 'images/img12.jpg',
-    'images/img13.jpg', 'images/img14.jpg', 'images/img15.jpg', 'images/img16.jpg',
-    'images/img17.jpg', 'images/img18.jpg', 'images/img19.jpg', 'images/img20.jpg',
-    'images/img21.jpg', 'images/img22.jpg', 'images/img23.jpg', 'images/img24.jpg',
-    'images/img25.jpg', 'images/img26.jpg', 'images/img27.jpg', 'images/img28.jpg',
-    'images/img29.jpg', 'images/img30.jpg', 'images/img31.jpg'
-];
+// Image list - load from images.js if available
+let imagePaths = [];
+
+// Initialize image paths from images.js
+function initializeImagePaths() {
+    // Check if images.js provides image paths
+    if (typeof getAllImages === 'function') {
+        const allImages = getAllImages();
+        if (allImages && allImages.length > 0) {
+            imagePaths = allImages.map(img => img.src);
+            console.log(`Loaded ${imagePaths.length} image paths from images.js`);
+            return;
+        }
+    }
+    
+    // Fallback: Use placeholder paths (user needs to add images to images.js)
+    console.warn('No images found in images.js. Please add image paths to images.js');
+    // Create some default paths for testing
+    imagePaths = [];
+    for (let i = 1; i <= 31; i++) {
+        imagePaths.push(`images/img${i}.jpg`);
+    }
+}
+
+// Initialize image paths (will be called after images.js loads)
+initializeImagePaths();
 
 // Image cache - stores loaded Image objects
 const imageCache = {};
 let imagesLoaded = 0;
-const totalImages = imagePaths.length;
+let totalImages = 0;
 
-// Load all images
+// Load all images with better error handling
 function loadImages() {
-    imagePaths.forEach((path, index) => {
+    // Re-initialize paths in case images.js loaded after this
+    if (imagePaths.length === 0) {
+        initializeImagePaths();
+    }
+    
+    const uniquePaths = [...new Set(imagePaths)]; // Remove duplicates
+    const pathsToLoad = uniquePaths.slice(0, 100); // Limit to 100 images max
+    totalImages = pathsToLoad.length;
+    imagesLoaded = 0;
+    
+    if (pathsToLoad.length === 0) {
+        console.warn('No image paths to load. Please add images to images.js');
+        return;
+    }
+    
+    pathsToLoad.forEach((path, index) => {
         const img = new Image();
         img.onload = () => {
             imagesLoaded++;
             if (imagesLoaded === totalImages) {
-                console.log('All images loaded');
+                console.log(`Loaded ${imagesLoaded}/${totalImages} images successfully`);
             }
         };
         img.onerror = () => {
             console.warn(`Failed to load image: ${path}`);
             imagesLoaded++;
+            if (imagesLoaded === totalImages) {
+                console.log(`Finished loading attempt: ${imagesLoaded}/${totalImages} images loaded`);
+            }
         };
+        img.crossOrigin = 'anonymous'; // Allow CORS if needed
         img.src = path;
         imageCache[path] = img;
     });
+    
+    console.log(`Attempting to load ${pathsToLoad.length} images...`);
 }
 
-// Start loading images
-loadImages();
+// Start loading images after a short delay to ensure images.js is loaded
+setTimeout(() => {
+    loadImages();
+}, 100);
 
 // Calculate bounding box (1/5 from top and bottom)
 function getBoundingBox() {
@@ -318,9 +355,9 @@ function handleTouchMove(e) {
             }
         } else {
             // Desktop touch or no alignment - normal touch movement
-            targetMouseX = e.touches[0].clientX - rect.left;
-            targetMouseY = e.touches[0].clientY - rect.top;
-        }
+        targetMouseX = e.touches[0].clientX - rect.left;
+        targetMouseY = e.touches[0].clientY - rect.top;
+    }
     }
 }
 
@@ -531,8 +568,9 @@ function handleEmojiClick(clickedPoint) {
     const centerX = canvas.width / 2;
     const centerY = canvas.height / 2;
     const totalEmojis = alignedEmojis.length;
-    // Spacing = 70% of image size (max 30% overlap)
-    const minSpacing = alignedSize * 0.7; // 70% spacing = max 30% overlap
+    // Desktop horizontal line: 35px gap between images, no overlap
+    const horizontalGap = 35; // Gap in pixels (world coordinates)
+    const minSpacing = alignedSize + horizontalGap; // Image size + gap = no overlap
     
     if (isMobile) {
         // Mobile: Line up emojis vertically, fit to width
@@ -661,8 +699,8 @@ function handleEmojiClick(clickedPoint) {
 function draw() {
     // Smooth mouse position (optimized - only when not dragging for better performance)
     if (!isDragging) {
-        smoothMouseX += (targetMouseX - smoothMouseX) * 0.1;
-        smoothMouseY += (targetMouseY - smoothMouseY) * 0.1;
+    smoothMouseX += (targetMouseX - smoothMouseX) * 0.1;
+    smoothMouseY += (targetMouseY - smoothMouseY) * 0.1;
     } else {
         // Direct update while dragging for better responsiveness
         smoothMouseX = targetMouseX;
@@ -857,14 +895,29 @@ function draw() {
         }
         
         // Draw image if loaded, otherwise draw placeholder
-        if (img && img.complete && img.naturalWidth > 0) {
+        if (img && img.complete && img.naturalWidth > 0 && img.naturalHeight > 0) {
             const halfSize = imageSize / 2;
-            ctx.drawImage(img, x - halfSize, y - halfSize, imageSize, imageSize);
+            try {
+                ctx.drawImage(img, x - halfSize, y - halfSize, imageSize, imageSize);
+            } catch (e) {
+                // If drawImage fails, draw placeholder
+                ctx.fillStyle = `rgba(255, 255, 255, ${point.opacity * 0.3})`;
+                ctx.fillRect(x - halfSize, y - halfSize, imageSize, imageSize);
+            }
         } else {
-            // Fallback: draw a small rectangle if image not loaded
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+            // Fallback: draw a placeholder rectangle if image not loaded
+            ctx.fillStyle = `rgba(255, 255, 255, ${point.opacity * 0.3})`;
             const halfSize = imageSize / 2;
             ctx.fillRect(x - halfSize, y - halfSize, imageSize, imageSize);
+            
+            // Draw a small "?" in the center to indicate missing image
+            if (imageSize > 20) {
+                ctx.fillStyle = `rgba(255, 255, 255, ${point.opacity * 0.5})`;
+                ctx.font = `${Math.min(imageSize / 3, 20)}px Arial`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('?', x, y);
+            }
         }
     });
     
