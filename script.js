@@ -64,8 +64,45 @@ let isMobileScrolling = false; // Whether user is currently scrolling
 let scrollIndicatorVisible = false; // Whether scroll indicator is visible
 let scrollIndicatorFadeTime = 0; // Time when scroll indicator should fade
 
-// Emoji list
-const emojis = ['🌟', '✨', '⭐', '💫', '🔥', '💎', '🎯', '⚡', '🎨', '🎭', '🎪', '🎬', '🎮', '🎲', '🎰', '🎯', '🎪', '🎨', '🎭', '🎬', '🎮', '🎲', '🎰', '🚀', '🌙', '☀️', '⭐', '🌟', '✨', '💫', '🔥'];
+// Image list - update these paths with your actual image files
+// Images should be placed in the images directory
+const imagePaths = [
+    'images/img1.jpg', 'images/img2.jpg', 'images/img3.jpg', 'images/img4.jpg',
+    'images/img5.jpg', 'images/img6.jpg', 'images/img7.jpg', 'images/img8.jpg',
+    'images/img9.jpg', 'images/img10.jpg', 'images/img11.jpg', 'images/img12.jpg',
+    'images/img13.jpg', 'images/img14.jpg', 'images/img15.jpg', 'images/img16.jpg',
+    'images/img17.jpg', 'images/img18.jpg', 'images/img19.jpg', 'images/img20.jpg',
+    'images/img21.jpg', 'images/img22.jpg', 'images/img23.jpg', 'images/img24.jpg',
+    'images/img25.jpg', 'images/img26.jpg', 'images/img27.jpg', 'images/img28.jpg',
+    'images/img29.jpg', 'images/img30.jpg', 'images/img31.jpg'
+];
+
+// Image cache - stores loaded Image objects
+const imageCache = {};
+let imagesLoaded = 0;
+const totalImages = imagePaths.length;
+
+// Load all images
+function loadImages() {
+    imagePaths.forEach((path, index) => {
+        const img = new Image();
+        img.onload = () => {
+            imagesLoaded++;
+            if (imagesLoaded === totalImages) {
+                console.log('All images loaded');
+            }
+        };
+        img.onerror = () => {
+            console.warn(`Failed to load image: ${path}`);
+            imagesLoaded++;
+        };
+        img.src = path;
+        imageCache[path] = img;
+    });
+}
+
+// Start loading images
+loadImages();
 
 // Calculate bounding box (1/5 from top and bottom)
 function getBoundingBox() {
@@ -85,11 +122,11 @@ function generatePoints(count, minDistance) {
     const points = [];
     const maxAttempts = 1000;
     
-    // Group emojis by assigning same index to similar emojis
-    const emojiGroups = {};
-    emojis.forEach((emoji, index) => {
-        if (!emojiGroups[emoji]) {
-            emojiGroups[emoji] = index; // Use emoji itself as the group identifier
+    // Group images by assigning same index to similar images
+    const imageGroups = {};
+    imagePaths.forEach((path, index) => {
+        if (!imageGroups[path]) {
+            imageGroups[path] = index; // Use image path as the group identifier
         }
     });
     
@@ -99,8 +136,8 @@ function generatePoints(count, minDistance) {
         let point;
         
         while (!validPoint && attempts < maxAttempts) {
-            const emojiIndex = Math.floor(Math.random() * emojis.length);
-            const emoji = emojis[emojiIndex];
+            const imageIndex = Math.floor(Math.random() * imagePaths.length);
+            const imagePath = imagePaths[imageIndex];
             point = {
                 x: Math.random() * box.width + box.x,
                 y: Math.random() * box.height + box.y,
@@ -109,8 +146,8 @@ function generatePoints(count, minDistance) {
                 originalBaseX: 0, // Store original position (never modified)
                 originalBaseY: 0, // Store original position (never modified)
                 layer: (i % 2 === 0) ? 'layer_1' : 'layer_2', // odd points (1st, 3rd, 5th...) = layer_1, even points (2nd, 4th, 6th...) = layer_2
-                emoji: emoji,
-                emojiIndex: emojiGroups[emoji] || emojiIndex, // Same index for identical emojis
+                imagePath: imagePath,
+                emojiIndex: imageGroups[imagePath] || imageIndex, // Same index for identical images
                 isAligned: false,
                 targetX: 0, // Target X position when aligned (center X)
                 targetY: 0, // Target Y position when aligned (horizontal line)
@@ -471,10 +508,13 @@ function unalignEmojis() {
     currentZoomIndex = 2; // Base level index (1.0)
     startZoomTransition();
     
-    // Reset opacity for all emojis
+    // Reset opacity for all images
     points.forEach(p => {
         p.targetOpacity = 1.0;
     });
+    
+    // Update close button visibility
+    updateCloseButtonVisibility();
 }
 
 // Handle emoji click - align all emojis with same index
@@ -491,7 +531,8 @@ function handleEmojiClick(clickedPoint) {
     const centerX = canvas.width / 2;
     const centerY = canvas.height / 2;
     const totalEmojis = alignedEmojis.length;
-    const minSpacing = alignedSize * 1.2; // 20% padding between emojis
+    // Spacing = 70% of image size (max 30% overlap)
+    const minSpacing = alignedSize * 0.7; // 70% spacing = max 30% overlap
     
     if (isMobile) {
         // Mobile: Line up emojis vertically, fit to width
@@ -515,18 +556,19 @@ function handleEmojiClick(clickedPoint) {
         
         const selectedZoom = zoomLevels[bestIndex];
         
-        // Calculate spacing between emojis vertically (fit to width, space vertically)
-        const verticalSpacing = alignedSize * 1.2; // 20% padding between emojis vertically
+        // Calculate spacing between images vertically (fit to width, space vertically)
+        // Spacing = 70% of image size (max 30% overlap)
+        const verticalSpacing = alignedSize * 0.7; // 70% spacing = max 30% overlap
         const totalHeight = (totalEmojis - 1) * verticalSpacing;
         
-        // Position emojis vertically (centered horizontally)
-        // Start from top with padding to focus on upper emoji
-        const topPadding = 80; // Padding from top to focus on first emoji
-        const startY = centerY - (totalHeight / 2) + topPadding; // Start higher to focus on first emoji
+        // Position images vertically (centered horizontally)
+        // Start from top with padding to focus on upper image
+        const topPadding = 80; // Padding from top to focus on first image
+        const startY = centerY - (totalHeight / 2) + topPadding; // Start higher to focus on first image
         
         alignedEmojis.forEach((point, index) => {
             point.isAligned = true;
-            point.targetX = centerX; // All emojis centered horizontally
+            point.targetX = centerX; // All images centered horizontally
             point.targetY = startY + (index * verticalSpacing); // Stacked vertically from top
             point.targetSize = alignedSize;
             point.targetOpacity = 1.0;
@@ -540,9 +582,13 @@ function handleEmojiClick(clickedPoint) {
         currentZoomIndex = bestIndex;
         startZoomTransition();
         
-        // Reset camera pan and scroll position to focus on upper emoji
+        // Focus camera on top image - adjust camera pan Y to center the first image
+        const firstImageY = startY;
+        const screenCenterY = canvas.height / 2;
+        // Calculate offset needed to center first image on screen (in world coordinates)
+        const worldOffsetY = (firstImageY - screenCenterY) * zoomLevels[bestIndex];
         targetCameraPanX = 0;
-        targetCameraPanY = 0;
+        targetCameraPanY = -worldOffsetY; // Negative because we want to move the view up
         mobileScrollPosition = 0;
         targetMobileScrollPosition = 0;
         
@@ -600,12 +646,15 @@ function handleEmojiClick(clickedPoint) {
         targetCameraPanY = 0;
     }
     
-    // Set opacity for non-selected emojis to fade to 0.1
+    // Set opacity for non-selected images to fade to 0.1
     points.forEach(p => {
         if (p.emojiIndex !== alignedEmojiIndex) {
             p.targetOpacity = 0.1;
         }
     });
+    
+    // Update close button visibility
+    updateCloseButtonVisibility();
 }
 
 // Draw points with parallax and emojis
@@ -646,9 +695,10 @@ function draw() {
         mobileScrollPosition += (targetMobileScrollPosition - mobileScrollPosition) * 0.15; // Smooth scroll
         
         // Calculate scroll offset and apply to camera pan Y
-        // Calculate total height of aligned emojis in world coordinates
+        // Calculate total height of aligned images in world coordinates
         const alignedSize = baseEmojiSize * alignedSizeMultiplier;
-        const verticalSpacing = alignedSize * 1.2;
+        // Spacing = 70% of image size (max 30% overlap)
+        const verticalSpacing = alignedSize * 0.7; // 70% spacing = max 30% overlap
         const totalHeight = (alignedEmojis.length - 1) * verticalSpacing;
         const maxScrollOffset = Math.max(0, totalHeight - canvas.height + 300); // Max scroll distance
         const scrollOffset = mobileScrollPosition * maxScrollOffset;
@@ -743,14 +793,6 @@ function draw() {
     const scaledMouseXForHover = ((smoothMouseX - centerX - cameraPanX) / globalZoomLevel) + centerX;
     const scaledMouseYForHover = ((smoothMouseY - centerY - cameraPanY) / globalZoomLevel) + centerY;
     
-    // Set text alignment and color for emojis (once)
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillStyle = '#fff';
-    
-    // Store previous font size to avoid redundant font changes
-    let lastFontSize = -1;
-    
     // Draw all points in a single loop (PERFORMANCE: was 2 loops, now 1)
     points.forEach(point => {
         const speed = point.layer === 'layer_1' ? layer1Speed : layer2Speed;
@@ -759,7 +801,7 @@ function draw() {
         point.opacity += (point.targetOpacity - point.opacity) * opacitySmoothness;
         
         let x, y;
-        let emojiSize;
+        let imageSize;
         
         if (point.isAligned || (point.alignmentStartTime > 0 && !point.isAligned)) {
             // Time-based smooth animation with easing (1.25 seconds duration)
@@ -778,12 +820,12 @@ function draw() {
             if (point.isAligned) {
                 x = point.currentAlignedX;
                 y = point.currentAlignedY;
-                emojiSize = point.currentSize;
+                imageSize = point.currentSize;
             } else {
                 // Transitioning back to original - combine with parallax
                 x = point.currentAlignedX + (offsetX * speed);
                 y = point.currentAlignedY + (offsetY * speed);
-                emojiSize = point.currentSize;
+                imageSize = point.currentSize;
                 // Reset animation start time when transition completes
                 if (progress >= 1.0) {
                     point.alignmentStartTime = 0;
@@ -802,21 +844,28 @@ function draw() {
             // Check if hovered (using cached coordinates)
             const isHovered = isPointHovered(x, y, scaledMouseXForHover, scaledMouseYForHover, point.currentSize * hoverZoom / 2);
             const hoverSize = isHovered ? point.currentSize * hoverZoom : point.currentSize;
-            emojiSize = hoverSize;
+            imageSize = hoverSize;
         }
         
-        // PERFORMANCE: Only set font when size changes (avoid redundant font updates)
-        if (Math.abs(emojiSize - lastFontSize) > 0.5) {
-            ctx.font = `${emojiSize}px Arial`;
-            lastFontSize = emojiSize;
-        }
+        // Get image from cache
+        const img = imageCache[point.imagePath];
         
         // PERFORMANCE: Use globalAlpha directly (more efficient than save/restore)
         // Only change globalAlpha if it's different (optimization)
         if (Math.abs(ctx.globalAlpha - point.opacity) > 0.01) {
             ctx.globalAlpha = point.opacity;
         }
-        ctx.fillText(point.emoji, x, y);
+        
+        // Draw image if loaded, otherwise draw placeholder
+        if (img && img.complete && img.naturalWidth > 0) {
+            const halfSize = imageSize / 2;
+            ctx.drawImage(img, x - halfSize, y - halfSize, imageSize, imageSize);
+        } else {
+            // Fallback: draw a small rectangle if image not loaded
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+            const halfSize = imageSize / 2;
+            ctx.fillRect(x - halfSize, y - halfSize, imageSize, imageSize);
+        }
     });
     
     // Restore transform and reset globalAlpha after drawing
@@ -860,6 +909,29 @@ function animate() {
     draw();
     requestAnimationFrame(animate);
 }
+
+// Close button functionality
+function updateCloseButtonVisibility() {
+    const closeButton = document.getElementById('closeButton');
+    if (!closeButton) return;
+    
+    const isMobile = window.innerWidth < 768 || ('ontouchstart' in window);
+    if (isMobile && alignedEmojiIndex !== null) {
+        closeButton.style.display = 'flex';
+    } else {
+        closeButton.style.display = 'none';
+    }
+}
+
+// Initialize close button after DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+    const closeButton = document.getElementById('closeButton');
+    if (closeButton) {
+        closeButton.addEventListener('click', () => {
+            unalignEmojis();
+        });
+    }
+});
 
 // Start animation
 animate();

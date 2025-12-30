@@ -59,3 +59,5 @@ new simpleParallax(image, {
 - Modify hover effects in `.gallery-item:hover` styles
 - Change parallax parameters in the JavaScript section
 
+
+
