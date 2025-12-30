@@ -1109,17 +1109,33 @@ function draw() {
                     text = text.substring(0, lastDot);
                 }
                 
-                // Draw text with width equal to image width
-                const textWidth = drawWidth * globalZoomLevel;
+                // Draw text with width equal to image width (18px fixed size, not scaled)
                 ctx.save();
                 ctx.globalAlpha = 1.0;
                 ctx.fillStyle = '#fff';
-                ctx.font = `${18 * globalZoomLevel}px Arial`;
+                ctx.font = '18px Arial';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'top';
                 
-                // Draw text (will wrap if needed, but we'll keep it simple)
-                ctx.fillText(text, screenX, textY);
+                // Measure text to ensure it fits within image width
+                const textMetrics = ctx.measureText(text);
+                const imageScreenWidth = drawWidth * globalZoomLevel;
+                
+                // Draw text (centered, constrained to image width)
+                if (textMetrics.width <= imageScreenWidth) {
+                    // Text fits, draw normally
+                    ctx.fillText(text, screenX, textY);
+                } else {
+                    // Text too wide, truncate with ellipsis
+                    let truncatedText = text;
+                    while (ctx.measureText(truncatedText + '...').width > imageScreenWidth && truncatedText.length > 0) {
+                        truncatedText = truncatedText.slice(0, -1);
+                    }
+                    if (truncatedText.length < text.length) {
+                        truncatedText += '...';
+                    }
+                    ctx.fillText(truncatedText, screenX, textY);
+                }
                 ctx.restore();
             }
         });
