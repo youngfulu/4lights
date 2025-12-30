@@ -790,8 +790,9 @@ function draw() {
         smoothMouseY = targetMouseY;
     }
     
-    // Smooth camera zoom interpolation with 1.5 second fade
+    // Smooth camera zoom interpolation
     if (isZoomTransitioning) {
+        // Discrete zoom transition (for non-selection mode)
         const elapsed = performance.now() - zoomTransitionStartTime;
         const progress = Math.min(elapsed / zoomTransitionDuration, 1.0);
         
@@ -806,7 +807,35 @@ function draw() {
             isZoomTransitioning = false;
             globalZoomLevel = zoomTransitionTargetLevel;
         }
+    } else if (alignedEmojiIndex !== null) {
+        // Smooth gradual zoom interpolation in selection mode (towards mouse)
+        const zoomSmoothness = 0.15; // Smooth interpolation factor (adjust for speed: lower = slower/smoother)
+        globalZoomLevel += (targetZoomLevel - globalZoomLevel) * zoomSmoothness;
+        
+        // Smoothly interpolate camera pan to keep mouse position fixed
+        // Recalculate pan as zoom changes to maintain mouse position
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+        
+        // Get current mouse position
+        const currentMouseX = smoothMouseX;
+        const currentMouseY = smoothMouseY;
+        
+        // Calculate world position under mouse (using current zoom)
+        const worldX = ((currentMouseX - centerX - cameraPanX) / globalZoomLevel) + centerX;
+        const worldY = ((currentMouseY - centerY - cameraPanY) / globalZoomLevel) + centerY;
+        
+        // Calculate target pan for current zoom level to keep mouse position fixed
+        const desiredPanX = currentMouseX - centerX - (worldX - centerX) * globalZoomLevel;
+        const desiredPanY = currentMouseY - centerY - (worldY - centerY) * globalZoomLevel;
+        
+        // Smoothly interpolate pan
+        cameraPanX += (desiredPanX - cameraPanX) * zoomSmoothness;
+        cameraPanY += (desiredPanY - cameraPanY) * zoomSmoothness;
+        targetCameraPanX = desiredPanX;
+        targetCameraPanY = desiredPanY;
     } else {
+        // Default: use discrete zoom level
         globalZoomLevel = zoomLevels[currentZoomIndex];
     }
     
