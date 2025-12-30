@@ -10,7 +10,7 @@ resizeCanvas();
 window.addEventListener('resize', resizeCanvas);
 
 // Emoji size settings - MUST be declared before use
-const baseEmojiSize = 24; // Base size for layer_1
+const baseEmojiSize = 96; // Base size for layer_1 (4x larger: 24 * 4 = 96)
 const layer2SizeMultiplier = 1 / 1.6; // Layer_2 is 1.6 times smaller
 const hoverZoom = 2.0; // Zoom factor on hover
 const alignmentAnimationDuration = 1250; // Animation duration in milliseconds (1.25 seconds)
@@ -874,7 +874,8 @@ function draw() {
         }
         
         // Get image from cache
-        const img = imageCache[point.imagePath];
+        const imageData = imageCache[point.imagePath];
+        const img = imageData ? imageData.img : null;
         
         // PERFORMANCE: Use globalAlpha directly (more efficient than save/restore)
         // Only change globalAlpha if it's different (optimization)
@@ -883,17 +884,35 @@ function draw() {
         }
         
         // Draw image if loaded, otherwise draw placeholder
-        if (img && img.complete && img.naturalWidth > 0 && img.naturalHeight > 0) {
-            const halfSize = imageSize / 2;
+        if (img && img.complete && img.naturalWidth > 0 && img.naturalHeight > 0 && imageData) {
+            // Calculate dimensions maintaining aspect ratio
+            // Use imageSize as the base dimension (width or height, whichever is larger)
+            let drawWidth, drawHeight;
+            const aspectRatio = imageData.aspectRatio;
+            
+            if (aspectRatio >= 1) {
+                // Landscape or square: use imageSize as width
+                drawWidth = imageSize;
+                drawHeight = imageSize / aspectRatio;
+            } else {
+                // Portrait: use imageSize as height
+                drawHeight = imageSize;
+                drawWidth = imageSize * aspectRatio;
+            }
+            
+            const halfWidth = drawWidth / 2;
+            const halfHeight = drawHeight / 2;
+            
             try {
-                ctx.drawImage(img, x - halfSize, y - halfSize, imageSize, imageSize);
+                ctx.drawImage(img, x - halfWidth, y - halfHeight, drawWidth, drawHeight);
             } catch (e) {
                 // If drawImage fails, draw placeholder
                 ctx.fillStyle = `rgba(255, 255, 255, ${point.opacity * 0.3})`;
-                ctx.fillRect(x - halfSize, y - halfSize, imageSize, imageSize);
+                ctx.fillRect(x - halfWidth, y - halfHeight, drawWidth, drawHeight);
             }
         } else {
             // Fallback: draw a placeholder rectangle if image not loaded
+            // Use square placeholder for missing images
             ctx.fillStyle = `rgba(255, 255, 255, ${point.opacity * 0.3})`;
             const halfSize = imageSize / 2;
             ctx.fillRect(x - halfSize, y - halfSize, imageSize, imageSize);
