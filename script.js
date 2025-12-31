@@ -1058,11 +1058,6 @@ function draw() {
     
     // Draw text blocks under aligned images (on top layer, after transform)
     if (alignedEmojiIndex !== null) {
-        ctx.fillStyle = '#fff';
-        ctx.font = '18px Arial';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'top';
-        
         alignedEmojis.forEach(point => {
             if (point.isAligned) {
                 // Get image dimensions
@@ -1114,19 +1109,26 @@ function draw() {
                 ctx.globalAlpha = 1.0;
                 ctx.fillStyle = '#fff';
                 
-                // Fixed text size (NOT scaled)
+                // Fixed text size (NOT scaled) - always 18px regardless of zoom
                 const textSize = 18;
                 ctx.font = `${textSize}px Arial`;
                 ctx.textAlign = 'left'; // Left alignment
                 ctx.textBaseline = 'top';
                 
-                // Image width in screen coordinates
+                // Use actual image width in world coordinates for wrapping (not zoomed)
+                // Text wraps at the same point relative to image regardless of zoom level
+                const imageWorldWidth = drawWidth;
+                
+                // Image width in screen coordinates (for positioning)
                 const imageScreenWidth = drawWidth * globalZoomLevel;
                 
                 // Calculate left edge of text (aligned to left edge of image)
                 const textLeftX = screenX - (imageScreenWidth / 2);
                 
-                // Word wrap text to fit within image width
+                // Word wrap text to fit within image width (use world width converted to screen pixels)
+                // Since text is fixed 18px, we need to convert world width to screen pixels for comparison
+                const maxTextWidth = imageWorldWidth * globalZoomLevel;
+                
                 const words = text.split(' ');
                 const lines = [];
                 let currentLine = '';
@@ -1135,7 +1137,7 @@ function draw() {
                     const testLine = currentLine ? `${currentLine} ${word}` : word;
                     const metrics = ctx.measureText(testLine);
                     
-                    if (metrics.width <= imageScreenWidth || currentLine === '') {
+                    if (metrics.width <= maxTextWidth || currentLine === '') {
                         // Word fits on current line, or it's the first word
                         currentLine = testLine;
                     } else {
@@ -1152,7 +1154,7 @@ function draw() {
                     lines.push(currentLine);
                 }
                 
-                // Draw each line (left-aligned)
+                // Draw each line (left-aligned, fixed 18px size)
                 const lineHeight = textSize * 1.2; // Line spacing
                 lines.forEach((line, index) => {
                     ctx.fillText(line, textLeftX, textY + (index * lineHeight));

@@ -61,3 +61,4 @@ new simpleParallax(image, {
 
 
 
+
