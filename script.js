@@ -1052,19 +1052,26 @@ function updateFilterButtons() {
 
 function positionFilterButtons() {
     const buttons = document.querySelectorAll('.filter-button:not(#weAreButton)');
-    const screenWidth = canvas.width;
-    const step = screenWidth / 3;
+    const screenWidth = window.innerWidth;
     
-    // Position buttons starting 1/3 from left, with 1/3 step spacing
+    // Position buttons starting 1/3 from left (33.33%), then 1/3 step spacing each
+    // Button 1: 33.33% (1/3)
+    // Button 2: 66.66% (2/3)
+    // Button 3: 100% (3/3, but we'll position it better)
+    // Actually, let's space them: start at 1/3, then add 1/3 for each button
     buttons.forEach((btn, index) => {
-        btn.style.left = `${33.33 + (index * 33.33)}%`;
+        // Start at 33.33% (1/3), add 33.33% for each button
+        const leftPercent = 33.33 + (index * (100 / 3));
+        btn.style.left = `${leftPercent}%`;
         btn.style.position = 'absolute';
+        btn.style.transform = 'translateX(0)'; // No transform needed, position is absolute
     });
     
-    // Position "we are" button
+    // Position "we are" button at 1/4 from right (75% from left)
     const weAreBtn = document.getElementById('weAreButton');
     if (weAreBtn) {
-        weAreBtn.style.right = '25%';
+        weAreBtn.style.left = '75%'; // 1/4 from right = 75% from left
+        weAreBtn.style.right = 'auto';
         weAreBtn.style.position = 'absolute';
     }
 }
