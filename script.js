@@ -12,7 +12,7 @@ window.addEventListener('resize', resizeCanvas);
 // Emoji size settings - MUST be declared before use
 const baseEmojiSize = 96; // Base size for layer_1 (4x larger: 24 * 4 = 96)
 const layer2SizeMultiplier = 1 / 1.6; // Layer_2 is 1.6 times smaller
-const hoverZoom = 2.0 / 3.0; // Zoom factor on hover (3x smaller than before: 2.0/3 ≈ 0.67)
+const hoverZoom = 1.0 + (2.0 - 1.0) / 3.0; // Zoom factor on hover (smaller zoom in: 1.33x instead of 2.0x)
 const hoverZoomTransitionDuration = 500; // Transition duration in milliseconds (0.5 seconds)
 const alignmentAnimationDuration = 1250; // Animation duration in milliseconds (1.25 seconds)
 const alignedSizeMultiplier = 7.0; // Size multiplier when aligned (7x larger)
@@ -1518,12 +1518,23 @@ function draw() {
     const scaledMouseXForHover = ((smoothMouseX - centerX - cameraPanX) / globalZoomLevel) + centerX;
     const scaledMouseYForHover = ((smoothMouseY - centerY - cameraPanY) / globalZoomLevel) + centerY;
     
+    // Cache frequently used values
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    const scaledMouseXForHover = ((smoothMouseX - centerX - cameraPanX) / globalZoomLevel) + centerX;
+    const scaledMouseYForHover = ((smoothMouseY - centerY - cameraPanY) / globalZoomLevel) + centerY;
+    const currentTime = performance.now(); // Cache current time to avoid repeated calls
+    
     // Draw all points in a single loop (PERFORMANCE: was 2 loops, now 1)
     points.forEach(point => {
         const speed = point.layer === 'layer_1' ? layer1Speed : layer2Speed;
         
-        // Animate opacity
-        point.opacity += (point.targetOpacity - point.opacity) * opacitySmoothness;
+        // Animate opacity (optimized: skip if already at target)
+        if (Math.abs(point.opacity - point.targetOpacity) > 0.001) {
+            point.opacity += (point.targetOpacity - point.opacity) * opacitySmoothness;
+        } else {
+            point.opacity = point.targetOpacity;
+        }
         
         let x, y;
         let imageSize;
@@ -1578,26 +1589,31 @@ function draw() {
             }
             
             if (point.hoverStartTime > 0) {
-                const elapsed = performance.now() - point.hoverStartTime;
+                const elapsed = currentTime - point.hoverStartTime; // Use cached time
                 const progress = Math.min(elapsed / hoverZoomTransitionDuration, 1.0);
                 
-                // Smooth ease-out easing
-                const easeProgress = 1 - Math.pow(1 - progress, 3);
-                
-                if (point.isHovered) {
-                    // Zooming in
-                    point.hoverSize = 1.0 + (hoverZoom - 1.0) * easeProgress;
-                } else {
-                    // Zooming out
-                    point.hoverSize = hoverZoom + (1.0 - hoverZoom) * easeProgress;
-                }
-                
                 if (progress >= 1.0) {
+                    // Transition complete
                     point.hoverSize = point.isHovered ? hoverZoom : 1.0;
+                    point.hoverStartTime = 0; // Reset to avoid future calculations
+                } else {
+                    // Smooth ease-out easing
+                    const easeProgress = 1 - Math.pow(1 - progress, 3);
+                    
+                    if (point.isHovered) {
+                        // Zooming in
+                        point.hoverSize = 1.0 + (hoverZoom - 1.0) * easeProgress;
+                    } else {
+                        // Zooming out
+                        point.hoverSize = hoverZoom + (1.0 - hoverZoom) * easeProgress;
+                    }
                 }
             } else {
-                // Initial state
-                point.hoverSize = point.isHovered ? hoverZoom : 1.0;
+                // Initial state - only set if changed
+                const targetHoverSize = point.isHovered ? hoverZoom : 1.0;
+                if (Math.abs(point.hoverSize - targetHoverSize) > 0.001) {
+                    point.hoverSize = targetHoverSize;
+                }
             }
             
             imageSize = point.currentSize * point.hoverSize;
