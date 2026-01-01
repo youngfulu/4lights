@@ -189,7 +189,7 @@ let totalImages = 0;
 // Load all images with better error handling
 function loadImages() {
     const uniquePaths = [...new Set(imagePaths)]; // Remove duplicates
-    const pathsToLoad = uniquePaths.slice(0, 100); // Limit to 100 images max
+    const pathsToLoad = uniquePaths; // Load all images, no limit
     totalImages = pathsToLoad.length;
     imagesLoaded = 0;
     
@@ -262,17 +262,35 @@ function generatePoints(count, minDistance) {
     }
     
     let imageIndexCounter = 0; // Track which image we're using
+    const usedImages = new Set(); // Track which images have been successfully placed
     
     for (let i = 0; i < count; i++) {
         let attempts = 0;
         let validPoint = false;
         let point;
+        let currentImagePath = null;
         
         while (!validPoint && attempts < maxAttempts) {
-            // Use images in order from shuffled array, wrapping around if needed
-            const imageIndex = imageIndexCounter % shuffledImages.length;
-            const imagePath = shuffledImages[imageIndex];
-            imageIndexCounter++;
+            // Find next unused image (skip ones already used)
+            let imageIndex;
+            let attemptsToFindImage = 0;
+            do {
+                imageIndex = imageIndexCounter % shuffledImages.length;
+                currentImagePath = shuffledImages[imageIndex];
+                imageIndexCounter++;
+                attemptsToFindImage++;
+                // If we've checked all images and they're all used, reset and start over
+                if (attemptsToFindImage > shuffledImages.length) {
+                    usedImages.clear();
+                    attemptsToFindImage = 0;
+                    imageIndexCounter = 0;
+                    imageIndex = 0;
+                    currentImagePath = shuffledImages[0];
+                    imageIndexCounter++;
+                }
+            } while (usedImages.has(currentImagePath) && attemptsToFindImage <= shuffledImages.length);
+            
+            const imagePath = currentImagePath;
             
             // Get folder path for grouping (handle images in root folder)
             let folderPath = imagePath.substring(0, imagePath.lastIndexOf('/'));
