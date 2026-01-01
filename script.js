@@ -17,9 +17,10 @@ const alignmentAnimationDuration = 1250; // Animation duration in milliseconds (
 const alignedSizeMultiplier = 7.0; // Size multiplier when aligned (7x larger)
 const panSmoothness = 0.18; // Smoothness factor for camera pan interpolation (more responsive, less laggy)
 // Opacity transition: fade to 0 (invisible) in 1 second
-// Formula: smoothness = 1 / (60fps * 1 second) ≈ 0.0167 for 1 second at 60fps
-// But we want faster, so use exponential approach: smoothness = ln(0.01) / (60 * 1) ≈ 0.0767
-const opacitySmoothness = 0.15; // Higher value = faster fade (fades to 0 in ~1 second)
+// Exponential decay: current += (target - current) * smoothness
+// To reach ~0.01 in 1 second (60 frames): (1 - smoothness)^60 ≈ 0.01
+// smoothness ≈ 0.075 for approximately 1 second fade
+const opacitySmoothness = 0.08; // Fades to ~0 in approximately 1 second at 60fps
 
 // Mouse/touch position
 let mouseX = canvas.width / 2;
