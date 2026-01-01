@@ -1299,8 +1299,10 @@ function positionFilterButtons() {
     
     // Measure spacebar and dash widths
     const spaceWidth = tempCtx.measureText(' ').width;
+    const threeSpacesWidth = spaceWidth * 3; // 3 spacebars
     const dashText = '––––––––––'; // 8 dashes
     const dashWidth = tempCtx.measureText(dashText).width;
+    const totalSpacingWidth = threeSpacesWidth + dashWidth + threeSpacesWidth; // 3 spaces + 8 dashes + 3 spaces
     
     // Find "stage design" button - it's the first one, at 1/3 from left
     const stageDesignBtn = Array.from(buttons).find(btn => btn.textContent.trim().toLowerCase() === 'stage design');
@@ -1319,17 +1321,17 @@ function positionFilterButtons() {
         currentX += textWidth + spaceWidth; // Button width + one space
     });
     
-    // Position "we are" button to the left of "stage design" with 8 dashes between them
+    // Position "we are" button to the left of "stage design" with: 3 spaces + 8 dashes + 3 spaces
     if (stageDesignBtn && weAreBtn) {
         const stageDesignLeft = screenWidth / 3; // Stage design is at 1/3 from left
         const weAreTextWidth = tempCtx.measureText(weAreBtn.textContent).width;
-        // Position we are button so that 8 dashes fit between it and stage design
-        const weAreLeft = stageDesignLeft - dashWidth - weAreTextWidth;
+        // Position we are button so that total spacing (3 spaces + 8 dashes + 3 spaces) fits between it and stage design
+        const weAreLeft = stageDesignLeft - totalSpacingWidth - weAreTextWidth;
         weAreBtn.style.left = `${weAreLeft}px`;
         weAreBtn.style.position = 'absolute';
         weAreBtn.style.right = 'auto';
         
-        // Create separator element with 8 dashes
+        // Create separator element with 3 spaces + 8 dashes + 3 spaces
         const existingDash = document.getElementById('dashSeparator');
         if (existingDash) {
             existingDash.remove();
@@ -1337,7 +1339,7 @@ function positionFilterButtons() {
         const separatorSpan = document.createElement('span');
         separatorSpan.id = 'dashSeparator';
         separatorSpan.className = 'filter-button';
-        separatorSpan.textContent = dashText; // 8 dashes
+        separatorSpan.textContent = '   ' + dashText + '   '; // 3 spaces + 8 dashes + 3 spaces
         separatorSpan.style.position = 'absolute';
         separatorSpan.style.left = `${weAreLeft + weAreTextWidth}px`;
         separatorSpan.style.pointerEvents = 'none'; // Don't allow clicks on separator
