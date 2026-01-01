@@ -12,7 +12,8 @@ window.addEventListener('resize', resizeCanvas);
 // Emoji size settings - MUST be declared before use
 const baseEmojiSize = 96; // Base size for layer_1 (4x larger: 24 * 4 = 96)
 const layer2SizeMultiplier = 1 / 1.6; // Layer_2 is 1.6 times smaller
-const hoverZoom = 2.0; // Zoom factor on hover
+const hoverZoom = 2.0 / 3.0; // Zoom factor on hover (3x smaller than before: 2.0/3 ≈ 0.67)
+const hoverZoomTransitionDuration = 500; // Transition duration in milliseconds (0.5 seconds)
 const alignmentAnimationDuration = 1250; // Animation duration in milliseconds (1.25 seconds)
 const alignedSizeMultiplier = 7.0; // Size multiplier when aligned (7x larger)
 const panSmoothness = 0.18; // Smoothness factor for camera pan interpolation (more responsive, less laggy)
@@ -1339,7 +1340,7 @@ function positionFilterButtons() {
         const separatorSpan = document.createElement('span');
         separatorSpan.id = 'dashSeparator';
         separatorSpan.className = 'filter-button';
-        separatorSpan.textContent = '   ' + dashText + '   '; // 3 spaces + 8 dashes + 3 spaces
+        separatorSpan.textContent = '\u00A0\u00A0\u00A0' + dashText + '\u00A0\u00A0\u00A0'; // 3 non-breaking spaces + 8 dashes + 3 non-breaking spaces
         separatorSpan.style.position = 'absolute';
         separatorSpan.style.left = `${weAreLeft + weAreTextWidth}px`;
         separatorSpan.style.pointerEvents = 'none'; // Don't allow clicks on separator
@@ -1561,9 +1562,39 @@ function draw() {
             point.currentSize += (point.targetSize - point.currentSize) * 0.1;
             
             // Check if hovered (using cached coordinates)
-            const isHovered = isPointHovered(x, y, scaledMouseXForHover, scaledMouseYForHover, point.currentSize * hoverZoom / 2);
-            const hoverSize = isHovered ? point.currentSize * hoverZoom : point.currentSize;
-            imageSize = hoverSize;
+            const isHovered = isPointHovered(x, y, scaledMouseXForHover, scaledMouseYForHover, point.currentSize / 2);
+            
+            // Smooth hover zoom transition (0.5 seconds)
+            if (isHovered !== point.isHovered) {
+                // Hover state changed - start transition
+                point.isHovered = isHovered;
+                point.hoverStartTime = performance.now();
+            }
+            
+            if (point.hoverStartTime > 0) {
+                const elapsed = performance.now() - point.hoverStartTime;
+                const progress = Math.min(elapsed / hoverZoomTransitionDuration, 1.0);
+                
+                // Smooth ease-out easing
+                const easeProgress = 1 - Math.pow(1 - progress, 3);
+                
+                if (point.isHovered) {
+                    // Zooming in
+                    point.hoverSize = 1.0 + (hoverZoom - 1.0) * easeProgress;
+                } else {
+                    // Zooming out
+                    point.hoverSize = hoverZoom + (1.0 - hoverZoom) * easeProgress;
+                }
+                
+                if (progress >= 1.0) {
+                    point.hoverSize = point.isHovered ? hoverZoom : 1.0;
+                }
+            } else {
+                // Initial state
+                point.hoverSize = point.isHovered ? hoverZoom : 1.0;
+            }
+            
+            imageSize = point.currentSize * point.hoverSize;
         }
         
         // Get image from cache
