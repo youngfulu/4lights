@@ -1293,9 +1293,9 @@ function positionFilterButtons() {
     const tempCtx = tempCanvas.getContext('2d');
     tempCtx.font = '14px Arial'; // Match button font
     
-    // Measure dash width (8 dashes: ––––––––––)
-    const dashText = '––––––––––';
-    const dashWidth = tempCtx.measureText(dashText).width;
+    // Measure spacebar width
+    const spaceWidth = tempCtx.measureText(' ').width;
+    const fiveSpacesWidth = spaceWidth * 5; // 5 spacebars
     
     // Find "stage design" button - it's the first one, at 1/3 from left
     const stageDesignBtn = Array.from(buttons).find(btn => btn.textContent.trim().toLowerCase() === 'stage design');
@@ -1311,39 +1311,24 @@ function positionFilterButtons() {
         
         // Measure button text width and add one space for next button
         const textWidth = tempCtx.measureText(btn.textContent).width;
-        const spaceWidth = tempCtx.measureText(' ').width;
         currentX += textWidth + spaceWidth; // Button width + one space
     });
     
-    // Position "we are" button to the left of "stage design" with 8 dashes visible
+    // Position "we are" button to the left of "stage design" with 5 spacebars spacing
     if (stageDesignBtn && weAreBtn) {
         const stageDesignLeft = screenWidth / 3; // Stage design is at 1/3 from left
         const weAreTextWidth = tempCtx.measureText(weAreBtn.textContent).width;
-        // Position we are button so that 8 dashes fit between it and stage design
-        const weAreLeft = stageDesignLeft - dashWidth - weAreTextWidth;
+        // Position we are button so that 5 spacebars fit between it and stage design
+        const weAreLeft = stageDesignLeft - fiveSpacesWidth - weAreTextWidth;
         weAreBtn.style.left = `${weAreLeft}px`;
         weAreBtn.style.position = 'absolute';
         weAreBtn.style.right = 'auto';
         
-        // Insert 8 dashes between "we are" and "stage design"
-        // Create a span element for the dashes
+        // Remove any existing dash separator
         const existingDash = document.getElementById('dashSeparator');
         if (existingDash) {
             existingDash.remove();
         }
-        const dashSpan = document.createElement('span');
-        dashSpan.id = 'dashSeparator';
-        dashSpan.className = 'filter-button';
-        dashSpan.textContent = dashText;
-        dashSpan.style.position = 'absolute';
-        dashSpan.style.left = `${weAreLeft + weAreTextWidth}px`;
-        dashSpan.style.pointerEvents = 'none'; // Don't allow clicks on dashes
-        dashSpan.style.opacity = '1';
-        dashSpan.style.color = '#fff';
-        dashSpan.style.fontSize = '14px';
-        dashSpan.style.fontFamily = 'Arial, sans-serif';
-        dashSpan.style.textTransform = 'lowercase';
-        document.getElementById('filterButtons').appendChild(dashSpan);
     }
 }
 
