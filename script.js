@@ -755,11 +755,11 @@ function unalignEmojis() {
 function handleEmojiClick(clickedPoint) {
     // Only handle alignment if nothing is currently aligned (unaligning is handled by mouseDown)
     // Align all emojis from the same folder
-    const clickedFolder = clickedPoint.folderPath || clickedPoint.imagePath.substring(0, clickedPoint.imagePath.lastIndexOf('/'));
+    const clickedFolderPath = clickedPoint.folderPath || clickedPoint.imagePath.substring(0, clickedPoint.imagePath.lastIndexOf('/'));
     alignedEmojiIndex = clickedPoint.emojiIndex; // Keep for compatibility
     alignedEmojis = points.filter(p => {
         const pFolder = p.folderPath || p.imagePath.substring(0, p.imagePath.lastIndexOf('/'));
-        return pFolder === clickedFolder;
+        return pFolder === clickedFolderPath;
     });
     
     // Check if mobile (screen width < 768px or touch device)
