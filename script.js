@@ -16,7 +16,10 @@ const hoverZoom = 2.0; // Zoom factor on hover
 const alignmentAnimationDuration = 1250; // Animation duration in milliseconds (1.25 seconds)
 const alignedSizeMultiplier = 7.0; // Size multiplier when aligned (7x larger)
 const panSmoothness = 0.18; // Smoothness factor for camera pan interpolation (more responsive, less laggy)
-const opacitySmoothness = 0.0334; // Smoothness for opacity transition (fade to 0.1 in 0.5 seconds: 2x faster than before)
+// Opacity transition: fade to 0 (invisible) in 1 second
+// Formula: smoothness = 1 / (60fps * 1 second) ≈ 0.0167 for 1 second at 60fps
+// But we want faster, so use exponential approach: smoothness = ln(0.01) / (60 * 1) ≈ 0.0767
+const opacitySmoothness = 0.15; // Higher value = faster fade (fades to 0 in ~1 second)
 
 // Mouse/touch position
 let mouseX = canvas.width / 2;
@@ -1044,7 +1047,7 @@ function handleEmojiClick(clickedPoint) {
         }
     }
     
-    // Set opacity for non-selected images to fade to 0.1
+    // Set opacity for non-selected images to fade to 0 (completely invisible) in 1 second
     points.forEach(p => {
         let pFolder = p.folderPath;
         if (!pFolder) {
@@ -1054,7 +1057,7 @@ function handleEmojiClick(clickedPoint) {
             }
         }
         if (pFolder !== clickedFolderPath) {
-            p.targetOpacity = 0.1;
+            p.targetOpacity = 0.0; // Fade to completely invisible
         } else {
             p.targetOpacity = 1.0; // Ensure images from same folder are fully visible
         }
@@ -1293,9 +1296,12 @@ function positionFilterButtons() {
     const tempCtx = tempCanvas.getContext('2d');
     tempCtx.font = '14px Arial'; // Match button font
     
-    // Measure spacebar width
+    // Measure spacebar and dash widths
     const spaceWidth = tempCtx.measureText(' ').width;
     const fiveSpacesWidth = spaceWidth * 5; // 5 spacebars
+    const dashText = '––––––––'; // 8 dashes
+    const dashWidth = tempCtx.measureText(dashText).width;
+    const totalSpacingWidth = fiveSpacesWidth + dashWidth + fiveSpacesWidth; // 5 spaces + 8 dashes + 5 spaces
     
     // Find "stage design" button - it's the first one, at 1/3 from left
     const stageDesignBtn = Array.from(buttons).find(btn => btn.textContent.trim().toLowerCase() === 'stage design');
@@ -1314,21 +1320,34 @@ function positionFilterButtons() {
         currentX += textWidth + spaceWidth; // Button width + one space
     });
     
-    // Position "we are" button to the left of "stage design" with 5 spacebars spacing
+    // Position "we are" button to the left of "stage design" with: 5 spacebars + 8 dashes + 5 spacebars
     if (stageDesignBtn && weAreBtn) {
         const stageDesignLeft = screenWidth / 3; // Stage design is at 1/3 from left
         const weAreTextWidth = tempCtx.measureText(weAreBtn.textContent).width;
-        // Position we are button so that 5 spacebars fit between it and stage design
-        const weAreLeft = stageDesignLeft - fiveSpacesWidth - weAreTextWidth;
+        // Position we are button so that total spacing (5 spaces + 8 dashes + 5 spaces) fits between it and stage design
+        const weAreLeft = stageDesignLeft - totalSpacingWidth - weAreTextWidth;
         weAreBtn.style.left = `${weAreLeft}px`;
         weAreBtn.style.position = 'absolute';
         weAreBtn.style.right = 'auto';
         
-        // Remove any existing dash separator
+        // Create separator element with 5 spaces + 8 dashes + 5 spaces
         const existingDash = document.getElementById('dashSeparator');
         if (existingDash) {
             existingDash.remove();
         }
+        const separatorSpan = document.createElement('span');
+        separatorSpan.id = 'dashSeparator';
+        separatorSpan.className = 'filter-button';
+        separatorSpan.textContent = '     ' + dashText + '     '; // 5 spaces + 8 dashes + 5 spaces
+        separatorSpan.style.position = 'absolute';
+        separatorSpan.style.left = `${weAreLeft + weAreTextWidth}px`;
+        separatorSpan.style.pointerEvents = 'none'; // Don't allow clicks on separator
+        separatorSpan.style.opacity = '1';
+        separatorSpan.style.color = '#fff';
+        separatorSpan.style.fontSize = '14px';
+        separatorSpan.style.fontFamily = 'Arial, sans-serif';
+        separatorSpan.style.textTransform = 'lowercase';
+        document.getElementById('filterButtons').appendChild(separatorSpan);
     }
 }
 
