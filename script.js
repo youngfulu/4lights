@@ -1365,6 +1365,16 @@ function positionFilterButtons() {
 
 // Draw points with parallax and emojis
 function draw() {
+    // Don't draw images until all are loaded
+    const allImagesLoaded = imagesLoaded === totalImages && totalImages > 0;
+    if (!allImagesLoaded) {
+        // Still clear canvas with black background
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        requestAnimationFrame(animate);
+        return;
+    }
+    
     // Smooth mouse position (optimized - only when not dragging for better performance)
     if (!isDragging) {
     smoothMouseX += (targetMouseX - smoothMouseX) * 0.1;
