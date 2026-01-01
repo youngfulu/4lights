@@ -1805,7 +1805,7 @@ function draw() {
     }
 }
 
-// Hide loading indicator
+// Hide loading indicator and show canvas
 function hideLoadingIndicator() {
     const loadingIndicator = document.getElementById('loadingIndicator');
     if (loadingIndicator) {
@@ -1817,6 +1817,9 @@ function hideLoadingIndicator() {
             }
         }, 1000); // Match transition duration
     }
+    
+    // Show canvas after all images are loaded
+    canvas.classList.add('images-loaded');
 }
 
 // Animation loop
