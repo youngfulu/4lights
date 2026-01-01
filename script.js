@@ -253,7 +253,15 @@ function generatePoints(count, minDistance) {
     const points = [];
     const maxAttempts = 1000;
     
-    // Each image is unique - no grouping needed
+    // Create a shuffled array of unique images to avoid duplicates
+    const shuffledImages = [...imagePaths];
+    // Fisher-Yates shuffle
+    for (let i = shuffledImages.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffledImages[i], shuffledImages[j]] = [shuffledImages[j], shuffledImages[i]];
+    }
+    
+    let imageIndexCounter = 0; // Track which image we're using
     
     for (let i = 0; i < count; i++) {
         let attempts = 0;
@@ -261,10 +269,17 @@ function generatePoints(count, minDistance) {
         let point;
         
         while (!validPoint && attempts < maxAttempts) {
-            const imageIndex = Math.floor(Math.random() * imagePaths.length);
-            const imagePath = imagePaths[imageIndex];
-            // Get folder path for grouping
-            const folderPath = imagePath.substring(0, imagePath.lastIndexOf('/'));
+            // Use images in order from shuffled array, wrapping around if needed
+            const imageIndex = imageIndexCounter % shuffledImages.length;
+            const imagePath = shuffledImages[imageIndex];
+            imageIndexCounter++;
+            
+            // Get folder path for grouping (handle images in root folder)
+            let folderPath = imagePath.substring(0, imagePath.lastIndexOf('/'));
+            // If no '/' found, it's in root - use 'Imgae test ' as folder
+            if (folderPath === imagePath || folderPath === '') {
+                folderPath = 'Imgae test ';
+            }
             point = {
                 x: Math.random() * box.width + box.x,
                 y: Math.random() * box.height + box.y,
@@ -275,7 +290,7 @@ function generatePoints(count, minDistance) {
                 layer: (i % 2 === 0) ? 'layer_1' : 'layer_2', // odd points (1st, 3rd, 5th...) = layer_1, even points (2nd, 4th, 6th...) = layer_2
                 imagePath: imagePath,
                 folderPath: folderPath, // Store folder path for grouping
-                emojiIndex: imageIndex, // Unique index for each image
+                emojiIndex: imageIndexCounter, // Unique index for each point
                 isAligned: false,
                 isFiltered: false,
                 filteredFolder: null,
@@ -755,11 +770,60 @@ function unalignEmojis() {
 function handleEmojiClick(clickedPoint) {
     // Only handle alignment if nothing is currently aligned (unaligning is handled by mouseDown)
     // Align all emojis from the same folder
-    const clickedFolderPath = clickedPoint.folderPath || clickedPoint.imagePath.substring(0, clickedPoint.imagePath.lastIndexOf('/'));
+    let clickedFolderPath = clickedPoint.folderPath;
+    if (!clickedFolderPath) {
+        clickedFolderPath = clickedPoint.imagePath.substring(0, clickedPoint.imagePath.lastIndexOf('/'));
+        // If no '/' found, it's in root - use 'Imgae test ' as folder
+        if (clickedFolderPath === clickedPoint.imagePath || clickedFolderPath === '') {
+            clickedFolderPath = 'Imgae test ';
+        }
+    }
+    
     alignedEmojiIndex = clickedPoint.emojiIndex; // Keep for compatibility
     alignedEmojis = points.filter(p => {
-        const pFolder = p.folderPath || p.imagePath.substring(0, p.imagePath.lastIndexOf('/'));
+        let pFolder = p.folderPath;
+        if (!pFolder) {
+            pFolder = p.imagePath.substring(0, p.imagePath.lastIndexOf('/'));
+            // If no '/' found, it's in root - use 'Imgae test ' as folder
+            if (pFolder === p.imagePath || pFolder === '') {
+                pFolder = 'Imgae test ';
+            }
+        }
         return pFolder === clickedFolderPath;
+    });
+    
+    // Also find all images from the folder that might not be in points yet
+    // (in case we have more images than points)
+    const allImagesFromFolder = imagePaths.filter(path => {
+        let pathFolder = path.substring(0, path.lastIndexOf('/'));
+        if (pathFolder === path || pathFolder === '') {
+            pathFolder = 'Imgae test ';
+        }
+        return pathFolder === clickedFolderPath;
+    });
+    
+    // Add any images from folder that aren't in points yet
+    allImagesFromFolder.forEach(path => {
+        const alreadyInPoints = points.some(p => p.imagePath === path);
+        if (!alreadyInPoints) {
+            // Create a temporary point for this image (will be added to alignedEmojis but not points)
+            const tempPoint = {
+                imagePath: path,
+                folderPath: clickedFolderPath,
+                isAligned: true,
+                currentAlignedX: 0,
+                currentAlignedY: 0,
+                currentSize: baseEmojiSize * alignedSizeMultiplier,
+                targetX: 0,
+                targetY: 0,
+                targetSize: baseEmojiSize * alignedSizeMultiplier,
+                targetOpacity: 1.0,
+                originalBaseX: 0,
+                originalBaseY: 0,
+                emojiIndex: -1
+            };
+            alignedEmojis.push(tempPoint);
+        }
     });
     
     // Check if mobile (screen width < 768px or touch device)
@@ -844,22 +908,36 @@ function handleEmojiClick(clickedPoint) {
         const totalWidth = (totalEmojis - 1) * minSpacing; // Width in world coordinates
         const startX = centerX - totalWidth / 2; // Center the line at canvas center (world coords)
         
+        // Update alignedEmojis count after adding folder images
+        const totalEmojisAfterFolder = alignedEmojis.length;
+        const totalWidthAfterFolder = (totalEmojisAfterFolder - 1) * minSpacing;
+        const startXAfterFolder = centerX - totalWidthAfterFolder / 2;
+        
         alignedEmojis.forEach((point, index) => {
             point.isAligned = true;
-            point.targetX = startX + (index * minSpacing);
+            point.targetX = startXAfterFolder + (index * minSpacing);
             point.targetY = centerY; // Horizontal line at center Y (world coords)
             point.targetSize = alignedSize; // Set target size for smooth transition
             point.targetOpacity = 1.0; // Selected emojis remain fully visible
             // Initialize animation start values
-            point.startX = point.currentAlignedX;
-            point.startY = point.currentAlignedY;
-            point.startSize = point.currentSize;
+            if (point.startX === undefined) {
+                point.startX = point.currentAlignedX || point.originalBaseX || 0;
+                point.startY = point.currentAlignedY || point.originalBaseY || 0;
+                point.startSize = point.currentSize || baseEmojiSize;
+                point.currentAlignedX = point.startX;
+                point.currentAlignedY = point.startY;
+                point.currentSize = point.startSize;
+            } else {
+                point.startX = point.currentAlignedX;
+                point.startY = point.currentAlignedY;
+                point.startSize = point.currentSize;
+            }
             point.alignmentStartTime = performance.now();
         });
         
         // Calculate zoom level to fit the horizontal line width on screen
         const padding = 80; // Padding on each side (in screen coordinates)
-        const totalSpanWidth = totalWidth + alignedSize; // Width from left edge of first emoji to right edge of last (world coords)
+        const totalSpanWidth = totalWidthAfterFolder + alignedSize; // Width from left edge of first emoji to right edge of last (world coords)
         const availableScreenWidth = canvas.width - (padding * 2);
         
         // When zoom = z, world coordinates are scaled by z: screenWidth = worldWidth * z
@@ -886,11 +964,18 @@ function handleEmojiClick(clickedPoint) {
     }
     
     // Set opacity for non-selected images to fade to 0.1
-    const clickedFolder = clickedPoint.folderPath || clickedPoint.imagePath.substring(0, clickedPoint.imagePath.lastIndexOf('/'));
     points.forEach(p => {
-        const pFolder = p.folderPath || p.imagePath.substring(0, p.imagePath.lastIndexOf('/'));
-        if (pFolder !== clickedFolder) {
+        let pFolder = p.folderPath;
+        if (!pFolder) {
+            pFolder = p.imagePath.substring(0, p.imagePath.lastIndexOf('/'));
+            if (pFolder === p.imagePath || pFolder === '') {
+                pFolder = 'Imgae test ';
+            }
+        }
+        if (pFolder !== clickedFolderPath) {
             p.targetOpacity = 0.1;
+        } else {
+            p.targetOpacity = 1.0; // Ensure images from same folder are fully visible
         }
     });
     
