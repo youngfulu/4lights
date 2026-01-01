@@ -62,6 +62,15 @@ const initialZoomIndex = 2; // Base zoom level index
 let alignedEmojiIndex = null; // null = no alignment, otherwise the emoji index to align
 let alignedEmojis = []; // Array of emoji objects that are currently aligned
 
+// Filter state
+let currentFilterTag = null; // null = no filter, otherwise the tag to filter by
+let filteredImages = []; // Array of filtered image points
+let isFilterMode = false; // Whether we're in filter mode
+
+// Zoom focal point (for mouse-relative zoom)
+let zoomFocalPointX = 0; // Screen X coordinate of zoom focal point
+let zoomFocalPointY = 0; // Screen Y coordinate of zoom focal point
+
 // Mobile vertical scroll state
 let mobileScrollPosition = 0; // Current scroll position (0 = top, 1 = bottom)
 let targetMobileScrollPosition = 0; // Target scroll position
@@ -381,6 +390,22 @@ function handleMouseDown(e) {
     
     const clickedPoint = findPointAtMouse(mouseX, mouseY);
     
+    // Handle clicks in filter mode
+    if (isFilterMode) {
+        if (clickedPoint && clickedPoint.isFiltered) {
+            handleFilteredImageClick(clickedPoint);
+            e.preventDefault();
+            return;
+        } else {
+            // Allow dragging in filter mode
+            isDragging = true;
+            lastDragX = mouseX;
+            lastDragY = mouseY;
+            canvas.style.cursor = 'grabbing';
+            return;
+        }
+    }
+    
     // Allow navigation (dragging) when images are aligned
     if (alignedEmojiIndex !== null) {
         // If clicking on an aligned image, allow drag navigation
@@ -398,7 +423,7 @@ function handleMouseDown(e) {
             canvas.style.cursor = 'grabbing';
         }
     } else if (clickedPoint && !isDragging) {
-        // Normal click on image (only when nothing is aligned)
+        // Normal click on image (only when nothing is aligned or filtered)
         handleEmojiClick(clickedPoint);
         e.preventDefault(); // Prevent drag when clicking image
     } else {
@@ -417,7 +442,7 @@ function handleMouseUp() {
     // Velocity will continue to apply inertia after drag ends
 }
 
-// Mouse wheel handler (zoom) - smooth, gradual, mouse-relative zoom in selection mode
+// Mouse wheel handler (zoom) - smooth, gradual, mouse-relative zoom in selection/filter mode
 function handleWheel(e) {
     e.preventDefault();
     
@@ -425,8 +450,12 @@ function handleWheel(e) {
     const mouseX = e.clientX - rect.left;
     const mouseY = e.clientY - rect.top;
     
-    // If in image selection mode, use smooth gradual zoom towards mouse position
-    if (alignedEmojiIndex !== null) {
+    // Store zoom focal point for smooth interpolation in draw loop
+    zoomFocalPointX = mouseX;
+    zoomFocalPointY = mouseY;
+    
+    // If in image selection mode or filter mode, use smooth gradual zoom towards mouse position
+    if (alignedEmojiIndex !== null || isFilterMode) {
         const centerX = canvas.width / 2;
         const centerY = canvas.height / 2;
         
@@ -544,9 +573,9 @@ function findPointAtMouse(mouseX, mouseY) {
         const point = points[i];
         let x, y;
         
-        if (point.isAligned) {
-            x = point.currentAlignedX;
-            y = point.currentAlignedY;
+        if (point.isAligned || point.isFiltered) {
+            x = point.isFiltered ? point.currentAlignedX : point.currentAlignedX;
+            y = point.isFiltered ? point.currentAlignedY : point.currentAlignedY;
         } else {
             // Use layer-specific speed for parallax
             const speed = point.layer === 'layer_1' ? layer1Speed : layer2Speed;
@@ -807,27 +836,27 @@ function draw() {
             isZoomTransitioning = false;
             globalZoomLevel = zoomTransitionTargetLevel;
         }
-    } else if (alignedEmojiIndex !== null) {
-        // Smooth gradual zoom interpolation in selection mode (towards mouse)
+    } else if (alignedEmojiIndex !== null || isFilterMode) {
+        // Smooth gradual zoom interpolation in selection/filter mode (towards mouse focal point)
         const zoomSmoothness = 0.15; // Smooth interpolation factor (adjust for speed: lower = slower/smoother)
         globalZoomLevel += (targetZoomLevel - globalZoomLevel) * zoomSmoothness;
         
-        // Smoothly interpolate camera pan to keep mouse position fixed
-        // Recalculate pan as zoom changes to maintain mouse position
+        // Smoothly interpolate camera pan to keep zoom focal point fixed
+        // Use stored zoom focal point (from wheel event) instead of smoothed mouse position
         const centerX = canvas.width / 2;
         const centerY = canvas.height / 2;
         
-        // Get current mouse position
-        const currentMouseX = smoothMouseX;
-        const currentMouseY = smoothMouseY;
+        // Use zoom focal point (actual mouse position from wheel event)
+        const focalX = zoomFocalPointX || smoothMouseX;
+        const focalY = zoomFocalPointY || smoothMouseY;
         
-        // Calculate world position under mouse (using current zoom)
-        const worldX = ((currentMouseX - centerX - cameraPanX) / globalZoomLevel) + centerX;
-        const worldY = ((currentMouseY - centerY - cameraPanY) / globalZoomLevel) + centerY;
+        // Calculate world position under focal point (using current zoom)
+        const worldX = ((focalX - centerX - cameraPanX) / globalZoomLevel) + centerX;
+        const worldY = ((focalY - centerY - cameraPanY) / globalZoomLevel) + centerY;
         
-        // Calculate target pan for current zoom level to keep mouse position fixed
-        const desiredPanX = currentMouseX - centerX - (worldX - centerX) * globalZoomLevel;
-        const desiredPanY = currentMouseY - centerY - (worldY - centerY) * globalZoomLevel;
+        // Calculate target pan for current zoom level to keep focal point fixed
+        const desiredPanX = focalX - centerX - (worldX - centerX) * globalZoomLevel;
+        const desiredPanY = focalY - centerY - (worldY - centerY) * globalZoomLevel;
         
         // Smoothly interpolate pan
         cameraPanX += (desiredPanX - cameraPanX) * zoomSmoothness;
@@ -953,7 +982,7 @@ function draw() {
         let x, y;
         let imageSize;
         
-        if (point.isAligned || (point.alignmentStartTime > 0 && !point.isAligned)) {
+        if (point.isAligned || point.isFiltered || (point.alignmentStartTime > 0 && !point.isAligned && !point.isFiltered)) {
             // Time-based smooth animation with easing (1.25 seconds duration)
             const elapsed = performance.now() - point.alignmentStartTime;
             const progress = Math.min(elapsed / alignmentAnimationDuration, 1.0);
@@ -966,8 +995,8 @@ function draw() {
             point.currentAlignedY = point.startY + (point.targetY - point.startY) * easeProgress;
             point.currentSize = point.startSize + (point.targetSize - point.startSize) * easeProgress;
             
-            // If aligned, use aligned position; otherwise transitioning back
-            if (point.isAligned) {
+            // If aligned or filtered, use target position; otherwise transitioning back
+            if (point.isAligned || point.isFiltered) {
                 x = point.currentAlignedX;
                 y = point.currentAlignedY;
                 imageSize = point.currentSize;
@@ -981,6 +1010,7 @@ function draw() {
                     point.alignmentStartTime = 0;
                     point.currentAlignedX = point.originalBaseX;
                     point.currentAlignedY = point.originalBaseY;
+                    point.isFiltered = false;
                 }
             }
         } else {
@@ -1208,8 +1238,8 @@ function updateBackButtonVisibility() {
     const backButton = document.getElementById('backButton');
     if (!backButton) return;
     
-    // Show back button when images are aligned (both mobile and desktop)
-    if (alignedEmojiIndex !== null) {
+    // Show back button when images are aligned or filtered
+    if (alignedEmojiIndex !== null || isFilterMode) {
         backButton.style.display = 'flex';
     } else {
         backButton.style.display = 'none';

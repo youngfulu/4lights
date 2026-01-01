@@ -49,3 +49,50 @@ body {
 .back-button:active {
     background: rgba(255, 255, 255, 0.15);
 }
+
+/* Filter buttons */
+.filter-buttons {
+    position: fixed;
+    top: 20px;
+    left: 0;
+    width: 100%;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    z-index: 1001;
+    pointer-events: none;
+}
+
+.filter-button {
+    color: #fff;
+    font-size: 14px;
+    font-weight: 400;
+    font-family: Arial, sans-serif;
+    text-transform: lowercase;
+    cursor: pointer;
+    pointer-events: auto;
+    padding: 0;
+    margin: 0;
+    transition: opacity 0.2s;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.filter-button:hover {
+    opacity: 0.6;
+}
+
+.filter-button.active {
+    opacity: 1;
+    font-weight: 500;
+}
+
+.filter-button:active {
+    opacity: 0.8;
+}
+
+#weAreButton {
+    position: absolute;
+    right: 25%;
+}
