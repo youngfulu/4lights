@@ -219,15 +219,9 @@ function loadImages() {
                     console.warn(`Retrying load (${retryCount + 1}/2): ${path}`);
                     setTimeout(() => loadImage(retryCount + 1), 500);
                 } else {
-                    // Final failure - store placeholder entry in cache
+                    // Final failure - don't store in cache, just skip it
                     console.error(`Failed to load image after 3 attempts: ${path}`);
-                    imageCache[path] = {
-                        img: null,
-                        width: 0,
-                        height: 0,
-                        aspectRatio: 1,
-                        error: true
-                    };
+                    // Don't add to cache - this way failed images won't be drawn
                     imagesLoaded++;
                     if (imagesLoaded === totalImages) {
                         const successful = Object.values(imageCache).filter(c => c && !c.error).length;
@@ -940,63 +934,114 @@ function handleEmojiClick(clickedPoint) {
             scrollIndicatorFadeTime = performance.now() + 3000; // Hide after 3 seconds of inactivity
         }
     } else {
-        // Desktop: Single horizontal line
-        const totalWidth = (totalEmojis - 1) * minSpacing; // Width in world coordinates
-        const startX = centerX - totalWidth / 2; // Center the line at canvas center (world coords)
-        
-        // Update alignedEmojis count after adding folder images
-        const totalEmojisAfterFolder = alignedEmojis.length;
-        const totalWidthAfterFolder = (totalEmojisAfterFolder - 1) * minSpacing;
-        const startXAfterFolder = centerX - totalWidthAfterFolder / 2;
-        
-        alignedEmojis.forEach((point, index) => {
-            point.isAligned = true;
-            point.targetX = startXAfterFolder + (index * minSpacing);
-            point.targetY = centerY; // Horizontal line at center Y (world coords)
-            point.targetSize = alignedSize; // Set target size for smooth transition
-            point.targetOpacity = 1.0; // Selected emojis remain fully visible
-            // Initialize animation start values
-            if (point.startX === undefined) {
-                point.startX = point.currentAlignedX || point.originalBaseX || 0;
-                point.startY = point.currentAlignedY || point.originalBaseY || 0;
-                point.startSize = point.currentSize || baseEmojiSize;
-                point.currentAlignedX = point.startX;
-                point.currentAlignedY = point.startY;
-                point.currentSize = point.startSize;
-            } else {
-                point.startX = point.currentAlignedX;
-                point.startY = point.currentAlignedY;
-                point.startSize = point.currentSize;
-            }
-            point.alignmentStartTime = performance.now();
-        });
-        
-        // Calculate zoom level to fit the horizontal line width on screen
+        // Desktop: Check if images fit in one line, otherwise use grid
         const padding = 80; // Padding on each side (in screen coordinates)
-        const totalSpanWidth = totalWidthAfterFolder + alignedSize; // Width from left edge of first emoji to right edge of last (world coords)
         const availableScreenWidth = canvas.width - (padding * 2);
+        const totalEmojisAfterFolder = alignedEmojis.length;
+        const totalWidthForLine = (totalEmojisAfterFolder - 1) * minSpacing + alignedSize;
+        const requiredZoomForLine = availableScreenWidth / totalWidthForLine;
         
-        // When zoom = z, world coordinates are scaled by z: screenWidth = worldWidth * z
-        // We want: totalSpanWidth * zoom <= availableScreenWidth
-        // So: zoom <= availableScreenWidth / totalSpanWidth
-        const requiredZoom = availableScreenWidth / totalSpanWidth;
+        // Check if all images fit in one line (check if smallest zoom level fits)
+        const canFitInLine = requiredZoomForLine >= zoomLevels[0];
         
-        // Find the largest zoom level that ensures all emojis fit (zoom <= requiredZoom)
-        let bestIndex = 0; // Start with smallest zoom
-        for (let i = zoomLevels.length - 1; i >= 0; i--) {
-            if (zoomLevels[i] <= requiredZoom) {
-                // This zoom level fits, use it (pick largest that fits)
-                bestIndex = i;
-                break;
+        if (canFitInLine) {
+            // Single horizontal line - fits on screen
+            const totalWidthAfterFolder = (totalEmojisAfterFolder - 1) * minSpacing;
+            const startXAfterFolder = centerX - totalWidthAfterFolder / 2;
+            
+            alignedEmojis.forEach((point, index) => {
+                point.isAligned = true;
+                point.targetX = startXAfterFolder + (index * minSpacing);
+                point.targetY = centerY; // Horizontal line at center Y (world coords)
+                point.targetSize = alignedSize; // Set target size for smooth transition
+                point.targetOpacity = 1.0; // Selected emojis remain fully visible
+                // Initialize animation start values
+                if (point.startX === undefined) {
+                    point.startX = point.currentAlignedX || point.originalBaseX || 0;
+                    point.startY = point.currentAlignedY || point.originalBaseY || 0;
+                    point.startSize = point.currentSize || baseEmojiSize;
+                    point.currentAlignedX = point.startX;
+                    point.currentAlignedY = point.startY;
+                    point.currentSize = point.startSize;
+                } else {
+                    point.startX = point.currentAlignedX;
+                    point.startY = point.currentAlignedY;
+                    point.startSize = point.currentSize;
+                }
+                point.alignmentStartTime = performance.now();
+            });
+            
+            // Calculate zoom level to fit the horizontal line width on screen
+            const totalSpanWidth = totalWidthAfterFolder + alignedSize;
+            const requiredZoom = availableScreenWidth / totalSpanWidth;
+            
+            // Find the largest zoom level that ensures all emojis fit
+            let bestIndex = 0;
+            for (let i = zoomLevels.length - 1; i >= 0; i--) {
+                if (zoomLevels[i] <= requiredZoom) {
+                    bestIndex = i;
+                    break;
+                }
             }
+            
+            currentZoomIndex = bestIndex;
+            startZoomTransition();
+            targetCameraPanX = 0;
+            targetCameraPanY = 0;
+        } else {
+            // Grid layout - too many images for one line
+            const gridCols = Math.ceil(Math.sqrt(totalEmojisAfterFolder));
+            const gridRows = Math.ceil(totalEmojisAfterFolder / gridCols);
+            const gap = 50; // Gap between images
+            const totalGridWidth = (gridCols - 1) * (alignedSize + gap);
+            const totalGridHeight = (gridRows - 1) * (alignedSize + gap);
+            const startXGrid = centerX - totalGridWidth / 2;
+            const startYGrid = centerY - totalGridHeight / 2;
+            
+            alignedEmojis.forEach((point, index) => {
+                const row = Math.floor(index / gridCols);
+                const col = index % gridCols;
+                
+                point.isAligned = true;
+                point.targetX = startXGrid + col * (alignedSize + gap);
+                point.targetY = startYGrid + row * (alignedSize + gap);
+                point.targetSize = alignedSize;
+                point.targetOpacity = 1.0;
+                // Initialize animation start values
+                if (point.startX === undefined) {
+                    point.startX = point.currentAlignedX || point.originalBaseX || 0;
+                    point.startY = point.currentAlignedY || point.originalBaseY || 0;
+                    point.startSize = point.currentSize || baseEmojiSize;
+                    point.currentAlignedX = point.startX;
+                    point.currentAlignedY = point.startY;
+                    point.currentSize = point.startSize;
+                } else {
+                    point.startX = point.currentAlignedX;
+                    point.startY = point.currentAlignedY;
+                    point.startSize = point.currentSize;
+                }
+                point.alignmentStartTime = performance.now();
+            });
+            
+            // Calculate zoom to fit grid
+            const maxSpan = Math.max(totalGridWidth + alignedSize, totalGridHeight + alignedSize);
+            const availableSpace = Math.min(canvas.width - padding * 2, canvas.height - padding * 2);
+            const requiredZoom = availableSpace / maxSpan;
+            
+            // Find the largest zoom level that ensures grid fits
+            let bestIndex = 0;
+            for (let i = zoomLevels.length - 1; i >= 0; i--) {
+                if (zoomLevels[i] <= requiredZoom) {
+                    bestIndex = i;
+                    break;
+                }
+            }
+            
+            currentZoomIndex = bestIndex;
+            startZoomTransition();
+            targetCameraPanX = 0;
+            targetCameraPanY = 0;
         }
-        
-        currentZoomIndex = bestIndex;
-        startZoomTransition();
-        
-        // Reset camera pan to center the aligned emojis
-        targetCameraPanX = 0;
-        targetCameraPanY = 0;
     }
     
     // Set opacity for non-selected images to fade to 0.1
@@ -1248,29 +1293,57 @@ function positionFilterButtons() {
     const tempCtx = tempCanvas.getContext('2d');
     tempCtx.font = '14px Arial'; // Match button font
     
-    // Measure spacebar width
-    const spaceWidth = tempCtx.measureText(' ').width;
+    // Measure dash width (8 dashes: ––––––––––)
+    const dashText = '––––––––––';
+    const dashWidth = tempCtx.measureText(dashText).width;
     
-    // Start position: 1/3 of screen from left
+    // Find "stage design" button - it's the first one, at 1/3 from left
+    const stageDesignBtn = Array.from(buttons).find(btn => btn.textContent.trim().toLowerCase() === 'stage design');
+    const weAreBtn = document.getElementById('weAreButton');
+    
+    // Position "stage design" and other buttons starting at 1/3 from left (don't move them)
     let currentX = screenWidth / 3;
     
-    // Position buttons one by one with one spacebar width between them
     buttons.forEach((btn) => {
         btn.style.left = `${currentX}px`;
         btn.style.position = 'absolute';
         btn.style.transform = 'translateX(0)';
         
-        // Measure button text width and add spacebar width for next button
+        // Measure button text width and add one space for next button
         const textWidth = tempCtx.measureText(btn.textContent).width;
+        const spaceWidth = tempCtx.measureText(' ').width;
         currentX += textWidth + spaceWidth; // Button width + one space
     });
     
-    // Position "we are" button at 1/4 from right (75% from left)
-    const weAreBtn = document.getElementById('weAreButton');
-    if (weAreBtn) {
-        weAreBtn.style.left = '75%'; // 1/4 from right = 75% from left
-        weAreBtn.style.right = 'auto';
+    // Position "we are" button to the left of "stage design" with 8 dashes visible
+    if (stageDesignBtn && weAreBtn) {
+        const stageDesignLeft = screenWidth / 3; // Stage design is at 1/3 from left
+        const weAreTextWidth = tempCtx.measureText(weAreBtn.textContent).width;
+        // Position we are button so that 8 dashes fit between it and stage design
+        const weAreLeft = stageDesignLeft - dashWidth - weAreTextWidth;
+        weAreBtn.style.left = `${weAreLeft}px`;
         weAreBtn.style.position = 'absolute';
+        weAreBtn.style.right = 'auto';
+        
+        // Insert 8 dashes between "we are" and "stage design"
+        // Create a span element for the dashes
+        const existingDash = document.getElementById('dashSeparator');
+        if (existingDash) {
+            existingDash.remove();
+        }
+        const dashSpan = document.createElement('span');
+        dashSpan.id = 'dashSeparator';
+        dashSpan.className = 'filter-button';
+        dashSpan.textContent = dashText;
+        dashSpan.style.position = 'absolute';
+        dashSpan.style.left = `${weAreLeft + weAreTextWidth}px`;
+        dashSpan.style.pointerEvents = 'none'; // Don't allow clicks on dashes
+        dashSpan.style.opacity = '1';
+        dashSpan.style.color = '#fff';
+        dashSpan.style.fontSize = '14px';
+        dashSpan.style.fontFamily = 'Arial, sans-serif';
+        dashSpan.style.textTransform = 'lowercase';
+        document.getElementById('filterButtons').appendChild(dashSpan);
     }
 }
 
@@ -1526,20 +1599,8 @@ function draw() {
                 ctx.fillRect(x - halfWidth, y - halfHeight, drawWidth, drawHeight);
             }
         } else {
-            // Fallback: draw a placeholder rectangle if image not loaded
-            // Use square placeholder for missing images
-            ctx.fillStyle = `rgba(255, 255, 255, ${point.opacity * 0.3})`;
-            const halfSize = imageSize / 2;
-            ctx.fillRect(x - halfSize, y - halfSize, imageSize, imageSize);
-            
-            // Draw a small "?" in the center to indicate missing image
-            if (imageSize > 20) {
-                ctx.fillStyle = `rgba(255, 255, 255, ${point.opacity * 0.5})`;
-                ctx.font = `${Math.min(imageSize / 3, 20)}px Arial`;
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText('?', x, y);
-            }
+            // Don't draw anything if image not loaded - just skip it
+            // This prevents grey rectangles from appearing
         }
     });
     
