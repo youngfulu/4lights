@@ -78,46 +78,107 @@ let isMobileScrolling = false; // Whether user is currently scrolling
 let scrollIndicatorVisible = false; // Whether scroll indicator is visible
 let scrollIndicatorFadeTime = 0; // Time when scroll indicator should fade
 
-// Image list - use images from "Imgae test " directory
+// Image list - use images from "Imgae test " directory (all unique images)
 const imagePaths = [
-    'Imgae test /blue-lockers1_concept.png',
-    'Imgae test /gula2 stage.jpg',
-    'Imgae test /gula2.jpg',
+    'Imgae test /2gis/14.png',
+    'Imgae test /2gis/45.png',
+    'Imgae test /2gis/53.png',
+    'Imgae test /Concepts/photo_2022-09-11_21-38-30.jpg',
+    'Imgae test /Concepts/photo_2022-09-11_21-38-31.jpg',
+    'Imgae test /Justice/21.png',
+    'Imgae test /Justice/Screenshot 2024-09-20 at 12.34.55.png',
+    'Imgae test /Justice/Screenshot 2024-09-20 at 12.50.27.png',
+    'Imgae test /Justice/Screenshot 2024-09-20 at 13.11.11-2.png',
+    'Imgae test /Justice/Screenshot 2024-09-20 at 13.11.11.png',
+    'Imgae test /Justice/Screenshot 2024-11-24 at 20.39.01-2.png',
+    'Imgae test /Justice/Screenshot 2024-11-24 at 20.40.26-2.png',
     'Imgae test /Kedr/kedr.jpg',
     'Imgae test /Kedr/kedr2.jpg',
     'Imgae test /Kedr/kedr3.jpg',
     'Imgae test /Kedr/photo_2021-08-07_21-17-07.jpg',
-    'Imgae test /photo_2022-06-11_11-15-59.jpg',
-    'Imgae test /photo_2022-06-11_11-49-34.jpg',
-    'Imgae test /photo_2022-06-17_15-23-43.jpg',
-    'Imgae test /photo_2022-06-17_15-23-45.jpg',
-    'Imgae test /photo_2022-06-17_15-23-51.jpg',
-    'Imgae test /photo_2022-08-04_18-43-59.jpg',
-    'Imgae test /photo_2022-08-12_13-03-47.jpg',
-    'Imgae test /photo_2022-08-12_13-03-54.jpg',
-    'Imgae test /photo_2022-08-25_12-45-14.jpg',
-    'Imgae test /photo_2022-08-25_12-45-28.jpg',
-    'Imgae test /photo_2022-08-25_12-45-30.jpg',
-    'Imgae test /photo_2022-08-25_16-07-59.jpg',
-    'Imgae test /photo_2022-08-26_12-24-51.jpg',
-    'Imgae test /photo_2022-11-11_15-44-50.jpg',
-    'Imgae test /photo_2022-11-11_15-45-01.jpg',
-    'Imgae test /photo_2022-11-11_15-45-02.jpg',
-    'Imgae test /photo_2022-11-11_15-45-04.jpg',
-    'Imgae test /photo_2022-11-12_14-26-35.jpg',
-    'Imgae test /photo_2022-11-12_18-19-42.jpg',
-    'Imgae test /port - stage 3.jpg',
-    'Imgae test /port - stage 6.jpg',
-    'Imgae test /port - stage 7 .jpg',
-    'Imgae test /port - stage2.jpg',
-    'Imgae test /port stage 9 .jpg',
-    'Imgae test /port-stage 8 .jpg',
-    'Imgae test /port-stage.jpg',
-    'Imgae test /stage concept.jpg',
-    'Imgae test /takik7.png',
-    'Imgae test /takik8.jpg',
-    'Imgae test /taktik0001.jpg',
-    'Imgae test /taktik0003.jpg'
+    'Imgae test /Kedrina/kedr.jpg',
+    'Imgae test /Kedrina/kedr2.jpg',
+    'Imgae test /Kedrina/kedr3.jpg',
+    'Imgae test /Mirage Cinema/pasted-image-2.png',
+    'Imgae test /Mirage Cinema/pasted-image.png',
+    'Imgae test /Mirage Cinema/photo_2627@28-07-2021_12-20-48.jpg',
+    'Imgae test /Mirage Cinema/photo_2659@07-08-2021_22-14-26.jpg',
+    'Imgae test /New star camp/25.png',
+    'Imgae test /New star camp/37.png',
+    'Imgae test /New star camp/fin4.png',
+    'Imgae test /New star camp/fin6.png',
+    'Imgae test /Nina kravitz/god_rays11.png',
+    'Imgae test /Nina kravitz/god_rays6.png',
+    'Imgae test /Nina kravitz/photo_2022-11-11_15-44-50.jpg',
+    'Imgae test /Nina kravitz/photo_2022-11-11_15-45-01.jpg',
+    'Imgae test /Nina kravitz/photo_2022-11-11_15-45-02.jpg',
+    'Imgae test /Nina kravitz/photo_2022-11-11_15-45-04.jpg',
+    'Imgae test /Nina kravitz/photo_2022-11-12_14-26-35.jpg',
+    'Imgae test /Nina kravitz/photo_2022-11-12_18-19-42.jpg',
+    'Imgae test /Nina kravitz/photo_3809@11-11-2022_13-44-50.jpg',
+    'Imgae test /Nina kravitz/photo_3812@11-11-2022_13-45-04_thumb.jpg',
+    'Imgae test /Nina kravitz/photo_3814@12-11-2022_12-26-35.jpg',
+    'Imgae test /Potato head bali/oli1 (2)-filtered.png',
+    'Imgae test /Potato head bali/photo_3830@13-11-2022_17-43-34-filtered.jpeg',
+    'Imgae test /Spatial design koridor/photo_2022-06-17_15-23-43.jpg',
+    'Imgae test /Spatial design koridor/photo_2022-06-17_15-23-51.jpg',
+    'Imgae test /Spatial design koridor/taktik0001.jpg',
+    'Imgae test /Spatial design koridor/taktik0003.jpg',
+    'Imgae test /Spatial design koridor/taktik0004.jpg',
+    'Imgae test /Telegraph/13-denoise.png',
+    'Imgae test /Telegraph/Screenshot 2024-02-29 at 19.46.48.png',
+    'Imgae test /belgium institution ? /photo_2022-08-25_12-45-14.jpg',
+    'Imgae test /belgium institution ? /photo_2022-08-25_12-45-28.jpg',
+    'Imgae test /belgium institution ? /photo_2022-08-25_12-45-30.jpg',
+    'Imgae test /belgium institution ? /photo_2022-08-25_16-07-59.jpg',
+    'Imgae test /belgium institution ? /photo_2022-08-26_12-24-51.jpg',
+    'Imgae test /fixtures decoratif/photo_2022-09-11_20-12-15.jpg',
+    'Imgae test /gate/Screenshot 2024-11-24 at 20.45.22.png',
+    'Imgae test /gate/Screenshot 2024-11-24 at 20.47.07.png',
+    'Imgae test /gula merah/gula2.jpg',
+    'Imgae test /gula merah/photo_2022-08-12_13-03-47.jpg',
+    'Imgae test /gula merah/photo_2022-08-12_13-03-54.jpg',
+    'Imgae test /la fleurs/fleurs4.png',
+    'Imgae test /la fleurs/hhhpng.png',
+    'Imgae test /la fleurs/ppp4.png',
+    'Imgae test /la fleurs/ppp5.png',
+    'Imgae test /mirag club/photo_2022-08-04_18-43-59.jpg',
+    'Imgae test /missoni/11.png',
+    'Imgae test /missoni/17.png',
+    'Imgae test /missoni/19.png',
+    'Imgae test /missoni/20.png',
+    'Imgae test /missoni/4.png',
+    'Imgae test /port/blue-lockers1.png',
+    'Imgae test /port/full_farsh copy.png',
+    'Imgae test /port/port - stage 3.jpg',
+    'Imgae test /port/port - stage 6.jpg',
+    'Imgae test /port/port - stage 7 .jpg',
+    'Imgae test /port/port - stage2.jpg',
+    'Imgae test /port/port stage 9 .jpg',
+    'Imgae test /port/port-stage 8 .jpg',
+    'Imgae test /port/port-stage.jpg',
+    'Imgae test /port/red_min.png',
+    'Imgae test /port/stage concept.jpg',
+    'Imgae test /thresholds/Screenshot 2024-11-24 at 22.18.45.png',
+    'Imgae test /thresholds/Screenshot 2024-11-24 at 22.21.12.png',
+    'Imgae test /thresholds/liminal8.png',
+    'Imgae test /torus/Screenshot 2024-06-07 at 03.09.29.png',
+    'Imgae test /torus/Screenshot 2024-06-07 at 03.36.29.png',
+    'Imgae test /torus/untitled11.png',
+    'Imgae test /torus/untitled16.png',
+    'Imgae test /torus/untitled18.png',
+    'Imgae test /torus/untitled19.png',
+    'Imgae test /tower building/19.png',
+    'Imgae test /tower building/2.png',
+    'Imgae test /tower building/22.jpg',
+    'Imgae test /tower building/4.png',
+    'Imgae test /tower building/5.png',
+    'Imgae test /tower building/v2_smallCube_lights.png',
+    'Imgae test /wish circles/Screenshot 2024-11-24 at 20.45.35.png',
+    'Imgae test /wish circles/Screenshot 2024-11-24 at 22.02.56.png',
+    'Imgae test /yndx interactive zone/11.png',
+    'Imgae test /yndx interactive zone/14.png',
+    'Imgae test /yndx interactive zone/2.png'
 ];
 
 // Image cache - stores loaded Image objects
@@ -192,13 +253,7 @@ function generatePoints(count, minDistance) {
     const points = [];
     const maxAttempts = 1000;
     
-    // Group images by assigning same index to similar images
-    const imageGroups = {};
-    imagePaths.forEach((path, index) => {
-        if (!imageGroups[path]) {
-            imageGroups[path] = index; // Use image path as the group identifier
-        }
-    });
+    // Each image is unique - no grouping needed
     
     for (let i = 0; i < count; i++) {
         let attempts = 0;
@@ -208,6 +263,8 @@ function generatePoints(count, minDistance) {
         while (!validPoint && attempts < maxAttempts) {
             const imageIndex = Math.floor(Math.random() * imagePaths.length);
             const imagePath = imagePaths[imageIndex];
+            // Get folder path for grouping
+            const folderPath = imagePath.substring(0, imagePath.lastIndexOf('/'));
             point = {
                 x: Math.random() * box.width + box.x,
                 y: Math.random() * box.height + box.y,
@@ -217,7 +274,8 @@ function generatePoints(count, minDistance) {
                 originalBaseY: 0, // Store original position (never modified)
                 layer: (i % 2 === 0) ? 'layer_1' : 'layer_2', // odd points (1st, 3rd, 5th...) = layer_1, even points (2nd, 4th, 6th...) = layer_2
                 imagePath: imagePath,
-                emojiIndex: imageGroups[imagePath] || imageIndex, // Same index for identical images
+                folderPath: folderPath, // Store folder path for grouping
+                emojiIndex: imageIndex, // Unique index for each image
                 isAligned: false,
                 isFiltered: false,
                 filteredFolder: null,
@@ -693,12 +751,16 @@ function unalignEmojis() {
     updateBackButtonVisibility();
 }
 
-// Handle emoji click - align all emojis with same index
+// Handle emoji click - align all emojis from same folder
 function handleEmojiClick(clickedPoint) {
     // Only handle alignment if nothing is currently aligned (unaligning is handled by mouseDown)
-    // Align all emojis with same index
-    alignedEmojiIndex = clickedPoint.emojiIndex;
-    alignedEmojis = points.filter(p => p.emojiIndex === alignedEmojiIndex);
+    // Align all emojis from the same folder
+    const clickedFolder = clickedPoint.folderPath || clickedPoint.imagePath.substring(0, clickedPoint.imagePath.lastIndexOf('/'));
+    alignedEmojiIndex = clickedPoint.emojiIndex; // Keep for compatibility
+    alignedEmojis = points.filter(p => {
+        const pFolder = p.folderPath || p.imagePath.substring(0, p.imagePath.lastIndexOf('/'));
+        return pFolder === clickedFolder;
+    });
     
     // Check if mobile (screen width < 768px or touch device)
     const isMobile = window.innerWidth < 768 || ('ontouchstart' in window);
@@ -824,8 +886,10 @@ function handleEmojiClick(clickedPoint) {
     }
     
     // Set opacity for non-selected images to fade to 0.1
+    const clickedFolder = clickedPoint.folderPath || clickedPoint.imagePath.substring(0, clickedPoint.imagePath.lastIndexOf('/'));
     points.forEach(p => {
-        if (p.emojiIndex !== alignedEmojiIndex) {
+        const pFolder = p.folderPath || p.imagePath.substring(0, p.imagePath.lastIndexOf('/'));
+        if (pFolder !== clickedFolder) {
             p.targetOpacity = 0.1;
         }
     });
