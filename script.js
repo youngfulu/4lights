@@ -250,33 +250,26 @@ function loadImages() {
     
     console.log(`Attempting to load ${pathsToLoad.length} images from "Imgae test " directory...`);
     console.log('First 3 image paths:', pathsToLoad.slice(0, 3));
+    console.log('Current URL:', window.location.href);
     
-    // Safety timeout: if images don't load within 10 seconds, show anyway (reduced from 30s)
+    // Safety timeout: if images don't load within 15 seconds, show anyway
     setTimeout(() => {
         if (imagesLoaded < totalImages) {
             console.warn(`Loading timeout: ${imagesLoaded}/${totalImages} images loaded. Showing what we have.`);
             console.warn(`Cache has ${Object.keys(imageCache).length} images`);
             // Force show images even if not all loaded - set to total to complete loading
-            const previousLoaded = imagesLoaded;
             imagesLoaded = totalImages;
-            if (previousLoaded < totalImages) {
-                hideLoadingIndicator();
-            }
+            hideLoadingIndicator();
         }
-    }, 10000); // 10 second timeout
+    }, 15000); // 15 second timeout
     
-    // Also check if no images after 3 seconds - might be a path issue
+    // Early check if no images after 5 seconds - might be a path issue
     setTimeout(() => {
         if (imagesLoaded === 0 && totalImages > 0) {
-            console.error('No images loaded after 3 seconds! Check image paths.');
+            console.error('No images loaded after 5 seconds! Check image paths.');
             console.error('Sample paths:', pathsToLoad.slice(0, 3));
-            console.error('Current URL:', window.location.href);
-            // If on GitHub Pages, paths might need to be relative
-            if (window.location.href.includes('github.io')) {
-                console.error('On GitHub Pages - ensure image paths are correct relative paths');
-            }
         }
-    }, 3000);
+    }, 5000);
 }
 
 // Start loading images
@@ -1846,20 +1839,29 @@ function draw() {
 }
 
 // Hide loading indicator and show canvas
+let loadingComplete = false; // Track if loading has completed
 function hideLoadingIndicator() {
+    if (loadingComplete) return; // Prevent multiple calls
+    loadingComplete = true;
+    
+    console.log('hideLoadingIndicator called', { imagesLoaded, totalImages, cacheSize: Object.keys(imageCache).length });
+    
     const loadingIndicator = document.getElementById('loadingIndicator');
     if (loadingIndicator) {
+        // Fade out loading indicator in 1 second
         loadingIndicator.classList.add('hidden');
         // Remove from DOM after fade out completes
         setTimeout(() => {
             if (loadingIndicator.parentNode) {
                 loadingIndicator.parentNode.removeChild(loadingIndicator);
             }
-        }, 1000); // Match transition duration
+        }, 1000); // Match transition duration (1 second)
     }
     
-    // Show canvas after all images are loaded
-    canvas.classList.add('images-loaded');
+    // Show canvas - fade in over 1 second
+    if (canvas) {
+        canvas.classList.add('images-loaded');
+    }
 }
 
 // Animation loop
