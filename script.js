@@ -1194,12 +1194,6 @@ function draw() {
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    // Draw name in upper left corner (outside scaled context)
-    ctx.fillStyle = '#fff';
-    ctx.font = '14px Arial'; // Match filter buttons font size
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'top';
-    ctx.fillText('dat_girl', 20, 20);
     
     // Apply camera zoom and pan transform
     const centerX = canvas.width / 2;
