@@ -1072,10 +1072,14 @@ function handleFilteredImageClick(clickedPoint) {
         point.alignmentStartTime = performance.now();
     });
     
-    // Set opacity for non-selected images
+    // Set opacity for non-selected images (group by folder)
+    const clickedFolderForAlignment = clickedPoint.folderPath || clickedPoint.imagePath.substring(0, clickedPoint.imagePath.lastIndexOf('/'));
     points.forEach(p => {
-        if (p.imageIndex !== alignedEmojiIndex) {
+        const pFolder = p.folderPath || p.imagePath.substring(0, p.imagePath.lastIndexOf('/'));
+        if (pFolder !== clickedFolderForAlignment) {
             p.targetOpacity = 0.1;
+        } else {
+            p.targetOpacity = 1.0;
         }
     });
     
