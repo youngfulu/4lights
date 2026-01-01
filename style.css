@@ -23,12 +23,12 @@ body {
     position: fixed;
     top: 20px;
     right: 20px;
-    padding: 0; /* Remove padding to match text-only buttons */
-    background: transparent; /* Remove background to match filter buttons */
-    border: none; /* Remove border to match filter buttons */
-    border-radius: 0;
+    padding: 8px 16px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 4px;
     color: #fff;
-    font-size: 14px; /* Match filter buttons exactly */
+    font-size: 14px; /* Match filter buttons font size */
     font-weight: 400;
     font-family: Arial, sans-serif;
     text-transform: lowercase;
@@ -37,17 +37,17 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: opacity 0.2s; /* Match filter button transition */
+    transition: background 0.2s, border-color 0.2s;
     -webkit-tap-highlight-color: transparent;
-    line-height: 1; /* Ensure consistent line height */
 }
 
 .back-button:hover {
-    opacity: 0.6; /* Match filter button hover */
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.5);
 }
 
 .back-button:active {
-    opacity: 0.8; /* Match filter button active */
+    background: rgba(255, 255, 255, 0.15);
 }
 
 /* Filter buttons */
@@ -78,8 +78,6 @@ body {
     user-select: none;
     -webkit-user-select: none;
     -webkit-tap-highlight-color: transparent;
-    line-height: 1; /* Ensure consistent line height */
-    top: 20px; /* Explicit top position to match other elements */
 }
 
 .filter-button:hover {
