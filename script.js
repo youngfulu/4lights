@@ -1196,7 +1196,7 @@ function draw() {
     
     // Draw name in upper left corner (outside scaled context)
     ctx.fillStyle = '#fff';
-    ctx.font = '16px Arial';
+    ctx.font = '14px Arial'; // Same size as filter buttons
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
     ctx.fillText('dat_girl', 20, 20);
