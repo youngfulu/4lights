@@ -249,16 +249,26 @@ function loadImages() {
     });
     
     console.log(`Attempting to load ${pathsToLoad.length} images from "Imgae test " directory...`);
+    console.log('First 3 image paths:', pathsToLoad.slice(0, 3));
     
     // Safety timeout: if images don't load within 30 seconds, show anyway
     setTimeout(() => {
         if (imagesLoaded < totalImages) {
             console.warn(`Loading timeout: ${imagesLoaded}/${totalImages} images loaded. Showing what we have.`);
+            console.warn(`Cache has ${Object.keys(imageCache).length} images`);
             // Force show images even if not all loaded
             imagesLoaded = totalImages;
             hideLoadingIndicator();
         }
     }, 30000); // 30 second timeout
+    
+    // Also check if no images after 5 seconds - might be a path issue
+    setTimeout(() => {
+        if (imagesLoaded === 0 && totalImages > 0) {
+            console.error('No images loaded after 5 seconds! Check image paths.');
+            console.error('Sample paths:', pathsToLoad.slice(0, 3));
+        }
+    }, 5000);
 }
 
 // Start loading images
@@ -1375,9 +1385,11 @@ function positionFilterButtons() {
 
 // Draw points with parallax and emojis
 function draw() {
-    // Don't draw images until all are loaded
-    const allImagesLoaded = imagesLoaded === totalImages && totalImages > 0;
-    if (!allImagesLoaded) {
+    // Don't draw images until all are loaded (or timeout reached)
+    // Check if all image loading attempts are complete
+    const allImagesProcessed = imagesLoaded === totalImages && totalImages > 0;
+    
+    if (!allImagesProcessed) {
         // Still clear canvas with black background
         ctx.fillStyle = '#000';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
