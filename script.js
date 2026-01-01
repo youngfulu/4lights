@@ -210,11 +210,20 @@ function loadImages() {
                 console.log(`All ${imagesLoaded} images loaded successfully!`);
             }
         };
-        img.onerror = () => {
-            console.warn(`Failed to load image: ${path}`);
+        img.onerror = (error) => {
+            console.error(`Failed to load image: ${path}`, error);
+            // Store placeholder entry in cache to prevent repeated attempts
+            imageCache[path] = {
+                img: null,
+                width: 0,
+                height: 0,
+                aspectRatio: 1,
+                error: true
+            };
             imagesLoaded++;
             if (imagesLoaded === totalImages) {
-                console.log(`Finished loading attempt: ${imagesLoaded}/${totalImages} images loaded`);
+                const successful = Object.values(imageCache).filter(c => !c.error).length;
+                console.log(`Finished loading: ${successful}/${totalImages} images loaded successfully, ${totalImages - successful} failed`);
             }
         };
         // Don't set crossOrigin for local file:// protocol - it causes CORS errors
@@ -1479,7 +1488,7 @@ function draw() {
         }
         
         // Draw image if loaded, otherwise draw placeholder
-        if (img && img.complete && img.naturalWidth > 0 && img.naturalHeight > 0 && imageData) {
+        if (img && img.complete && img.naturalWidth > 0 && img.naturalHeight > 0 && imageData && !imageData.error) {
             // Calculate dimensions maintaining aspect ratio
             // Use imageSize as the base dimension (width or height, whichever is larger)
             let drawWidth, drawHeight;
