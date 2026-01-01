@@ -1389,9 +1389,24 @@ function draw() {
     // Don't draw images until all are loaded (or timeout reached)
     // Check if all image loading attempts are complete
     const allImagesProcessed = imagesLoaded === totalImages && totalImages > 0;
+    const hasAnyImages = Object.keys(imageCache).length > 0;
     
-    if (!allImagesProcessed) {
+    // If no images processed yet AND no images in cache, show loading screen
+    if (!allImagesProcessed && !hasAnyImages) {
         // Still clear canvas with black background
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        requestAnimationFrame(animate);
+        return;
+    }
+    
+    // If we have some images loaded, show them (progressive loading)
+    // This handles cases where some images load successfully
+    if (!allImagesProcessed && hasAnyImages && loadingComplete) {
+        // Loading indicator was hidden (timeout), so we can show images
+        // Continue drawing with available images
+    } else if (!allImagesProcessed && !loadingComplete) {
+        // Still loading - don't show images yet
         ctx.fillStyle = '#000';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         requestAnimationFrame(animate);
