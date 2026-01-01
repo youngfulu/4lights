@@ -1069,6 +1069,7 @@ function positionFilterButtons() {
     buttons.forEach((btn) => {
         btn.style.left = `${currentX}px`;
         btn.style.position = 'absolute';
+        btn.style.top = '20px'; // Explicitly set top to match other elements
         btn.style.transform = 'translateX(0)';
         
         // Measure button text width and add spacebar width for next button
@@ -1076,10 +1077,15 @@ function positionFilterButtons() {
         currentX += textWidth + spaceWidth; // Button width + one space
     });
     
-    // Position "we are" button at 1/4 from right (75% from left)
+    // Position "we are" button right after the last filter button with one spacebar distance
     const weAreBtn = document.getElementById('weAreButton');
-    if (weAreBtn) {
-        weAreBtn.style.left = '75%'; // 1/4 from right = 75% from left
+    if (weAreBtn && buttons.length > 0) {
+        // Get the last button's position and add its width + space
+        const lastButton = buttons[buttons.length - 1];
+        const lastButtonTextWidth = tempCtx.measureText(lastButton.textContent).width;
+        const lastButtonLeft = parseFloat(lastButton.style.left) || 0;
+        weAreBtn.style.left = `${lastButtonLeft + lastButtonTextWidth + spaceWidth}px`;
+        weAreBtn.style.top = '20px'; // Match other buttons
         weAreBtn.style.right = 'auto';
         weAreBtn.style.position = 'absolute';
     }
@@ -1195,11 +1201,12 @@ function draw() {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
     // Draw name in upper left corner (outside scaled context)
+    // Use same font size as filter buttons (14px) and align with button top position
     ctx.fillStyle = '#fff';
-    ctx.font = '14px Arial'; // Same size as filter buttons
+    ctx.font = '14px Arial'; // Match filter buttons exactly
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
-    ctx.fillText('dat_girl', 20, 20);
+    ctx.fillText('dat_girl', 20, 20); // Same top position as buttons (top: 20px)
     
     // Apply camera zoom and pan transform
     const centerX = canvas.width / 2;
