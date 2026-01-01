@@ -80,19 +80,44 @@ let scrollIndicatorFadeTime = 0; // Time when scroll indicator should fade
 
 // Image list - use images from "Imgae test " directory
 const imagePaths = [
-    'Imgae test /575104183_10234916968638578_3714106829795647330_n.jpg',
-    'Imgae test /IMG_3088.PNG',
-    'Imgae test /photo_2023-09-15_22-34-48.jpg',
-    'Imgae test /Screenshot 2025-11-06 at 16.03.53.png',
-    'Imgae test /Screenshot 2025-11-08 at 02.26.28.png',
-    'Imgae test /Screenshot 2025-11-08 at 03.27.57.png',
-    'Imgae test /Screenshot 2025-11-20 at 00.49.08.png',
-    'Imgae test /Screenshot 2025-11-20 at 15.07.33.png',
-    'Imgae test /Screenshot 2025-12-07 at 15.08.15.png',
-    'Imgae test /Screenshot 2025-12-07 at 15.08.19.png',
-    'Imgae test /Screenshot 2025-12-13 at 17.16.14.png',
-    'Imgae test /Screenshot 2025-12-14 at 22.28.14.png',
-    'Imgae test /Screenshot 2025-12-22 at 14.53.33.png'
+    'Imgae test /blue-lockers1_concept.png',
+    'Imgae test /gula2 stage.jpg',
+    'Imgae test /gula2.jpg',
+    'Imgae test /Kedr/kedr.jpg',
+    'Imgae test /Kedr/kedr2.jpg',
+    'Imgae test /Kedr/kedr3.jpg',
+    'Imgae test /Kedr/photo_2021-08-07_21-17-07.jpg',
+    'Imgae test /photo_2022-06-11_11-15-59.jpg',
+    'Imgae test /photo_2022-06-11_11-49-34.jpg',
+    'Imgae test /photo_2022-06-17_15-23-43.jpg',
+    'Imgae test /photo_2022-06-17_15-23-45.jpg',
+    'Imgae test /photo_2022-06-17_15-23-51.jpg',
+    'Imgae test /photo_2022-08-04_18-43-59.jpg',
+    'Imgae test /photo_2022-08-12_13-03-47.jpg',
+    'Imgae test /photo_2022-08-12_13-03-54.jpg',
+    'Imgae test /photo_2022-08-25_12-45-14.jpg',
+    'Imgae test /photo_2022-08-25_12-45-28.jpg',
+    'Imgae test /photo_2022-08-25_12-45-30.jpg',
+    'Imgae test /photo_2022-08-25_16-07-59.jpg',
+    'Imgae test /photo_2022-08-26_12-24-51.jpg',
+    'Imgae test /photo_2022-11-11_15-44-50.jpg',
+    'Imgae test /photo_2022-11-11_15-45-01.jpg',
+    'Imgae test /photo_2022-11-11_15-45-02.jpg',
+    'Imgae test /photo_2022-11-11_15-45-04.jpg',
+    'Imgae test /photo_2022-11-12_14-26-35.jpg',
+    'Imgae test /photo_2022-11-12_18-19-42.jpg',
+    'Imgae test /port - stage 3.jpg',
+    'Imgae test /port - stage 6.jpg',
+    'Imgae test /port - stage 7 .jpg',
+    'Imgae test /port - stage2.jpg',
+    'Imgae test /port stage 9 .jpg',
+    'Imgae test /port-stage 8 .jpg',
+    'Imgae test /port-stage.jpg',
+    'Imgae test /stage concept.jpg',
+    'Imgae test /takik7.png',
+    'Imgae test /takik8.jpg',
+    'Imgae test /taktik0001.jpg',
+    'Imgae test /taktik0003.jpg'
 ];
 
 // Image cache - stores loaded Image objects
@@ -194,6 +219,8 @@ function generatePoints(count, minDistance) {
                 imagePath: imagePath,
                 emojiIndex: imageGroups[imagePath] || imageIndex, // Same index for identical images
                 isAligned: false,
+                isFiltered: false,
+                filteredFolder: null,
                 targetX: 0, // Target X position when aligned (center X)
                 targetY: 0, // Target Y position when aligned (horizontal line)
                 currentAlignedX: 0, // Current interpolated X position
@@ -396,8 +423,8 @@ function handleMouseDown(e) {
             handleFilteredImageClick(clickedPoint);
             e.preventDefault();
             return;
-        } else {
-            // Allow dragging in filter mode
+        } else if (!clickedPoint) {
+            // Allow dragging in filter mode when clicking empty space
             isDragging = true;
             lastDragX = mouseX;
             lastDragY = mouseY;
@@ -805,6 +832,241 @@ function handleEmojiClick(clickedPoint) {
     
     // Update back button visibility
     updateBackButtonVisibility();
+}
+
+// Filter functions
+function filterByTag(tag) {
+    // Clear any existing alignment first
+    if (alignedEmojiIndex !== null) {
+        unalignEmojis();
+    }
+    
+    if (currentFilterTag === tag) {
+        // If clicking the same tag, clear filter
+        clearFilter();
+        return;
+    }
+    
+    currentFilterTag = tag;
+    isFilterMode = true;
+    
+    // Find all images matching the tag
+    filteredImages = points.filter(point => {
+        const filename = point.imagePath.toLowerCase();
+        const tagPattern = `_${tag}`;
+        return filename.includes(tagPattern);
+    });
+    
+    if (filteredImages.length === 0) {
+        console.warn(`No images found with tag: ${tag}`);
+        clearFilter();
+        return;
+    }
+    
+    // Calculate grid layout
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    const gridCols = Math.ceil(Math.sqrt(filteredImages.length));
+    const gridRows = Math.ceil(filteredImages.length / gridCols);
+    
+    const imageSize = baseEmojiSize;
+    const gap = 50; // Gap between images
+    const totalWidth = (gridCols - 1) * (imageSize + gap);
+    const totalHeight = (gridRows - 1) * (imageSize + gap);
+    
+    const startX = centerX - totalWidth / 2;
+    const startY = centerY - totalHeight / 2;
+    
+    // Position filtered images in grid
+    filteredImages.forEach((point, index) => {
+        const row = Math.floor(index / gridCols);
+        const col = index % gridCols;
+        
+        point.isFiltered = true;
+        point.targetX = startX + col * (imageSize + gap);
+        point.targetY = startY + row * (imageSize + gap);
+        point.targetSize = imageSize;
+        point.targetOpacity = 1.0;
+        point.startX = point.currentAlignedX || point.originalBaseX;
+        point.startY = point.currentAlignedY || point.originalBaseY;
+        point.startSize = point.currentSize;
+        point.alignmentStartTime = performance.now();
+        point.filteredFolder = point.imagePath.substring(0, point.imagePath.lastIndexOf('/'));
+    });
+    
+    // Fade out non-filtered images
+    points.forEach(p => {
+        if (!filteredImages.includes(p)) {
+            p.targetOpacity = 0.1;
+            p.isFiltered = false;
+        }
+    });
+    
+    // Calculate zoom to fit grid
+    const padding = 80;
+    const maxSpan = Math.max(totalWidth + imageSize, totalHeight + imageSize);
+    const availableSpace = Math.min(canvas.width - padding * 2, canvas.height - padding * 2);
+    const requiredZoom = availableSpace / maxSpan;
+    
+    // Find best zoom level
+    let bestIndex = 0;
+    for (let i = zoomLevels.length - 1; i >= 0; i--) {
+        if (zoomLevels[i] <= requiredZoom) {
+            bestIndex = i;
+            break;
+        }
+    }
+    
+    currentZoomIndex = bestIndex;
+    targetZoomLevel = zoomLevels[bestIndex];
+    startZoomTransition();
+    
+    // Center camera
+    targetCameraPanX = 0;
+    targetCameraPanY = 0;
+    
+    // Update button states
+    updateFilterButtons();
+    updateBackButtonVisibility();
+}
+
+function clearFilter() {
+    if (!isFilterMode) return;
+    
+    currentFilterTag = null;
+    isFilterMode = false;
+    
+    // Restore all points to original positions
+    filteredImages.forEach(point => {
+        point.isFiltered = false;
+        point.targetX = point.originalBaseX;
+        point.targetY = point.originalBaseY;
+        point.targetSize = point.layer === 'layer_1' ? baseEmojiSize : baseEmojiSize * layer2SizeMultiplier;
+        point.targetOpacity = 1.0;
+        point.startX = point.currentAlignedX;
+        point.startY = point.currentAlignedY;
+        point.startSize = point.currentSize;
+        point.alignmentStartTime = performance.now();
+    });
+    
+    filteredImages = [];
+    
+    // Restore opacity for all images
+    points.forEach(p => {
+        p.targetOpacity = 1.0;
+    });
+    
+    // Reset camera
+    currentZoomIndex = initialZoomIndex;
+    startZoomTransition();
+    targetCameraPanX = initialCameraPanX;
+    targetCameraPanY = initialCameraPanY;
+    cameraPanX = initialCameraPanX;
+    cameraPanY = initialCameraPanY;
+    
+    updateFilterButtons();
+    updateBackButtonVisibility();
+}
+
+function handleFilteredImageClick(clickedPoint) {
+    if (!isFilterMode || !clickedPoint.isFiltered) return;
+    
+    // Get all images from the same folder
+    const folderPath = clickedPoint.filteredFolder || clickedPoint.imagePath.substring(0, clickedPoint.imagePath.lastIndexOf('/'));
+    const folderImages = points.filter(p => {
+        const pFolder = p.imagePath.substring(0, p.imagePath.lastIndexOf('/'));
+        return pFolder === folderPath;
+    });
+    
+    if (folderImages.length === 0) return;
+    
+    // Clear current filter and align folder images
+    clearFilter();
+    
+    // Align folder images (similar to handleEmojiClick)
+    alignedEmojiIndex = clickedPoint.imageIndex;
+    alignedEmojis = folderImages;
+    
+    const alignedSize = baseEmojiSize * alignedSizeMultiplier;
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    const totalEmojis = alignedEmojis.length;
+    const horizontalGap = 35;
+    const minSpacing = alignedSize + horizontalGap;
+    const totalWidth = (totalEmojis - 1) * minSpacing;
+    const startX = centerX - totalWidth / 2;
+    
+    alignedEmojis.forEach((point, index) => {
+        point.isAligned = true;
+        point.targetX = startX + (index * minSpacing);
+        point.targetY = centerY;
+        point.targetSize = alignedSize;
+        point.targetOpacity = 1.0;
+        point.startX = point.currentAlignedX || point.originalBaseX;
+        point.startY = point.currentAlignedY || point.originalBaseY;
+        point.startSize = point.currentSize;
+        point.alignmentStartTime = performance.now();
+    });
+    
+    // Set opacity for non-selected images
+    points.forEach(p => {
+        if (p.imageIndex !== alignedEmojiIndex) {
+            p.targetOpacity = 0.1;
+        }
+    });
+    
+    // Calculate zoom
+    const padding = 80;
+    const totalSpanWidth = totalWidth + alignedSize;
+    const availableScreenWidth = canvas.width - (padding * 2);
+    const requiredZoom = availableScreenWidth / totalSpanWidth;
+    
+    let bestIndex = 0;
+    for (let i = zoomLevels.length - 1; i >= 0; i--) {
+        if (zoomLevels[i] <= requiredZoom) {
+            bestIndex = i;
+            break;
+        }
+    }
+    
+    currentZoomIndex = bestIndex;
+    startZoomTransition();
+    targetCameraPanX = 0;
+    targetCameraPanY = 0;
+    
+    updateBackButtonVisibility();
+}
+
+function updateFilterButtons() {
+    const buttons = document.querySelectorAll('.filter-button');
+    buttons.forEach(btn => {
+        if (btn.id === 'weAreButton') return;
+        const tag = btn.getAttribute('data-tag');
+        if (tag === currentFilterTag) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
+    });
+}
+
+function positionFilterButtons() {
+    const buttons = document.querySelectorAll('.filter-button:not(#weAreButton)');
+    const screenWidth = canvas.width;
+    const step = screenWidth / 3;
+    
+    // Position buttons starting 1/3 from left, with 1/3 step spacing
+    buttons.forEach((btn, index) => {
+        btn.style.left = `${33.33 + (index * 33.33)}%`;
+        btn.style.position = 'absolute';
+    });
+    
+    // Position "we are" button
+    const weAreBtn = document.getElementById('weAreButton');
+    if (weAreBtn) {
+        weAreBtn.style.right = '25%';
+        weAreBtn.style.position = 'absolute';
+    }
 }
 
 // Draw points with parallax and emojis
@@ -1246,14 +1508,39 @@ function updateBackButtonVisibility() {
     }
 }
 
-// Initialize back button after DOM is ready
+// Initialize back button and filter buttons after DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
     const backButton = document.getElementById('backButton');
     if (backButton) {
         backButton.addEventListener('click', () => {
-            unalignEmojis();
+            if (isFilterMode) {
+                clearFilter();
+            } else {
+                unalignEmojis();
+            }
         });
     }
+    
+    // Setup filter buttons
+    positionFilterButtons();
+    window.addEventListener('resize', () => {
+        positionFilterButtons();
+    });
+    
+    const filterButtons = document.querySelectorAll('.filter-button');
+    filterButtons.forEach(btn => {
+        if (btn.id === 'weAreButton') {
+            // Handle "we are" button separately if needed
+            btn.addEventListener('click', () => {
+                // Add specific behavior for "we are" button if needed
+            });
+        } else {
+            const tag = btn.getAttribute('data-tag');
+            btn.addEventListener('click', () => {
+                filterByTag(tag);
+            });
+        }
+    });
 });
 
 // Start animation
