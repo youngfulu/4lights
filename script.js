@@ -343,7 +343,9 @@ function generatePoints(count, minDistance) {
             attempts++;
         }
         
-        if (validPoint) {
+        if (validPoint && currentImagePath) {
+            // Mark this image as used to prevent duplicates
+            usedImages.add(currentImagePath);
             // Store base position and original position (original never changes)
             point.baseX = point.x;
             point.baseY = point.y;
