@@ -216,6 +216,8 @@ function loadImages() {
                 if (imagesLoaded === totalImages) {
                     const successful = Object.values(imageCache).filter(c => c && !c.error).length;
                     console.log(`All images processed: ${successful}/${totalImages} loaded successfully, ${totalImages - successful} failed`);
+                    // Hide loading indicator after all images are loaded
+                    hideLoadingIndicator();
                 }
             };
             img.onerror = (error) => {
@@ -231,6 +233,8 @@ function loadImages() {
                     if (imagesLoaded === totalImages) {
                         const successful = Object.values(imageCache).filter(c => c && !c.error).length;
                         console.log(`Finished loading: ${successful}/${totalImages} images loaded successfully, ${totalImages - successful} failed`);
+                        // Hide loading indicator after all images are loaded
+                        hideLoadingIndicator();
                     }
                 }
             };
