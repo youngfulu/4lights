@@ -1541,7 +1541,7 @@ function draw() {
         
         if (point.isAligned || point.isFiltered || (point.alignmentStartTime > 0 && !point.isAligned && !point.isFiltered)) {
             // Time-based smooth animation with easing (1.25 seconds duration)
-            const elapsed = performance.now() - point.alignmentStartTime;
+            const elapsed = currentTime - point.alignmentStartTime; // Use cached time
             const progress = Math.min(elapsed / alignmentAnimationDuration, 1.0);
             
             // Smooth ease-out easing function (easeOutCubic)
