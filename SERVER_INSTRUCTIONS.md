@@ -56,3 +56,5 @@ php -S localhost:8000
 **Note:** Once you're running through a web server (http://localhost), the images should load correctly!
 
 
+
+
