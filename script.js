@@ -1805,6 +1805,20 @@ function draw() {
     }
 }
 
+// Hide loading indicator
+function hideLoadingIndicator() {
+    const loadingIndicator = document.getElementById('loadingIndicator');
+    if (loadingIndicator) {
+        loadingIndicator.classList.add('hidden');
+        // Remove from DOM after fade out completes
+        setTimeout(() => {
+            if (loadingIndicator.parentNode) {
+                loadingIndicator.parentNode.removeChild(loadingIndicator);
+            }
+        }, 1000); // Match transition duration
+    }
+}
+
 // Animation loop
 function animate() {
     draw();
