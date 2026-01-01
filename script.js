@@ -1386,32 +1386,20 @@ function positionFilterButtons() {
 
 // Draw points with parallax and emojis
 function draw() {
-    // Don't draw images until all are loaded (or timeout reached)
+    // Don't draw images until all are loaded
     // Check if all image loading attempts are complete
     const allImagesProcessed = imagesLoaded === totalImages && totalImages > 0;
-    const hasAnyImages = Object.keys(imageCache).length > 0;
     
-    // If no images processed yet AND no images in cache, show loading screen
-    if (!allImagesProcessed && !hasAnyImages) {
-        // Still clear canvas with black background
+    // If images haven't finished loading AND loading hasn't been marked complete, don't draw images
+    if (!allImagesProcessed && !loadingComplete) {
+        // Still loading - show loading screen (black background)
         ctx.fillStyle = '#000';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         requestAnimationFrame(animate);
         return;
     }
     
-    // If we have some images loaded, show them (progressive loading)
-    // This handles cases where some images load successfully
-    if (!allImagesProcessed && hasAnyImages && loadingComplete) {
-        // Loading indicator was hidden (timeout), so we can show images
-        // Continue drawing with available images
-    } else if (!allImagesProcessed && !loadingComplete) {
-        // Still loading - don't show images yet
-        ctx.fillStyle = '#000';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        requestAnimationFrame(animate);
-        return;
-    }
+    // Images are loaded (or timeout occurred), now we can draw
     
     // Smooth mouse position (optimized - only when not dragging for better performance)
     if (!isDragging) {
