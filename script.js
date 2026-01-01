@@ -1054,17 +1054,26 @@ function positionFilterButtons() {
     const buttons = document.querySelectorAll('.filter-button:not(#weAreButton)');
     const screenWidth = window.innerWidth;
     
-    // Position buttons starting 1/3 from left (33.33%), then 1/3 step spacing each
-    // Button 1: 33.33% (1/3)
-    // Button 2: 66.66% (2/3)
-    // Button 3: 100% (3/3, but we'll position it better)
-    // Actually, let's space them: start at 1/3, then add 1/3 for each button
-    buttons.forEach((btn, index) => {
-        // Start at 33.33% (1/3), add 33.33% for each button
-        const leftPercent = 33.33 + (index * (100 / 3));
-        btn.style.left = `${leftPercent}%`;
+    // Create a temporary canvas to measure text width
+    const tempCanvas = document.createElement('canvas');
+    const tempCtx = tempCanvas.getContext('2d');
+    tempCtx.font = '14px Arial'; // Match button font
+    
+    // Measure spacebar width
+    const spaceWidth = tempCtx.measureText(' ').width;
+    
+    // Start position: 1/3 of screen from left
+    let currentX = screenWidth / 3;
+    
+    // Position buttons one by one with one spacebar width between them
+    buttons.forEach((btn) => {
+        btn.style.left = `${currentX}px`;
         btn.style.position = 'absolute';
-        btn.style.transform = 'translateX(0)'; // No transform needed, position is absolute
+        btn.style.transform = 'translateX(0)';
+        
+        // Measure button text width and add spacebar width for next button
+        const textWidth = tempCtx.measureText(btn.textContent).width;
+        currentX += textWidth + spaceWidth; // Button width + one space
     });
     
     // Position "we are" button at 1/4 from right (75% from left)
