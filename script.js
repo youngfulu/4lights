@@ -249,6 +249,16 @@ function loadImages() {
     });
     
     console.log(`Attempting to load ${pathsToLoad.length} images from "Imgae test " directory...`);
+    
+    // Safety timeout: if images don't load within 30 seconds, show anyway
+    setTimeout(() => {
+        if (imagesLoaded < totalImages) {
+            console.warn(`Loading timeout: ${imagesLoaded}/${totalImages} images loaded. Showing what we have.`);
+            // Force show images even if not all loaded
+            imagesLoaded = totalImages;
+            hideLoadingIndicator();
+        }
+    }, 30000); // 30 second timeout
 }
 
 // Start loading images
