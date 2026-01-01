@@ -1299,27 +1299,34 @@ function positionFilterButtons() {
     
     // Measure spacebar width
     const spaceWidth = tempCtx.measureText(' ').width;
+    const fiveSpacesWidth = spaceWidth * 5; // 5 spacebars
     
-    // Start position: 1/3 of screen from left
+    // Find "stage design" button - it's the first one, at 1/3 from left
+    const stageDesignBtn = Array.from(buttons).find(btn => btn.textContent.trim().toLowerCase() === 'stage design');
+    const weAreBtn = document.getElementById('weAreButton');
+    
+    // Position "stage design" and other buttons starting at 1/3 from left (don't move them)
     let currentX = screenWidth / 3;
     
-    // Position buttons one by one with one spacebar width between them
     buttons.forEach((btn) => {
         btn.style.left = `${currentX}px`;
         btn.style.position = 'absolute';
         btn.style.transform = 'translateX(0)';
         
-        // Measure button text width and add spacebar width for next button
+        // Measure button text width and add one space for next button
         const textWidth = tempCtx.measureText(btn.textContent).width;
         currentX += textWidth + spaceWidth; // Button width + one space
     });
     
-    // Position "we are" button at 1/4 from right (75% from left)
-    const weAreBtn = document.getElementById('weAreButton');
-    if (weAreBtn) {
-        weAreBtn.style.left = '75%'; // 1/4 from right = 75% from left
-        weAreBtn.style.right = 'auto';
+    // Position "we are" button to the left of "stage design" with 5 spacebars spacing
+    if (stageDesignBtn && weAreBtn) {
+        const stageDesignLeft = screenWidth / 3; // Stage design is at 1/3 from left
+        const weAreTextWidth = tempCtx.measureText(weAreBtn.textContent).width;
+        // Position we are button so that 5 spacebars fit between it and stage design
+        const weAreLeft = stageDesignLeft - fiveSpacesWidth - weAreTextWidth;
+        weAreBtn.style.left = `${weAreLeft}px`;
         weAreBtn.style.position = 'absolute';
+        weAreBtn.style.right = 'auto';
         
         // Remove any existing dash separator
         const existingDash = document.getElementById('dashSeparator');
