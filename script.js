@@ -396,6 +396,9 @@ points.forEach(point => {
     }
     point.opacity = 1.0;
     point.targetOpacity = 1.0;
+    point.hoverSize = 1.0;
+    point.isHovered = false;
+    point.hoverStartTime = 0;
 });
 
 // Check if mouse is hovering over a point
