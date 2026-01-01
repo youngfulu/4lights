@@ -1510,17 +1510,11 @@ function draw() {
         ctx.stroke();
     }
     
-    // Calculate center offset for parallax
+    // Calculate center offset for parallax (centerX and centerY already defined above at line 1473)
     const offsetX = (smoothMouseX - centerX) * parallaxStrength;
     const offsetY = (smoothMouseY - centerY) * parallaxStrength;
     
     // Cache mouse coordinates for hover detection (calculated once per frame)
-    const scaledMouseXForHover = ((smoothMouseX - centerX - cameraPanX) / globalZoomLevel) + centerX;
-    const scaledMouseYForHover = ((smoothMouseY - centerY - cameraPanY) / globalZoomLevel) + centerY;
-    
-    // Cache frequently used values
-    const centerX = canvas.width / 2;
-    const centerY = canvas.height / 2;
     const scaledMouseXForHover = ((smoothMouseX - centerX - cameraPanX) / globalZoomLevel) + centerX;
     const scaledMouseYForHover = ((smoothMouseY - centerY - cameraPanY) / globalZoomLevel) + centerY;
     const currentTime = performance.now(); // Cache current time to avoid repeated calls
