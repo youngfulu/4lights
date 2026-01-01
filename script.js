@@ -1297,58 +1297,35 @@ function positionFilterButtons() {
     const tempCtx = tempCanvas.getContext('2d');
     tempCtx.font = '14px Arial'; // Match button font
     
-    // Measure spacebar and dash widths
+    // Measure spacebar width
     const spaceWidth = tempCtx.measureText(' ').width;
-    const fiveSpacesWidth = spaceWidth * 5; // 5 spacebars
-    const dashText = '––––––––'; // 8 dashes
-    const dashWidth = tempCtx.measureText(dashText).width;
-    const totalSpacingWidth = fiveSpacesWidth + dashWidth + fiveSpacesWidth; // 5 spaces + 8 dashes + 5 spaces
     
-    // Find "stage design" button - it's the first one, at 1/3 from left
-    const stageDesignBtn = Array.from(buttons).find(btn => btn.textContent.trim().toLowerCase() === 'stage design');
-    const weAreBtn = document.getElementById('weAreButton');
-    
-    // Position "stage design" and other buttons starting at 1/3 from left (don't move them)
+    // Start position: 1/3 of screen from left
     let currentX = screenWidth / 3;
     
+    // Position buttons one by one with one spacebar width between them
     buttons.forEach((btn) => {
         btn.style.left = `${currentX}px`;
         btn.style.position = 'absolute';
         btn.style.transform = 'translateX(0)';
         
-        // Measure button text width and add one space for next button
+        // Measure button text width and add spacebar width for next button
         const textWidth = tempCtx.measureText(btn.textContent).width;
         currentX += textWidth + spaceWidth; // Button width + one space
     });
     
-    // Position "we are" button to the left of "stage design" with: 5 spacebars + 8 dashes + 5 spacebars
-    if (stageDesignBtn && weAreBtn) {
-        const stageDesignLeft = screenWidth / 3; // Stage design is at 1/3 from left
-        const weAreTextWidth = tempCtx.measureText(weAreBtn.textContent).width;
-        // Position we are button so that total spacing (5 spaces + 8 dashes + 5 spaces) fits between it and stage design
-        const weAreLeft = stageDesignLeft - totalSpacingWidth - weAreTextWidth;
-        weAreBtn.style.left = `${weAreLeft}px`;
-        weAreBtn.style.position = 'absolute';
+    // Position "we are" button at 1/4 from right (75% from left)
+    const weAreBtn = document.getElementById('weAreButton');
+    if (weAreBtn) {
+        weAreBtn.style.left = '75%'; // 1/4 from right = 75% from left
         weAreBtn.style.right = 'auto';
+        weAreBtn.style.position = 'absolute';
         
-        // Create separator element with 5 spaces + 8 dashes + 5 spaces
+        // Remove any existing dash separator
         const existingDash = document.getElementById('dashSeparator');
         if (existingDash) {
             existingDash.remove();
         }
-        const separatorSpan = document.createElement('span');
-        separatorSpan.id = 'dashSeparator';
-        separatorSpan.className = 'filter-button';
-        separatorSpan.textContent = '     ' + dashText + '     '; // 5 spaces + 8 dashes + 5 spaces
-        separatorSpan.style.position = 'absolute';
-        separatorSpan.style.left = `${weAreLeft + weAreTextWidth}px`;
-        separatorSpan.style.pointerEvents = 'none'; // Don't allow clicks on separator
-        separatorSpan.style.opacity = '1';
-        separatorSpan.style.color = '#fff';
-        separatorSpan.style.fontSize = '14px';
-        separatorSpan.style.fontFamily = 'Arial, sans-serif';
-        separatorSpan.style.textTransform = 'lowercase';
-        document.getElementById('filterButtons').appendChild(separatorSpan);
     }
 }
 
