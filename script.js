@@ -195,43 +195,54 @@ function loadImages() {
     }
     
     pathsToLoad.forEach((path, index) => {
-        const img = new Image();
-        img.onload = () => {
-            // Store image dimensions for aspect ratio calculation
-            imageCache[path] = {
-                img: img,
-                width: img.naturalWidth,
-                height: img.naturalHeight,
-                aspectRatio: img.naturalWidth / img.naturalHeight
+        const loadImage = (retryCount = 0) => {
+            const img = new Image();
+            img.onload = () => {
+                // Store image dimensions for aspect ratio calculation
+                imageCache[path] = {
+                    img: img,
+                    width: img.naturalWidth,
+                    height: img.naturalHeight,
+                    aspectRatio: img.naturalWidth / img.naturalHeight,
+                    error: false
+                };
+                imagesLoaded++;
+                console.log(`Loaded image ${imagesLoaded}/${totalImages}: ${path} (${img.naturalWidth}x${img.naturalHeight})`);
+                if (imagesLoaded === totalImages) {
+                    const successful = Object.values(imageCache).filter(c => c && !c.error).length;
+                    console.log(`All images processed: ${successful}/${totalImages} loaded successfully, ${totalImages - successful} failed`);
+                }
             };
-            imagesLoaded++;
-            console.log(`Loaded image ${imagesLoaded}/${totalImages}: ${path} (${img.naturalWidth}x${img.naturalHeight})`);
-            if (imagesLoaded === totalImages) {
-                console.log(`All ${imagesLoaded} images loaded successfully!`);
-            }
-        };
-        img.onerror = (error) => {
-            console.error(`Failed to load image: ${path}`, error);
-            // Store placeholder entry in cache to prevent repeated attempts
-            imageCache[path] = {
-                img: null,
-                width: 0,
-                height: 0,
-                aspectRatio: 1,
-                error: true
+            img.onerror = (error) => {
+                if (retryCount < 2) {
+                    // Retry up to 2 times
+                    console.warn(`Retrying load (${retryCount + 1}/2): ${path}`);
+                    setTimeout(() => loadImage(retryCount + 1), 500);
+                } else {
+                    // Final failure - store placeholder entry in cache
+                    console.error(`Failed to load image after 3 attempts: ${path}`);
+                    imageCache[path] = {
+                        img: null,
+                        width: 0,
+                        height: 0,
+                        aspectRatio: 1,
+                        error: true
+                    };
+                    imagesLoaded++;
+                    if (imagesLoaded === totalImages) {
+                        const successful = Object.values(imageCache).filter(c => c && !c.error).length;
+                        console.log(`Finished loading: ${successful}/${totalImages} images loaded successfully, ${totalImages - successful} failed`);
+                    }
+                }
             };
-            imagesLoaded++;
-            if (imagesLoaded === totalImages) {
-                const successful = Object.values(imageCache).filter(c => !c.error).length;
-                console.log(`Finished loading: ${successful}/${totalImages} images loaded successfully, ${totalImages - successful} failed`);
+            // Don't set crossOrigin for local file:// protocol - it causes CORS errors
+            // Only set it if using http/https protocol
+            if (window.location.protocol === 'http:' || window.location.protocol === 'https:') {
+                img.crossOrigin = 'anonymous';
             }
+            img.src = path;
         };
-        // Don't set crossOrigin for local file:// protocol - it causes CORS errors
-        // Only set it if using http/https protocol
-        if (window.location.protocol === 'http:' || window.location.protocol === 'https:') {
-            img.crossOrigin = 'anonymous';
-        }
-        img.src = path;
+        loadImage();
     });
     
     console.log(`Attempting to load ${pathsToLoad.length} images from "Imgae test " directory...`);
