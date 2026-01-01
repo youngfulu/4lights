@@ -338,7 +338,10 @@ function generatePoints(count, minDistance) {
                 alignmentStartTime: 0, // Start time for alignment animation
                 startX: 0, // Starting X position for animation
                 startY: 0, // Starting Y position for animation
-                startSize: 0 // Starting size for animation
+                startSize: 0, // Starting size for animation
+                hoverSize: 1.0, // Current hover size multiplier (animated)
+                isHovered: false, // Current hover state
+                hoverStartTime: 0 // Start time for hover zoom transition
             };
             
             validPoint = true;
