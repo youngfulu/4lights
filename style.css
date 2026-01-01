@@ -97,3 +97,23 @@ body {
     position: absolute;
     right: 25%;
 }
+
+/* Loading indicator */
+.loading-indicator {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #fff;
+    font-size: 18px;
+    font-family: Arial, sans-serif;
+    text-transform: lowercase;
+    z-index: 2000;
+    opacity: 1;
+    transition: opacity 1s ease-out;
+    pointer-events: none;
+}
+
+.loading-indicator.hidden {
+    opacity: 0;
+}
