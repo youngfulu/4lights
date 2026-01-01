@@ -1130,7 +1130,7 @@ function filterByTag(tag) {
     // Fade out non-filtered images
     points.forEach(p => {
         if (!filteredImages.includes(p)) {
-            p.targetOpacity = 0.1;
+            p.targetOpacity = 0.0; // Fade to completely invisible
             p.isFiltered = false;
         }
     });
@@ -1246,7 +1246,7 @@ function handleFilteredImageClick(clickedPoint) {
     points.forEach(p => {
         const pFolder = p.folderPath || p.imagePath.substring(0, p.imagePath.lastIndexOf('/'));
         if (pFolder !== clickedFolderForAlignment) {
-            p.targetOpacity = 0.1;
+            p.targetOpacity = 0.0; // Fade to completely invisible
         } else {
             p.targetOpacity = 1.0;
         }
