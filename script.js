@@ -71,6 +71,8 @@ let alignedEmojis = []; // Array of emoji objects that are currently aligned
 let currentFilterTag = null; // null = no filter, otherwise the tag to filter by
 let filteredImages = []; // Array of filtered image points
 let isFilterMode = false; // Whether we're in filter mode
+let isWeAreMode = false; // Whether we're in "we are" mode
+let weAreImages = []; // Array of "we are" image points
 
 // Zoom focal point (for mouse-relative zoom)
 let zoomFocalPointX = 0; // Screen X coordinate of zoom focal point
