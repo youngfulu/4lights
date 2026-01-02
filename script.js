@@ -372,6 +372,7 @@ function generatePoints(count, minDistance) {
                 emojiIndex: imageIndexCounter, // Unique index for each point
                 isAligned: false,
                 isFiltered: false,
+                isWeAreMode: false,
                 filteredFolder: null,
                 targetX: 0, // Target X position when aligned (center X)
                 targetY: 0, // Target Y position when aligned (horizontal line)
@@ -642,7 +643,7 @@ function handleWheel(e) {
     zoomFocalPointY = mouseY;
     
     // If in image selection mode or filter mode, use smooth gradual zoom towards mouse position
-    if (alignedEmojiIndex !== null || isFilterMode) {
+    if (alignedEmojiIndex !== null || isFilterMode || isWeAreMode) {
         const centerX = canvas.width / 2;
         const centerY = canvas.height / 2;
         
@@ -760,9 +761,14 @@ function findPointAtMouse(mouseX, mouseY) {
         const point = points[i];
         let x, y;
         
-        if (point.isAligned || point.isFiltered) {
-            x = point.isFiltered ? point.currentAlignedX : point.currentAlignedX;
-            y = point.isFiltered ? point.currentAlignedY : point.currentAlignedY;
+        if (point.isAligned || point.isFiltered || point.isWeAreMode) {
+            if (point.isWeAreMode) {
+                x = point.currentAlignedX;
+                y = point.currentAlignedY;
+            } else {
+                x = point.isFiltered ? point.currentAlignedX : point.currentAlignedX;
+                y = point.isFiltered ? point.currentAlignedY : point.currentAlignedY;
+            }
         } else {
             // Use layer-specific speed for parallax
             const speed = point.layer === 'layer_1' ? layer1Speed : layer2Speed;
@@ -1218,7 +1224,24 @@ function filterByTag(tag) {
 }
 
 function clearFilter() {
-    if (!isFilterMode) return;
+    if (!isFilterMode && !isWeAreMode) return;
+    
+    // Clear "we are" mode
+    if (isWeAreMode) {
+        isWeAreMode = false;
+        weAreImages.forEach(point => {
+            point.isWeAreMode = false;
+            point.targetX = point.originalBaseX;
+            point.targetY = point.originalBaseY;
+            point.targetSize = point.layer === 'layer_1' ? baseEmojiSize : baseEmojiSize * layer2SizeMultiplier;
+            point.targetOpacity = 1.0;
+            point.startX = point.currentAlignedX || point.x;
+            point.startY = point.currentAlignedY || point.y;
+            point.startSize = point.currentSize;
+            point.alignmentStartTime = performance.now();
+        });
+        weAreImages = [];
+    }
     
     currentFilterTag = null;
     isFilterMode = false;
@@ -1449,7 +1472,7 @@ function draw() {
             isZoomTransitioning = false;
             globalZoomLevel = zoomTransitionTargetLevel;
         }
-    } else if (alignedEmojiIndex !== null || isFilterMode) {
+    } else if (alignedEmojiIndex !== null || isFilterMode || isWeAreMode) {
         // Smooth gradual zoom interpolation in selection/filter mode (towards mouse focal point)
         const zoomSmoothness = 0.15; // Smooth interpolation factor (adjust for speed: lower = slower/smoother)
         globalZoomLevel += (targetZoomLevel - globalZoomLevel) * zoomSmoothness;
@@ -1912,7 +1935,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const backButton = document.getElementById('backButton');
     if (backButton) {
         backButton.addEventListener('click', () => {
-            if (isFilterMode) {
+            if (isFilterMode || isWeAreMode) {
                 clearFilter();
             } else {
                 unalignEmojis();
@@ -1929,9 +1952,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const filterButtons = document.querySelectorAll('.filter-button');
     filterButtons.forEach(btn => {
         if (btn.id === 'weAreButton') {
-            // Handle "we are" button separately if needed
+            // Handle "we are" button - show images from "We are" folder
             btn.addEventListener('click', () => {
-                // Add specific behavior for "we are" button if needed
+                showWeAreImages();
             });
         } else {
             const tag = btn.getAttribute('data-tag');
