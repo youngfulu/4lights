@@ -199,54 +199,73 @@ function loadImages() {
         return;
     }
     
-    pathsToLoad.forEach((path, index) => {
-        const loadImage = (retryCount = 0) => {
-            const img = new Image();
-            img.onload = () => {
-                // Store image dimensions for aspect ratio calculation
-                imageCache[path] = {
-                    img: img,
-                    width: img.naturalWidth,
-                    height: img.naturalHeight,
-                    aspectRatio: img.naturalWidth / img.naturalHeight,
-                    error: false
-                };
-                imagesLoaded++;
-                console.log(`Loaded image ${imagesLoaded}/${totalImages}: ${path} (${img.naturalWidth}x${img.naturalHeight})`);
-                if (imagesLoaded === totalImages) {
-                    const successful = Object.values(imageCache).filter(c => c && !c.error).length;
-                    console.log(`All images processed: ${successful}/${totalImages} loaded successfully, ${totalImages - successful} failed`);
-                    // Hide loading indicator after all images are loaded
-                    hideLoadingIndicator();
-                }
-            };
-            img.onerror = (error) => {
-                if (retryCount < 2) {
-                    // Retry up to 2 times
-                    console.warn(`Retrying load (${retryCount + 1}/2): ${path}`);
-                    setTimeout(() => loadImage(retryCount + 1), 500);
-                } else {
-                    // Final failure - don't store in cache, just skip it
-                    console.error(`Failed to load image after 3 attempts: ${path}`);
-                    // Don't add to cache - this way failed images won't be drawn
+    // Optimize: Load images in parallel batches for faster loading
+    // Load all images simultaneously instead of sequentially
+    const BATCH_SIZE = 10; // Load 10 images at a time
+    let currentBatch = 0;
+    
+    const loadBatch = () => {
+        const start = currentBatch * BATCH_SIZE;
+        const end = Math.min(start + BATCH_SIZE, pathsToLoad.length);
+        const batch = pathsToLoad.slice(start, end);
+        
+        batch.forEach((path) => {
+            const loadImage = (retryCount = 0) => {
+                const img = new Image();
+                img.onload = () => {
+                    // Store image dimensions for aspect ratio calculation
+                    imageCache[path] = {
+                        img: img,
+                        width: img.naturalWidth,
+                        height: img.naturalHeight,
+                        aspectRatio: img.naturalWidth / img.naturalHeight,
+                        error: false
+                    };
                     imagesLoaded++;
+                    if (imagesLoaded % 10 === 0 || imagesLoaded === totalImages) {
+                        console.log(`Loaded ${imagesLoaded}/${totalImages} images...`);
+                    }
                     if (imagesLoaded === totalImages) {
                         const successful = Object.values(imageCache).filter(c => c && !c.error).length;
-                        console.log(`Finished loading: ${successful}/${totalImages} images loaded successfully, ${totalImages - successful} failed`);
+                        console.log(`All images processed: ${successful}/${totalImages} loaded successfully, ${totalImages - successful} failed`);
                         // Hide loading indicator after all images are loaded
                         hideLoadingIndicator();
                     }
+                };
+                img.onerror = (error) => {
+                    if (retryCount < 1) {
+                        // Reduced retries for faster loading
+                        setTimeout(() => loadImage(retryCount + 1), 200);
+                    } else {
+                        // Final failure - don't store in cache, just skip it
+                        imagesLoaded++;
+                        if (imagesLoaded === totalImages) {
+                            const successful = Object.values(imageCache).filter(c => c && !c.error).length;
+                            console.log(`Finished loading: ${successful}/${totalImages} images loaded successfully, ${totalImages - successful} failed`);
+                            // Hide loading indicator after all images are loaded
+                            hideLoadingIndicator();
+                        }
+                    }
+                };
+                // Don't set crossOrigin for local file:// protocol - it causes CORS errors
+                // Only set it if using http/https protocol
+                if (window.location.protocol === 'http:' || window.location.protocol === 'https:') {
+                    img.crossOrigin = 'anonymous';
                 }
+                img.src = path;
             };
-            // Don't set crossOrigin for local file:// protocol - it causes CORS errors
-            // Only set it if using http/https protocol
-            if (window.location.protocol === 'http:' || window.location.protocol === 'https:') {
-                img.crossOrigin = 'anonymous';
-            }
-            img.src = path;
-        };
-        loadImage();
-    });
+            loadImage();
+        });
+        
+        currentBatch++;
+        if (end < pathsToLoad.length) {
+            // Load next batch immediately (parallel loading)
+            setTimeout(loadBatch, 0);
+        }
+    };
+    
+    // Start loading all batches in parallel
+    loadBatch();
     
     console.log(`Attempting to load ${pathsToLoad.length} images from "Imgae test " directory...`);
     console.log('First 3 image paths:', pathsToLoad.slice(0, 3));
@@ -1573,7 +1592,7 @@ function draw() {
         let x, y;
         let imageSize;
         
-        if (point.isAligned || point.isFiltered || (point.alignmentStartTime > 0 && !point.isAligned && !point.isFiltered)) {
+        if (point.isAligned || point.isFiltered || point.isWeAreMode || (point.alignmentStartTime > 0 && !point.isAligned && !point.isFiltered && !point.isWeAreMode)) {
             // Time-based smooth animation with easing (1.25 seconds duration)
             const elapsed = currentTime - point.alignmentStartTime; // Use cached time
             const progress = Math.min(elapsed / alignmentAnimationDuration, 1.0);
@@ -1878,8 +1897,8 @@ function updateBackButtonVisibility() {
     const backButton = document.getElementById('backButton');
     if (!backButton) return;
     
-    // Show back button when images are aligned or filtered
-    if (alignedEmojiIndex !== null || isFilterMode) {
+    // Show back button when images are aligned, filtered, or in we are mode
+    if (alignedEmojiIndex !== null || isFilterMode || isWeAreMode) {
         backButton.style.display = 'flex';
     } else {
         backButton.style.display = 'none';
