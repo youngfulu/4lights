@@ -2072,8 +2072,25 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-// Start animation
-animate();
+// Start animation after DOM is ready and canvas is initialized
+// Wait for DOMContentLoaded to ensure canvas is available
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        // Small delay to ensure canvas is fully initialized
+        setTimeout(() => {
+            if (canvas && typeof animate === 'function') {
+                animate();
+            }
+        }, 100);
+    });
+} else {
+    // DOM already loaded
+    setTimeout(() => {
+        if (canvas && typeof animate === 'function') {
+            animate();
+        }
+    }, 100);
+}
 
 // Redraw on resize
 window.addEventListener('resize', () => {
