@@ -43,3 +43,4 @@ echo ""
 echo "Note: For better PNG compression, install pngquant:"
 echo "  brew install pngquant"
 
+

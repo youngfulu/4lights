@@ -202,73 +202,86 @@ function loadImages() {
         return;
     }
     
-    // Optimize: Load images in parallel batches for faster loading
-    // Load all images simultaneously instead of sequentially
-    const BATCH_SIZE = 10; // Load 10 images at a time
-    let currentBatch = 0;
+    // Load images with controlled concurrency to prevent browser freeze
+    const MAX_CONCURRENT = 5; // Limit to 5 concurrent image loads to prevent freezing
+    let activeLoads = 0;
+    let currentIndex = 0;
     
-    const loadBatch = () => {
-        const start = currentBatch * BATCH_SIZE;
-        const end = Math.min(start + BATCH_SIZE, pathsToLoad.length);
-        const batch = pathsToLoad.slice(start, end);
+    const loadNextImage = () => {
+        // Don't load more than MAX_CONCURRENT images at once
+        if (activeLoads >= MAX_CONCURRENT || currentIndex >= pathsToLoad.length) {
+            return;
+        }
         
-        batch.forEach((path) => {
-            const loadImage = (retryCount = 0) => {
-                const img = new Image();
-                img.onload = () => {
-                    // Store image dimensions for aspect ratio calculation
-                    imageCache[path] = {
-                        img: img,
-                        width: img.naturalWidth,
-                        height: img.naturalHeight,
-                        aspectRatio: img.naturalWidth / img.naturalHeight,
-                        error: false
-                    };
+        const path = pathsToLoad[currentIndex++];
+        activeLoads++;
+        
+        const loadImage = (retryCount = 0) => {
+            const img = new Image();
+            img.onload = () => {
+                // Store image dimensions for aspect ratio calculation
+                imageCache[path] = {
+                    img: img,
+                    width: img.naturalWidth,
+                    height: img.naturalHeight,
+                    aspectRatio: img.naturalWidth / img.naturalHeight,
+                    error: false
+                };
+                imagesLoaded++;
+                activeLoads--;
+                
+                if (imagesLoaded % 10 === 0 || imagesLoaded === totalImages) {
+                    console.log(`Loaded ${imagesLoaded}/${totalImages} images...`);
+                }
+                
+                if (imagesLoaded === totalImages) {
+                    const successful = Object.values(imageCache).filter(c => c && !c.error).length;
+                    console.log(`All images processed: ${successful}/${totalImages} loaded successfully, ${totalImages - successful} failed`);
+                    // Hide loading indicator after all images are loaded
+                    hideLoadingIndicator();
+                } else {
+                    // Load next image after this one completes
+                    setTimeout(loadNextImage, 0);
+                }
+            };
+            img.onerror = (error) => {
+                activeLoads--;
+                if (retryCount < 1) {
+                    // Retry once
+                    setTimeout(() => loadImage(retryCount + 1), 200);
+                } else {
+                    // Final failure - don't store in cache, just skip it
                     imagesLoaded++;
-                    if (imagesLoaded % 10 === 0 || imagesLoaded === totalImages) {
-                        console.log(`Loaded ${imagesLoaded}/${totalImages} images...`);
-                    }
                     if (imagesLoaded === totalImages) {
                         const successful = Object.values(imageCache).filter(c => c && !c.error).length;
-                        console.log(`All images processed: ${successful}/${totalImages} loaded successfully, ${totalImages - successful} failed`);
+                        console.log(`Finished loading: ${successful}/${totalImages} images loaded successfully, ${totalImages - successful} failed`);
                         // Hide loading indicator after all images are loaded
                         hideLoadingIndicator();
-                    }
-                };
-                img.onerror = (error) => {
-                    if (retryCount < 1) {
-                        // Reduced retries for faster loading
-                        setTimeout(() => loadImage(retryCount + 1), 200);
                     } else {
-                        // Final failure - don't store in cache, just skip it
-                        imagesLoaded++;
-                        if (imagesLoaded === totalImages) {
-                            const successful = Object.values(imageCache).filter(c => c && !c.error).length;
-                            console.log(`Finished loading: ${successful}/${totalImages} images loaded successfully, ${totalImages - successful} failed`);
-                            // Hide loading indicator after all images are loaded
-                            hideLoadingIndicator();
-                        }
+                        // Continue loading next image
+                        setTimeout(loadNextImage, 0);
                     }
-                };
-                // Don't set crossOrigin for local file:// protocol - it causes CORS errors
-                // Only set it if using http/https protocol
-                if (window.location.protocol === 'http:' || window.location.protocol === 'https:') {
-                    img.crossOrigin = 'anonymous';
                 }
-                img.src = path;
             };
-            loadImage();
-        });
+            // Don't set crossOrigin for local file:// protocol - it causes CORS errors
+            // Only set it if using http/https protocol
+            if (window.location.protocol === 'http:' || window.location.protocol === 'https:') {
+                img.crossOrigin = 'anonymous';
+            }
+            img.src = path;
+        };
+        loadImage();
         
-        currentBatch++;
-        if (end < pathsToLoad.length) {
-            // Load next batch immediately (parallel loading)
-            setTimeout(loadBatch, 0);
+        // Continue loading if we can load more concurrently
+        if (currentIndex < pathsToLoad.length) {
+            setTimeout(loadNextImage, 0);
         }
     };
     
-    // Start loading all batches in parallel
-    loadBatch();
+    // Start loading images with controlled concurrency
+    for (let i = 0; i < Math.min(MAX_CONCURRENT, pathsToLoad.length); i++) {
+        setTimeout(loadNextImage, 0);
+    }
     
     console.log(`Attempting to load ${pathsToLoad.length} images from "Imgae test " directory...`);
     console.log('First 3 image paths:', pathsToLoad.slice(0, 3));

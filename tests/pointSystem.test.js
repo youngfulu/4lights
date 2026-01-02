@@ -83,3 +83,4 @@ test('initializePointSizes sets correct sizes', () => {
 
 console.log('\nAll tests completed!');
 
+
