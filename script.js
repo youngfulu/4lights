@@ -1224,6 +1224,97 @@ function filterByTag(tag) {
     updateBackButtonVisibility();
 }
 
+// Show "We are" images
+function showWeAreImages() {
+    // Clear any existing filter or alignment
+    if (isFilterMode) {
+        clearFilter();
+    }
+    if (alignedEmojiIndex !== null) {
+        unalignEmojis();
+    }
+    
+    isWeAreMode = true;
+    
+    // Find all images from "We are" folder
+    const weAreFolderNames = ['we are', 'We are'];
+    weAreImages = points.filter(point => {
+        const folderPath = point.folderPath || point.imagePath.substring(0, point.imagePath.lastIndexOf('/'));
+        return weAreFolderNames.some(name => folderPath.toLowerCase().includes(name.toLowerCase()));
+    });
+    
+    // If no images found, use all images as fallback
+    if (weAreImages.length === 0) {
+        console.warn('No images found in "We are" folder, using all images');
+        weAreImages = [...points];
+    }
+    
+    // Fade out all non-"we are" images (1.5 second fade)
+    points.forEach(p => {
+        if (!weAreImages.includes(p)) {
+            p.targetOpacity = 0.0; // Fade to invisible
+        } else {
+            p.targetOpacity = 1.0; // Keep "we are" images visible
+            p.isWeAreMode = true;
+        }
+    });
+    
+    // Position "we are" images vertically on the right side of screen
+    const rightPadding = 50; // Padding from right edge
+    const topPadding = 80; // Padding from top
+    const bottomPadding = 80; // Padding from bottom
+    const availableHeight = canvas.height - topPadding - bottomPadding;
+    const availableWidth = canvas.width * 0.3; // Use 30% of screen width on right side
+    const rightX = canvas.width - rightPadding - availableWidth / 2; // Center of right area
+    
+    // Calculate size to fit all images vertically
+    const gap = 30; // Gap between images
+    const totalGaps = (weAreImages.length - 1) * gap;
+    const availableImageHeight = availableHeight - totalGaps;
+    const imageHeight = availableImageHeight / weAreImages.length;
+    
+    // Scale images to fit width while maintaining aspect ratio
+    const maxImageWidth = availableWidth * 0.9; // 90% of available width
+    
+    weAreImages.forEach((point, index) => {
+        point.targetX = rightX;
+        point.targetY = topPadding + (index * (imageHeight + gap)) + imageHeight / 2;
+        
+        // Calculate size based on aspect ratio to fit in available space
+        const imageData = imageCache[point.imagePath];
+        if (imageData && imageData.aspectRatio) {
+            // Fit to height first, then check width
+            let targetHeight = imageHeight;
+            let targetWidth = targetHeight * imageData.aspectRatio;
+            
+            // If too wide, scale down to fit width
+            if (targetWidth > maxImageWidth) {
+                targetWidth = maxImageWidth;
+                targetHeight = targetWidth / imageData.aspectRatio;
+            }
+            
+            // Use the larger dimension as size
+            point.targetSize = Math.max(targetWidth, targetHeight);
+        } else {
+            point.targetSize = Math.min(imageHeight, maxImageWidth);
+        }
+        
+        point.targetOpacity = 1.0;
+        point.startX = point.currentAlignedX || point.originalBaseX || point.x;
+        point.startY = point.currentAlignedY || point.originalBaseY || point.y;
+        point.startSize = point.currentSize;
+        point.alignmentStartTime = performance.now();
+    });
+    
+    // Reset camera
+    currentZoomIndex = initialZoomIndex;
+    startZoomTransition();
+    targetCameraPanX = 0;
+    targetCameraPanY = 0;
+    
+    updateBackButtonVisibility();
+}
+
 function clearFilter() {
     if (!isFilterMode && !isWeAreMode) return;
     
@@ -1609,8 +1700,10 @@ function draw() {
         const speed = point.layer === 'layer_1' ? layer1Speed : layer2Speed;
         
         // Animate opacity (optimized: skip if already at target)
+        // Use slower fade (1.5s) for we are mode, faster (1s) for others
         if (Math.abs(point.opacity - point.targetOpacity) > 0.001) {
-            point.opacity += (point.targetOpacity - point.opacity) * opacitySmoothness;
+            const smoothness = isWeAreMode ? weAreOpacitySmoothness : opacitySmoothness;
+            point.opacity += (point.targetOpacity - point.opacity) * smoothness;
         } else {
             point.opacity = point.targetOpacity;
         }
