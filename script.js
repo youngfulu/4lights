@@ -22,6 +22,7 @@ const panSmoothness = 0.18; // Smoothness factor for camera pan interpolation (m
 // To reach ~0.01 in 1 second (60 frames): (1 - smoothness)^60 ≈ 0.01
 // smoothness ≈ 0.075 for approximately 1 second fade
 const opacitySmoothness = 0.08; // Fades to ~0 in approximately 1 second at 60fps
+const weAreOpacitySmoothness = 0.05; // Fades to ~0 in approximately 1.5 seconds at 60fps
 
 // Mouse/touch position
 let mouseX = canvas.width / 2;
