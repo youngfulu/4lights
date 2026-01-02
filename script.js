@@ -1724,8 +1724,8 @@ function draw() {
             point.currentAlignedY = point.startY + (point.targetY - point.startY) * easeProgress;
             point.currentSize = point.startSize + (point.targetSize - point.startSize) * easeProgress;
             
-            // If aligned or filtered, use target position; otherwise transitioning back
-            if (point.isAligned || point.isFiltered) {
+            // If aligned, filtered, or in we are mode, use target position; otherwise transitioning back
+            if (point.isAligned || point.isFiltered || point.isWeAreMode) {
                 x = point.currentAlignedX;
                 y = point.currentAlignedY;
                 imageSize = point.currentSize;
