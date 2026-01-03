@@ -1,13 +1,31 @@
-const canvas = document.getElementById('canvas');
-const ctx = canvas.getContext('2d');
+// Canvas and context - initialized after DOM ready to prevent crashes
+let canvas = null;
+let ctx = null;
 
 // Set canvas size
 function resizeCanvas() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    if (canvas) {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
 }
-resizeCanvas();
-window.addEventListener('resize', resizeCanvas);
+
+// Initialize canvas after DOM is ready
+function initCanvas() {
+    canvas = document.getElementById('canvas');
+    if (!canvas) {
+        console.error('Canvas element not found!');
+        return false;
+    }
+    ctx = canvas.getContext('2d');
+    if (!ctx) {
+        console.error('Could not get 2d context!');
+        return false;
+    }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+    return true;
+}
 
 // Emoji size settings - MUST be declared before use
 const baseEmojiSize = 96; // Base size for layer_1 (4x larger: 24 * 4 = 96)
@@ -24,9 +42,9 @@ const panSmoothness = 0.18; // Smoothness factor for camera pan interpolation (m
 const opacitySmoothness = 0.08; // Fades to ~0 in approximately 1 second at 60fps
 const weAreOpacitySmoothness = 0.05; // Fades to ~0 in approximately 1.5 seconds at 60fps
 
-// Mouse/touch position
-let mouseX = canvas.width / 2;
-let mouseY = canvas.height / 2;
+// Mouse/touch position (initialized after canvas)
+let mouseX = window.innerWidth / 2;
+let mouseY = window.innerHeight / 2;
 let targetMouseX = mouseX;
 let targetMouseY = mouseY;
 
@@ -2018,11 +2036,25 @@ function hideLoadingIndicator() {
     }
 }
 
-// Animation loop
+// Animation loop with visibility check
+let animationFrameId = null;
+let isPageVisible = true;
+
 function animate() {
-    draw();
-    requestAnimationFrame(animate);
+    // Only animate when page is visible
+    if (isPageVisible && canvas && ctx) {
+        draw();
+    }
+    animationFrameId = requestAnimationFrame(animate);
 }
+
+// Stop animation when page is hidden to save resources
+document.addEventListener('visibilitychange', () => {
+    isPageVisible = !document.hidden;
+    if (!isPageVisible && animationFrameId) {
+        // Page hidden - could cancel animation, but we'll just skip drawing
+    }
+});
 
 // Back button functionality
 function updateBackButtonVisibility() {
