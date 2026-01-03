@@ -7,8 +7,16 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <!-- Loading screen -->
+    <div id="loadingIndicator" class="loading-indicator">
+        <div id="loadingText" class="loading-text"></div>
+    </div>
+    
     <canvas id="canvas"></canvas>
     <button id="backButton" class="back-button" style="display: none;">back</button>
+    
+    <!-- About text (for "We are" button) -->
+    <div id="aboutText" class="about-text" style="display: none;"></div>
     
     <!-- Filter buttons -->
     <div id="filterButtons" class="filter-buttons">
@@ -20,6 +28,7 @@
     </div>
     
     <script src="images.js"></script>
+    <script src="about.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

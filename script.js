@@ -71,6 +71,7 @@ let alignedEmojis = []; // Array of emoji objects that are currently aligned
 let currentFilterTag = null; // null = no filter, otherwise the tag to filter by
 let filteredImages = []; // Array of filtered image points
 let isFilterMode = false; // Whether we're in filter mode
+let isWeAreMode = false; // Whether we're in "We are" mode
 
 // Zoom focal point (for mouse-relative zoom)
 let zoomFocalPointX = 0; // Screen X coordinate of zoom focal point
@@ -187,8 +188,99 @@ const imageCache = {};
 let imagesLoaded = 0;
 let totalImages = 0;
 
+// Loading text variables
+let allWordsVisible = false;
+let visibleWordsCount = 0;
+let totalWords = 0;
+
+// Initialize loading text animation
+function initLoadingText() {
+    const loadingTextEl = document.getElementById('loadingText');
+    if (!loadingTextEl) {
+        console.error('loadingText element not found!');
+        return;
+    }
+    
+    const text = "Welcome to Spatial Playground";
+    // Split by space - ВАЖНО: не фильтруем, просто разбиваем
+    const words = text.split(' ');
+    // Убираем пустые строки ТОЛЬКО после split
+    const filteredWords = words.filter(w => w.length > 0);
+    totalWords = filteredWords.length;
+    visibleWordsCount = 0;
+    allWordsVisible = false;
+    
+    console.log('Initializing loading text:', text);
+    console.log('Total words:', totalWords);
+    console.log('Filtered words array:', filteredWords);
+    console.log('Original split:', words);
+    
+    // Clear and prepare container
+    loadingTextEl.innerHTML = '';
+    
+    // Create word elements - КАЖДОЕ слово отдельно, ВКЛЮЧАЯ "Spatial"
+    filteredWords.forEach((word, index) => {
+        const wordSpan = document.createElement('span');
+        wordSpan.className = 'word';
+        wordSpan.textContent = word;
+        // НЕ устанавливаем inline opacity - используем только CSS
+        loadingTextEl.appendChild(wordSpan);
+        
+        console.log(`Created word ${index + 1}/${totalWords}: "${word}"`);
+        
+        // Animate word appearance with 0.6s delay per word
+        setTimeout(() => {
+            // Добавляем класс visible - CSS transition сработает
+            wordSpan.classList.add('visible');
+            visibleWordsCount++;
+            
+            console.log(`Word ${index + 1}/${totalWords} "${word}" - class "visible" added, count: ${visibleWordsCount}/${totalWords}`);
+            
+            // Check if all words are now visible
+            if (visibleWordsCount >= totalWords) {
+                // Даем время для CSS transition (0.6s)
+                setTimeout(() => {
+                    allWordsVisible = true;
+                    console.log('All words are now visible!', { totalWords, visibleWordsCount, allWords: filteredWords });
+                    checkIfReadyToShowImages();
+                }, 650); // Немного больше чем transition duration
+            }
+        }, index * 600); // 0.6 seconds per word
+    });
+}
+
+// Check if ready to show images (both words and images must be ready)
+function checkIfReadyToShowImages() {
+    if (allWordsVisible && imagesLoaded >= totalImages) {
+        hideLoadingIndicator();
+    }
+}
+
+// Hide loading indicator and show canvas
+let loadingComplete = false;
+function hideLoadingIndicator() {
+    if (loadingComplete) return;
+    loadingComplete = true;
+    
+    const loadingIndicator = document.getElementById('loadingIndicator');
+    if (loadingIndicator) {
+        loadingIndicator.classList.add('hidden');
+        setTimeout(() => {
+            if (loadingIndicator.parentNode) {
+                loadingIndicator.parentNode.removeChild(loadingIndicator);
+            }
+        }, 1000);
+    }
+    
+    if (canvas) {
+        canvas.classList.add('images-loaded');
+    }
+}
+
 // Load all images with better error handling
 function loadImages() {
+    // Start loading text animation FIRST
+    initLoadingText();
     const uniquePaths = [...new Set(imagePaths)]; // Remove duplicates
     const pathsToLoad = uniquePaths; // Load all images, no limit
     totalImages = pathsToLoad.length;
@@ -213,9 +305,10 @@ function loadImages() {
                 };
                 imagesLoaded++;
                 console.log(`Loaded image ${imagesLoaded}/${totalImages}: ${path} (${img.naturalWidth}x${img.naturalHeight})`);
-                if (imagesLoaded === totalImages) {
+                if (imagesLoaded >= totalImages) {
                     const successful = Object.values(imageCache).filter(c => c && !c.error).length;
                     console.log(`All images processed: ${successful}/${totalImages} loaded successfully, ${totalImages - successful} failed`);
+                    checkIfReadyToShowImages();
                 }
             };
             img.onerror = (error) => {
@@ -228,9 +321,10 @@ function loadImages() {
                     console.error(`Failed to load image after 3 attempts: ${path}`);
                     // Don't add to cache - this way failed images won't be drawn
                     imagesLoaded++;
-                    if (imagesLoaded === totalImages) {
+                    if (imagesLoaded >= totalImages) {
                         const successful = Object.values(imageCache).filter(c => c && !c.error).length;
                         console.log(`Finished loading: ${successful}/${totalImages} images loaded successfully, ${totalImages - successful} failed`);
+                        checkIfReadyToShowImages();
                     }
                 }
             };
@@ -1092,10 +1186,22 @@ function filterByTag(tag) {
     isFilterMode = true;
     
     // Find all images matching the tag
+    // Tags can be in filename or folder name
     filteredImages = points.filter(point => {
-        const filename = point.imagePath.toLowerCase();
+        const pathLower = point.imagePath.toLowerCase();
+        const folderLower = (point.folderPath || '').toLowerCase();
+        
+        // Check for tag patterns: _stage, _install, _tech, _concept
+        // Also check folder names and filenames containing tag words
         const tagPattern = `_${tag}`;
-        return filename.includes(tagPattern);
+        const tagWord = tag === 'stage' ? 'stage' : 
+                       tag === 'install' ? 'install' : 
+                       tag === 'tech' ? 'tech' : 
+                       tag === 'concept' ? 'concept' : tag;
+        
+        return pathLower.includes(tagPattern) || 
+               pathLower.includes(tagWord) || 
+               folderLower.includes(tagWord);
     });
     
     if (filteredImages.length === 0) {
@@ -1359,8 +1465,79 @@ function positionFilterButtons() {
     }
 }
 
+// Show "We are" about text
+function showWeAreAbout() {
+    // Clear any existing filter/alignment first
+    if (isFilterMode) {
+        clearFilter();
+    }
+    if (alignedEmojiIndex !== null) {
+        unalignEmojis();
+    }
+    
+    // Fade out all images in 1 second
+    points.forEach(p => {
+        p.targetOpacity = 0.0;
+    });
+    
+    isWeAreMode = true;
+    
+    // Display about text from embedded constant
+    const aboutTextEl = document.getElementById('aboutText');
+    if (aboutTextEl && typeof ABOUT_TEXT !== 'undefined') {
+        // Format text: preserve line breaks
+        aboutTextEl.innerHTML = ABOUT_TEXT.split('\n').map(line => {
+            if (line.trim() === '') {
+                return '<br>';
+            }
+            return `<p>${line}</p>`;
+        }).join('');
+        aboutTextEl.style.display = 'block';
+        aboutTextEl.style.opacity = '0';
+        // Fade in after images fade out (1 second)
+        setTimeout(() => {
+            aboutTextEl.style.opacity = '1';
+        }, 1000);
+    } else {
+        console.error('About text not available or element not found');
+    }
+    
+    // Show back button
+    updateBackButtonVisibility();
+}
+
+// Clear "We are" mode
+function clearWeAreMode() {
+    if (!isWeAreMode) return;
+    
+    isWeAreMode = false;
+    
+    const aboutTextEl = document.getElementById('aboutText');
+    if (aboutTextEl) {
+        aboutTextEl.style.opacity = '0';
+        setTimeout(() => {
+            aboutTextEl.style.display = 'none';
+        }, 500);
+    }
+    
+    // Restore images opacity
+    points.forEach(p => {
+        p.targetOpacity = 1.0;
+    });
+    
+    updateBackButtonVisibility();
+}
+
 // Draw points with parallax and emojis
 function draw() {
+    // IMPORTANT: Don't draw images until all words have appeared
+    if (!allWordsVisible) {
+        // Only draw black background while words are loading
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        return;
+    }
+    
     // Smooth mouse position (optimized - only when not dragging for better performance)
     if (!isDragging) {
     smoothMouseX += (targetMouseX - smoothMouseX) * 0.1;
@@ -1812,8 +1989,8 @@ function updateBackButtonVisibility() {
     const backButton = document.getElementById('backButton');
     if (!backButton) return;
     
-    // Show back button when images are aligned or filtered
-    if (alignedEmojiIndex !== null || isFilterMode) {
+    // Show back button when images are aligned, filtered, or in "We are" mode
+    if (alignedEmojiIndex !== null || isFilterMode || isWeAreMode) {
         backButton.style.display = 'flex';
     } else {
         backButton.style.display = 'none';
@@ -1825,7 +2002,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const backButton = document.getElementById('backButton');
     if (backButton) {
         backButton.addEventListener('click', () => {
-            if (isFilterMode) {
+            if (isWeAreMode) {
+                clearWeAreMode();
+            } else if (isFilterMode) {
                 clearFilter();
             } else {
                 unalignEmojis();
@@ -1842,9 +2021,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const filterButtons = document.querySelectorAll('.filter-button');
     filterButtons.forEach(btn => {
         if (btn.id === 'weAreButton') {
-            // Handle "we are" button separately if needed
+            // Handle "we are" button - show about text
             btn.addEventListener('click', () => {
-                // Add specific behavior for "we are" button if needed
+                showWeAreAbout();
             });
         } else {
             const tag = btn.getAttribute('data-tag');
