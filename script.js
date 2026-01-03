@@ -252,13 +252,24 @@ function loadImages() {
                     console.log(`Loaded ${imagesLoaded}/${totalImages} images...`);
                 }
                 
+                // Progressive display: show images after first 10 load
+                if (imagesLoaded >= 10 && !loadingComplete) {
+                    // Allow drawing after first 10 images load
+                    loadingComplete = true;
+                    hideLoadingIndicator();
+                }
+                
                 if (imagesLoaded === totalImages) {
                     const successful = Object.values(imageCache).filter(c => c && !c.error).length;
                     console.log(`All images processed: ${successful}/${totalImages} loaded successfully, ${totalImages - successful} failed`);
                     // Hide loading indicator after all images are loaded
-                    hideLoadingIndicator();
-                } else {
-                    // Load next image after this one completes
+                    if (!loadingComplete) {
+                        hideLoadingIndicator();
+                    }
+                }
+                
+                // Load next image if we have capacity and more to load
+                if (activeLoads < MAX_CONCURRENT && currentIndex < pathsToLoad.length) {
                     setTimeout(loadNextImage, 0);
                 }
             };
