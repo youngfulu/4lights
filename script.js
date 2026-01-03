@@ -325,9 +325,6 @@ function loadImages() {
     }, 5000);
 }
 
-// Start loading images
-loadImages();
-
 // Calculate bounding box (1/5 from top and bottom)
 function getBoundingBox() {
     const screenHeight = canvas.height;
