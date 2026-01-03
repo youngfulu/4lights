@@ -2056,24 +2056,45 @@ document.addEventListener('visibilitychange', () => {
     }
 });
 
+// Cache DOM elements to avoid repeated queries
+let cachedBackButton = null;
+
 // Back button functionality
 function updateBackButtonVisibility() {
-    const backButton = document.getElementById('backButton');
-    if (!backButton) return;
+    // Cache back button element
+    if (!cachedBackButton) {
+        cachedBackButton = document.getElementById('backButton');
+    }
+    if (!cachedBackButton) return;
     
     // Show back button when images are aligned, filtered, or in we are mode
     if (alignedEmojiIndex !== null || isFilterMode || isWeAreMode) {
-        backButton.style.display = 'flex';
+        cachedBackButton.style.display = 'flex';
     } else {
-        backButton.style.display = 'none';
+        cachedBackButton.style.display = 'none';
     }
 }
 
-// Initialize back button and filter buttons after DOM is ready
-document.addEventListener('DOMContentLoaded', () => {
-    const backButton = document.getElementById('backButton');
-    if (backButton) {
-        backButton.addEventListener('click', () => {
+// Initialize everything after DOM is ready
+function initialize() {
+    // Initialize canvas first
+    if (!initCanvas()) {
+        console.error('Failed to initialize canvas!');
+        return;
+    }
+    
+    // Initialize mouse position after canvas is ready
+    mouseX = canvas.width / 2;
+    mouseY = canvas.height / 2;
+    targetMouseX = mouseX;
+    targetMouseY = mouseY;
+    smoothMouseX = mouseX;
+    smoothMouseY = mouseY;
+    
+    // Cache and setup back button
+    cachedBackButton = document.getElementById('backButton');
+    if (cachedBackButton) {
+        cachedBackButton.addEventListener('click', () => {
             if (isFilterMode || isWeAreMode) {
                 clearFilter();
             } else {
@@ -2088,6 +2109,7 @@ document.addEventListener('DOMContentLoaded', () => {
         positionFilterButtons();
     });
     
+    // Setup filter buttons
     const filterButtons = document.querySelectorAll('.filter-button');
     filterButtons.forEach(btn => {
         if (btn.id === 'weAreButton') {
@@ -2102,7 +2124,21 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
     });
-});
+    
+    // Start loading images
+    loadImages();
+    
+    // Start animation
+    animate();
+}
+
+// Wait for DOM to be ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initialize);
+} else {
+    // DOM already loaded
+    setTimeout(initialize, 0);
+}
 
 // Start animation after DOM is ready and canvas is initialized
 // Wait for DOMContentLoaded to ensure canvas is available
