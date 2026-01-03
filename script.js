@@ -1,6 +1,17 @@
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 
+// Performance/debug flags
+const DEBUG = false;
+const IMAGE_LOAD_CONCURRENCY = 4; // Limit parallel decodes/downloads to reduce jank
+const INITIAL_IMAGES_TO_LOAD = 12; // Load a small set eagerly for faster first render
+const MAX_LOADING_SCREEN_WAIT_MS = 3000; // Safety: never block on all images
+const APP_START_TIME = performance.now();
+
+function debugLog(...args) {
+    if (DEBUG) console.log(...args);
+}
+
 // Set canvas size
 function resizeCanvas() {
     canvas.width = window.innerWidth;
@@ -187,6 +198,8 @@ const imagePaths = [
 const imageCache = {};
 let imagesLoaded = 0;
 let totalImages = 0;
+let imagesLoadedSuccessfully = 0;
+const imageLoadPromises = new Map();
 
 // Loading text variables
 let allWordsVisible = false;
@@ -209,11 +222,7 @@ function initLoadingText() {
     totalWords = filteredWords.length;
     visibleWordsCount = 0;
     allWordsVisible = false;
-    
-    console.log('Initializing loading text:', text);
-    console.log('Total words:', totalWords);
-    console.log('Filtered words array:', filteredWords);
-    console.log('Original split:', words);
+    debugLog('Initializing loading text:', text, { totalWords, filteredWords, words });
     
     // Clear and prepare container
     loadingTextEl.innerHTML = '';
@@ -226,22 +235,21 @@ function initLoadingText() {
         // НЕ устанавливаем inline opacity - используем только CSS
         loadingTextEl.appendChild(wordSpan);
         
-        console.log(`Created word ${index + 1}/${totalWords}: "${word}"`);
+        debugLog(`Created word ${index + 1}/${totalWords}: "${word}"`);
         
         // Animate word appearance with 0.6s delay per word
         setTimeout(() => {
             // Добавляем класс visible - CSS transition сработает
             wordSpan.classList.add('visible');
             visibleWordsCount++;
-            
-            console.log(`Word ${index + 1}/${totalWords} "${word}" - class "visible" added, count: ${visibleWordsCount}/${totalWords}`);
+            debugLog(`Word ${index + 1}/${totalWords} "${word}" visible (${visibleWordsCount}/${totalWords})`);
             
             // Check if all words are now visible
             if (visibleWordsCount >= totalWords) {
                 // Даем время для CSS transition (0.6s)
                 setTimeout(() => {
                     allWordsVisible = true;
-                    console.log('All words are now visible!', { totalWords, visibleWordsCount, allWords: filteredWords });
+                    debugLog('All words are now visible!', { totalWords, visibleWordsCount, allWords: filteredWords });
                     checkIfReadyToShowImages();
                 }, 650); // Немного больше чем transition duration
             }
@@ -251,7 +259,12 @@ function initLoadingText() {
 
 // Check if ready to show images (both words and images must be ready)
 function checkIfReadyToShowImages() {
-    if (allWordsVisible && imagesLoaded >= totalImages) {
+    // Don't block first paint on full image set; show once words are done and
+    // either we have "enough" images to start or a safety timeout has passed.
+    const minToStart = Math.min(INITIAL_IMAGES_TO_LOAD, totalImages);
+    const timedOut = (performance.now() - APP_START_TIME) >= MAX_LOADING_SCREEN_WAIT_MS;
+    const enoughImages = imagesLoadedSuccessfully >= minToStart || imagesLoaded >= totalImages;
+    if (allWordsVisible && (enoughImages || timedOut)) {
         hideLoadingIndicator();
     }
 }
@@ -281,64 +294,126 @@ function hideLoadingIndicator() {
 function loadImages() {
     // Start loading text animation FIRST
     initLoadingText();
-    const uniquePaths = [...new Set(imagePaths)]; // Remove duplicates
-    const pathsToLoad = uniquePaths; // Load all images, no limit
-    totalImages = pathsToLoad.length;
+
+    const uniquePaths = [...new Set(imagePaths)];
+    totalImages = uniquePaths.length;
     imagesLoaded = 0;
-    
-    if (pathsToLoad.length === 0) {
+    imagesLoadedSuccessfully = 0;
+
+    if (uniquePaths.length === 0) {
         console.warn('No image paths to load.');
         return;
     }
-    
-    pathsToLoad.forEach((path, index) => {
-        const loadImage = (retryCount = 0) => {
-            const img = new Image();
-            img.onload = () => {
-                // Store image dimensions for aspect ratio calculation
-                imageCache[path] = {
-                    img: img,
-                    width: img.naturalWidth,
-                    height: img.naturalHeight,
-                    aspectRatio: img.naturalWidth / img.naturalHeight,
-                    error: false
-                };
-                imagesLoaded++;
-                console.log(`Loaded image ${imagesLoaded}/${totalImages}: ${path} (${img.naturalWidth}x${img.naturalHeight})`);
-                if (imagesLoaded >= totalImages) {
-                    const successful = Object.values(imageCache).filter(c => c && !c.error).length;
-                    console.log(`All images processed: ${successful}/${totalImages} loaded successfully, ${totalImages - successful} failed`);
-                    checkIfReadyToShowImages();
-                }
-            };
-            img.onerror = (error) => {
-                if (retryCount < 2) {
-                    // Retry up to 2 times
-                    console.warn(`Retrying load (${retryCount + 1}/2): ${path}`);
-                    setTimeout(() => loadImage(retryCount + 1), 500);
-                } else {
-                    // Final failure - don't store in cache, just skip it
-                    console.error(`Failed to load image after 3 attempts: ${path}`);
-                    // Don't add to cache - this way failed images won't be drawn
-                    imagesLoaded++;
-                    if (imagesLoaded >= totalImages) {
-                        const successful = Object.values(imageCache).filter(c => c && !c.error).length;
-                        console.log(`Finished loading: ${successful}/${totalImages} images loaded successfully, ${totalImages - successful} failed`);
-                        checkIfReadyToShowImages();
-                    }
-                }
-            };
-            // Don't set crossOrigin for local file:// protocol - it causes CORS errors
-            // Only set it if using http/https protocol
-            if (window.location.protocol === 'http:' || window.location.protocol === 'https:') {
-                img.crossOrigin = 'anonymous';
-            }
-            img.src = path;
-        };
-        loadImage();
+
+    debugLog(`Attempting to load ${uniquePaths.length} images...`);
+
+    const eagerPaths = uniquePaths.slice(0, INITIAL_IMAGES_TO_LOAD);
+    const deferredPaths = uniquePaths.slice(INITIAL_IMAGES_TO_LOAD);
+
+    // Eager: start quickly to get first pixels.
+    loadImagesWithConcurrency(eagerPaths).finally(() => {
+        checkIfReadyToShowImages();
     });
-    
-    console.log(`Attempting to load ${pathsToLoad.length} images from "Imgae test " directory...`);
+
+    // Deferred: avoid competing with main-thread startup work.
+    const startDeferred = () => loadImagesWithConcurrency(deferredPaths);
+    if ('requestIdleCallback' in window) {
+        window.requestIdleCallback(startDeferred, { timeout: 2000 });
+    } else {
+        setTimeout(startDeferred, 0);
+    }
+}
+
+function loadImagesWithConcurrency(paths) {
+    if (!paths || paths.length === 0) return Promise.resolve();
+
+    let nextIndex = 0;
+    const workerCount = Math.min(IMAGE_LOAD_CONCURRENCY, paths.length);
+
+    const workers = Array.from({ length: workerCount }, async () => {
+        while (nextIndex < paths.length) {
+            const path = paths[nextIndex++];
+            await loadImageWithRetry(path, 2);
+        }
+    });
+
+    return Promise.all(workers).then(() => undefined);
+}
+
+function loadImageWithRetry(path, retries) {
+    // De-dupe concurrent requests
+    if (imageLoadPromises.has(path)) return imageLoadPromises.get(path);
+
+    const promise = (async () => {
+        for (let attempt = 0; attempt <= retries; attempt++) {
+            try {
+                const imageData = await loadImageOnce(path);
+                if (imageData) return imageData;
+            } catch (e) {
+                if (attempt < retries) {
+                    // Small backoff
+                    await new Promise(r => setTimeout(r, 250 * (attempt + 1)));
+                }
+            }
+        }
+        return null;
+    })().finally(() => {
+        // Keep the promise cached so we never re-request the same image
+        checkIfReadyToShowImages();
+    });
+
+    imageLoadPromises.set(path, promise);
+    return promise;
+}
+
+function loadImageOnce(path) {
+    return new Promise((resolve, reject) => {
+        // If already cached, just count it as loaded (no double counting)
+        if (imageCache[path]) {
+            resolve(imageCache[path]);
+            return;
+        }
+
+        const img = new Image();
+        // Hint the browser to decode off the critical path where possible
+        img.decoding = 'async';
+
+        img.onload = async () => {
+            // Ensure decode has completed before first draw to reduce jank
+            if (typeof img.decode === 'function') {
+                try {
+                    await img.decode();
+                } catch {
+                    // decode() can reject for some formats; safe to ignore
+                }
+            }
+
+            imageCache[path] = {
+                img,
+                width: img.naturalWidth,
+                height: img.naturalHeight,
+                aspectRatio: img.naturalWidth / img.naturalHeight,
+                error: false
+            };
+
+            imagesLoaded++;
+            imagesLoadedSuccessfully++;
+            debugLog(`Loaded image ${imagesLoadedSuccessfully}/${totalImages}: ${path} (${img.naturalWidth}x${img.naturalHeight})`);
+            resolve(imageCache[path]);
+        };
+
+        img.onerror = () => {
+            imagesLoaded++;
+            debugLog(`Failed to load image: ${path}`);
+            reject(new Error(`Failed to load image: ${path}`));
+        };
+
+        // Don't set crossOrigin for local file:// protocol - it causes CORS errors
+        if (window.location.protocol === 'http:' || window.location.protocol === 'https:') {
+            img.crossOrigin = 'anonymous';
+        }
+        img.src = path;
+    });
 }
 
 // Start loading images
@@ -780,6 +855,29 @@ canvas.addEventListener('mouseleave', handleMouseLeave);
 const parallaxStrength = 0.02; // How much points move
 const layer1Speed = 1.0; // Speed for layer_1
 const layer2Speed = 0.5; // Speed for layer_2 (slower for depth effect)
+
+// Grid rendering cache (pattern-based, much cheaper than per-line loops)
+const gridSize = 25;
+let gridPattern = null;
+function getGridPattern() {
+    if (gridPattern) return gridPattern;
+    const tile = document.createElement('canvas');
+    tile.width = gridSize;
+    tile.height = gridSize;
+    const tctx = tile.getContext('2d');
+    // Transparent background; draw only the grid lines
+    tctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+    tctx.lineWidth = 1;
+    // Draw top and left lines so the pattern tiles seamlessly
+    tctx.beginPath();
+    tctx.moveTo(0.5, 0);
+    tctx.lineTo(0.5, gridSize);
+    tctx.moveTo(0, 0.5);
+    tctx.lineTo(gridSize, 0.5);
+    tctx.stroke();
+    gridPattern = ctx.createPattern(tile, 'repeat');
+    return gridPattern;
+}
 
 // Find point at mouse position for click detection
 function findPointAtMouse(mouseX, mouseY) {
@@ -1415,9 +1513,12 @@ function positionFilterButtons() {
     const buttons = document.querySelectorAll('.filter-button:not(#weAreButton)');
     const screenWidth = window.innerWidth;
     
-    // Create a temporary canvas to measure text width
-    const tempCanvas = document.createElement('canvas');
-    const tempCtx = tempCanvas.getContext('2d');
+    // Reuse a single canvas context for text measurement (avoid DOM churn on resize)
+    if (!positionFilterButtons._measureCtx) {
+        const tempCanvas = document.createElement('canvas');
+        positionFilterButtons._measureCtx = tempCanvas.getContext('2d');
+    }
+    const tempCtx = positionFilterButtons._measureCtx;
     tempCtx.font = '14px Arial'; // Match button font
     
     // Measure spacebar and dash widths
@@ -1665,36 +1766,18 @@ function draw() {
     ctx.translate(-centerX, -centerY);
     ctx.globalAlpha = 1.0; // Reset alpha for drawing within transform (will be set per-point)
     
-    // Draw grid (25x25 pixels, white, opacity 0.3)
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
-    ctx.lineWidth = 1;
-    
-    const gridSize = 25;
-    
+    // Draw grid using a cached repeating pattern (much cheaper than per-line loops)
+    const pattern = getGridPattern();
+
     // Calculate visible area in world coordinates (after transform)
     const visibleLeft = centerX - canvas.width / (2 * globalZoomLevel);
     const visibleRight = centerX + canvas.width / (2 * globalZoomLevel);
     const visibleTop = centerY - canvas.height / (2 * globalZoomLevel);
     const visibleBottom = centerY + canvas.height / (2 * globalZoomLevel);
-    
-    // Draw vertical lines
-    const startX = Math.floor(visibleLeft / gridSize) * gridSize;
-    const endX = Math.ceil(visibleRight / gridSize) * gridSize;
-    for (let x = startX; x <= endX; x += gridSize) {
-        ctx.beginPath();
-        ctx.moveTo(x, visibleTop);
-        ctx.lineTo(x, visibleBottom);
-        ctx.stroke();
-    }
-    
-    // Draw horizontal lines
-    const startY = Math.floor(visibleTop / gridSize) * gridSize;
-    const endY = Math.ceil(visibleBottom / gridSize) * gridSize;
-    for (let y = startY; y <= endY; y += gridSize) {
-        ctx.beginPath();
-        ctx.moveTo(visibleLeft, y);
-        ctx.lineTo(visibleRight, y);
-        ctx.stroke();
+
+    if (pattern) {
+        ctx.fillStyle = pattern;
+        ctx.fillRect(visibleLeft, visibleTop, visibleRight - visibleLeft, visibleBottom - visibleTop);
     }
     
     // Calculate center offset for parallax (centerX and centerY already defined above at line 1473)
@@ -1766,7 +1849,7 @@ function draw() {
             if (isHovered !== point.isHovered) {
                 // Hover state changed - start transition
                 point.isHovered = isHovered;
-                point.hoverStartTime = performance.now();
+                point.hoverStartTime = currentTime;
             }
             
             if (point.hoverStartTime > 0) {
@@ -2041,8 +2124,13 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Setup filter buttons
     positionFilterButtons();
+    let filterButtonsRaf = 0;
     window.addEventListener('resize', () => {
-        positionFilterButtons();
+        if (filterButtonsRaf) cancelAnimationFrame(filterButtonsRaf);
+        filterButtonsRaf = requestAnimationFrame(() => {
+            filterButtonsRaf = 0;
+            positionFilterButtons();
+        });
     });
     
     const filterButtons = document.querySelectorAll('.filter-button');
@@ -2065,15 +2153,20 @@ document.addEventListener('DOMContentLoaded', () => {
 animate();
 
 // Redraw on resize
+let resizeRaf = 0;
 window.addEventListener('resize', () => {
-    resizeCanvas();
-    // Regenerate points for new canvas size
-    const newPoints = generatePoints(100, 50);
-    points.length = 0;
-    points.push(...newPoints);
-    // Update mouse position
-    targetMouseX = canvas.width / 2;
-    targetMouseY = canvas.height / 2;
-    smoothMouseX = targetMouseX;
-    smoothMouseY = targetMouseY;
+    if (resizeRaf) cancelAnimationFrame(resizeRaf);
+    resizeRaf = requestAnimationFrame(() => {
+        resizeRaf = 0;
+        resizeCanvas();
+        // Regenerate points for new canvas size (debounced to avoid thrash while resizing)
+        const newPoints = generatePoints(100, 50);
+        points.length = 0;
+        points.push(...newPoints);
+        // Update mouse position
+        targetMouseX = canvas.width / 2;
+        targetMouseY = canvas.height / 2;
+        smoothMouseX = targetMouseX;
+        smoothMouseY = targetMouseY;
+    });
 });
