@@ -1039,114 +1039,93 @@ function handleEmojiClick(clickedPoint) {
             scrollIndicatorFadeTime = performance.now() + 3000; // Hide after 3 seconds of inactivity
         }
     } else {
-        // Desktop: Check if images fit in one line, otherwise use grid
-        const padding = 80; // Padding on each side (in screen coordinates)
+        // Desktop: Always use horizontal grid with equal height (max 1/3 screen height)
+        const maxImageHeight = canvas.height / 3; // Maximum height = 1/3 of screen height (in screen coordinates)
+        const horizontalGap = 35; // Gap between images (in world coordinates)
+        
+        // Calculate image dimensions for each image based on aspect ratio
+        // All images will have the same height (maxImageHeight in world coordinates)
+        let currentX = centerX;
+        const imageHeights = []; // Store heights for each image
+        const imageWidths = []; // Store widths for each image
+        
+        alignedEmojis.forEach((point) => {
+            const imageData = imageCache[point.imagePath];
+            let imageHeight = maxImageHeight;
+            let imageWidth = maxImageHeight;
+            
+            if (imageData && imageData.aspectRatio) {
+                // Calculate width based on aspect ratio to maintain proportions
+                if (imageData.aspectRatio >= 1) {
+                    // Landscape or square: height is maxImageHeight, width is calculated
+                    imageHeight = maxImageHeight;
+                    imageWidth = maxImageHeight * imageData.aspectRatio;
+                } else {
+                    // Portrait: width is maxImageHeight, height is calculated
+                    imageWidth = maxImageHeight;
+                    imageHeight = maxImageHeight / imageData.aspectRatio;
+                }
+            }
+            
+            imageHeights.push(imageHeight);
+            imageWidths.push(imageWidth);
+        });
+        
+        // Calculate total width needed (sum of all widths + gaps)
+        const totalWidth = imageWidths.reduce((sum, width) => sum + width, 0) + (alignedEmojis.length - 1) * horizontalGap;
+        
+        // Start position (centered)
+        let startX = centerX - totalWidth / 2;
+        
+        // Position images horizontally
+        alignedEmojis.forEach((point, index) => {
+            const imageWidth = imageWidths[index];
+            const imageHeight = imageHeights[index];
+            
+            point.isAligned = true;
+            point.targetX = startX + imageWidth / 2; // Center of image
+            point.targetY = centerY; // Horizontal line at center Y
+            point.targetSize = imageHeight; // Store height as targetSize (will be used for drawing)
+            point.targetImageWidth = imageWidth; // Store width separately
+            point.targetOpacity = 1.0;
+            
+            // Initialize animation start values
+            if (point.startX === undefined) {
+                point.startX = point.currentAlignedX || point.originalBaseX || 0;
+                point.startY = point.currentAlignedY || point.originalBaseY || 0;
+                point.startSize = point.currentSize || baseEmojiSize;
+                point.currentAlignedX = point.startX;
+                point.currentAlignedY = point.startY;
+                point.currentSize = point.startSize;
+            } else {
+                point.startX = point.currentAlignedX;
+                point.startY = point.currentAlignedY;
+                point.startSize = point.currentSize;
+            }
+            point.alignmentStartTime = performance.now();
+            
+            // Move startX for next image
+            startX += imageWidth + horizontalGap;
+        });
+        
+        // Calculate zoom level to fit the horizontal line width on screen
+        const padding = 80;
         const availableScreenWidth = canvas.width - (padding * 2);
-        const totalEmojisAfterFolder = alignedEmojis.length;
-        const totalWidthForLine = (totalEmojisAfterFolder - 1) * minSpacing + alignedSize;
-        const requiredZoomForLine = availableScreenWidth / totalWidthForLine;
+        const requiredZoom = availableScreenWidth / totalWidth;
         
-        // Check if all images fit in one line (check if smallest zoom level fits)
-        const canFitInLine = requiredZoomForLine >= zoomLevels[0];
-        
-        if (canFitInLine) {
-            // Single horizontal line - fits on screen
-            const totalWidthAfterFolder = (totalEmojisAfterFolder - 1) * minSpacing;
-            const startXAfterFolder = centerX - totalWidthAfterFolder / 2;
-            
-            alignedEmojis.forEach((point, index) => {
-                point.isAligned = true;
-                point.targetX = startXAfterFolder + (index * minSpacing);
-                point.targetY = centerY; // Horizontal line at center Y (world coords)
-                point.targetSize = alignedSize; // Set target size for smooth transition
-                point.targetOpacity = 1.0; // Selected emojis remain fully visible
-                // Initialize animation start values
-                if (point.startX === undefined) {
-                    point.startX = point.currentAlignedX || point.originalBaseX || 0;
-                    point.startY = point.currentAlignedY || point.originalBaseY || 0;
-                    point.startSize = point.currentSize || baseEmojiSize;
-                    point.currentAlignedX = point.startX;
-                    point.currentAlignedY = point.startY;
-                    point.currentSize = point.startSize;
-                } else {
-                    point.startX = point.currentAlignedX;
-                    point.startY = point.currentAlignedY;
-                    point.startSize = point.currentSize;
-                }
-                point.alignmentStartTime = performance.now();
-            });
-            
-            // Calculate zoom level to fit the horizontal line width on screen
-            const totalSpanWidth = totalWidthAfterFolder + alignedSize;
-            const requiredZoom = availableScreenWidth / totalSpanWidth;
-            
-            // Find the largest zoom level that ensures all emojis fit
-            let bestIndex = 0;
-            for (let i = zoomLevels.length - 1; i >= 0; i--) {
-                if (zoomLevels[i] <= requiredZoom) {
-                    bestIndex = i;
-                    break;
-                }
+        // Find the largest zoom level that ensures all images fit
+        let bestIndex = 0;
+        for (let i = zoomLevels.length - 1; i >= 0; i--) {
+            if (zoomLevels[i] <= requiredZoom) {
+                bestIndex = i;
+                break;
             }
-            
-            currentZoomIndex = bestIndex;
-            startZoomTransition();
-            targetCameraPanX = 0;
-            targetCameraPanY = 0;
-        } else {
-            // Grid layout - too many images for one line
-            const gridCols = Math.ceil(Math.sqrt(totalEmojisAfterFolder));
-            const gridRows = Math.ceil(totalEmojisAfterFolder / gridCols);
-            const gap = 50; // Gap between images
-            const totalGridWidth = (gridCols - 1) * (alignedSize + gap);
-            const totalGridHeight = (gridRows - 1) * (alignedSize + gap);
-            const startXGrid = centerX - totalGridWidth / 2;
-            const startYGrid = centerY - totalGridHeight / 2;
-            
-            alignedEmojis.forEach((point, index) => {
-                const row = Math.floor(index / gridCols);
-                const col = index % gridCols;
-                
-                point.isAligned = true;
-                point.targetX = startXGrid + col * (alignedSize + gap);
-                point.targetY = startYGrid + row * (alignedSize + gap);
-                point.targetSize = alignedSize;
-                point.targetOpacity = 1.0;
-                // Initialize animation start values
-                if (point.startX === undefined) {
-                    point.startX = point.currentAlignedX || point.originalBaseX || 0;
-                    point.startY = point.currentAlignedY || point.originalBaseY || 0;
-                    point.startSize = point.currentSize || baseEmojiSize;
-                    point.currentAlignedX = point.startX;
-                    point.currentAlignedY = point.startY;
-                    point.currentSize = point.startSize;
-                } else {
-                    point.startX = point.currentAlignedX;
-                    point.startY = point.currentAlignedY;
-                    point.startSize = point.currentSize;
-                }
-                point.alignmentStartTime = performance.now();
-            });
-            
-            // Calculate zoom to fit grid
-            const maxSpan = Math.max(totalGridWidth + alignedSize, totalGridHeight + alignedSize);
-            const availableSpace = Math.min(canvas.width - padding * 2, canvas.height - padding * 2);
-            const requiredZoom = availableSpace / maxSpan;
-            
-            // Find the largest zoom level that ensures grid fits
-            let bestIndex = 0;
-            for (let i = zoomLevels.length - 1; i >= 0; i--) {
-                if (zoomLevels[i] <= requiredZoom) {
-                    bestIndex = i;
-                    break;
-                }
-            }
-            
-            currentZoomIndex = bestIndex;
-            startZoomTransition();
-            targetCameraPanX = 0;
-            targetCameraPanY = 0;
         }
+        
+        currentZoomIndex = bestIndex;
+        startZoomTransition();
+        targetCameraPanX = 0;
+        targetCameraPanY = 0;
     }
     
     // Set opacity for non-selected images to fade to 0 (completely invisible) in 1 second
@@ -1330,29 +1309,61 @@ function handleFilteredImageClick(clickedPoint) {
     // Clear current filter and align folder images
     clearFilter();
     
-    // Align folder images (similar to handleEmojiClick)
+    // Align folder images (same logic as handleEmojiClick for desktop)
     alignedEmojiIndex = clickedPoint.imageIndex;
     alignedEmojis = folderImages;
     
-    const alignedSize = baseEmojiSize * alignedSizeMultiplier;
+    const maxImageHeight = canvas.height / 3; // Maximum height = 1/3 of screen height
+    const horizontalGap = 35; // Gap between images
     const centerX = canvas.width / 2;
     const centerY = canvas.height / 2;
-    const totalEmojis = alignedEmojis.length;
-    const horizontalGap = 35;
-    const minSpacing = alignedSize + horizontalGap;
-    const totalWidth = (totalEmojis - 1) * minSpacing;
-    const startX = centerX - totalWidth / 2;
     
+    // Calculate image dimensions for each image based on aspect ratio
+    const imageHeights = [];
+    const imageWidths = [];
+    
+    alignedEmojis.forEach((point) => {
+        const imageData = imageCache[point.imagePath];
+        let imageHeight = maxImageHeight;
+        let imageWidth = maxImageHeight;
+        
+        if (imageData && imageData.aspectRatio) {
+            if (imageData.aspectRatio >= 1) {
+                imageHeight = maxImageHeight;
+                imageWidth = maxImageHeight * imageData.aspectRatio;
+            } else {
+                imageWidth = maxImageHeight;
+                imageHeight = maxImageHeight / imageData.aspectRatio;
+            }
+        }
+        
+        imageHeights.push(imageHeight);
+        imageWidths.push(imageWidth);
+    });
+    
+    // Calculate total width needed
+    const totalWidth = imageWidths.reduce((sum, width) => sum + width, 0) + (alignedEmojis.length - 1) * horizontalGap;
+    
+    // Start position (centered)
+    let startX = centerX - totalWidth / 2;
+    
+    // Position images horizontally
     alignedEmojis.forEach((point, index) => {
+        const imageWidth = imageWidths[index];
+        const imageHeight = imageHeights[index];
+        
         point.isAligned = true;
-        point.targetX = startX + (index * minSpacing);
+        point.targetX = startX + imageWidth / 2;
         point.targetY = centerY;
-        point.targetSize = alignedSize;
+        point.targetSize = imageHeight;
+        point.targetImageWidth = imageWidth;
         point.targetOpacity = 1.0;
         point.startX = point.currentAlignedX || point.originalBaseX;
         point.startY = point.currentAlignedY || point.originalBaseY;
         point.startSize = point.currentSize;
         point.alignmentStartTime = performance.now();
+        
+        startX += imageWidth + horizontalGap;
     });
     
     // Set opacity for non-selected images (group by folder)
@@ -1360,7 +1371,7 @@ function handleFilteredImageClick(clickedPoint) {
     points.forEach(p => {
         const pFolder = p.folderPath || p.imagePath.substring(0, p.imagePath.lastIndexOf('/'));
         if (pFolder !== clickedFolderForAlignment) {
-            p.targetOpacity = 0.0; // Fade to completely invisible
+            p.targetOpacity = 0.0;
         } else {
             p.targetOpacity = 1.0;
         }
@@ -1368,9 +1379,8 @@ function handleFilteredImageClick(clickedPoint) {
     
     // Calculate zoom
     const padding = 80;
-    const totalSpanWidth = totalWidth + alignedSize;
     const availableScreenWidth = canvas.width - (padding * 2);
-    const requiredZoom = availableScreenWidth / totalSpanWidth;
+    const requiredZoom = availableScreenWidth / totalWidth;
     
     let bestIndex = 0;
     for (let i = zoomLevels.length - 1; i >= 0; i--) {
@@ -1803,11 +1813,16 @@ function draw() {
         // Draw image if loaded, otherwise draw placeholder
         if (img && img.complete && img.naturalWidth > 0 && img.naturalHeight > 0 && imageData && !imageData.error) {
             // Calculate dimensions maintaining aspect ratio
-            // Use imageSize as the base dimension (width or height, whichever is larger)
+            // For aligned images, use stored targetImageWidth if available
             let drawWidth, drawHeight;
             const aspectRatio = imageData.aspectRatio;
             
-            if (aspectRatio >= 1) {
+            if (point.isAligned && point.targetImageWidth !== undefined) {
+                // For aligned images: use currentSize (interpolated height) and calculate width from aspect ratio
+                // This ensures smooth animation during size transitions
+                drawHeight = point.currentSize; // currentSize stores interpolated height
+                drawWidth = drawHeight * aspectRatio; // Calculate width from current height and aspect ratio
+            } else if (aspectRatio >= 1) {
                 // Landscape or square: use imageSize as width
                 drawWidth = imageSize;
                 drawHeight = imageSize / aspectRatio;
@@ -1846,20 +1861,32 @@ function draw() {
                 let drawWidth, drawHeight;
                 
                 if (imageData && imageData.img && imageData.img.complete) {
-                    const aspectRatio = imageData.aspectRatio;
-                    const imageSize = point.currentSize;
-                    
-                    if (aspectRatio >= 1) {
-                        drawWidth = imageSize;
-                        drawHeight = imageSize / aspectRatio;
+                    // Use stored targetImageWidth and targetSize if available (for aligned images with equal height)
+                    if (point.targetImageWidth !== undefined && imageData.aspectRatio) {
+                        // For aligned images: use currentSize (interpolated height) and calculate width from aspect ratio
+                        drawHeight = point.currentSize; // currentSize stores interpolated height
+                        drawWidth = drawHeight * imageData.aspectRatio; // Calculate width from current height and aspect ratio
                     } else {
-                        drawHeight = imageSize;
-                        drawWidth = imageSize * aspectRatio;
+                        const aspectRatio = imageData.aspectRatio;
+                        const imageSize = point.currentSize;
+                        
+                        if (aspectRatio >= 1) {
+                            drawWidth = imageSize;
+                            drawHeight = imageSize / aspectRatio;
+                        } else {
+                            drawHeight = imageSize;
+                            drawWidth = imageSize * aspectRatio;
+                        }
                     }
                 } else {
                     // Fallback for missing images
-                    drawWidth = point.currentSize;
-                    drawHeight = point.currentSize;
+                    if (point.targetImageWidth !== undefined) {
+                        drawWidth = point.targetImageWidth;
+                        drawHeight = point.currentSize;
+                    } else {
+                        drawWidth = point.currentSize;
+                        drawHeight = point.currentSize;
+                    }
                 }
                 
                 // Calculate screen position of aligned image
