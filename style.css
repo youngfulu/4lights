@@ -21,6 +21,8 @@ body {
     transition: opacity 1s ease-in;
     z-index: 1;
     position: relative;
+    /* iOS/Safari: ensure touch gestures feel like native map interactions */
+    touch-action: none;
 }
 
 #canvas.images-loaded {
