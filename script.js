@@ -94,6 +94,29 @@ let targetMobileScrollPosition = 0; // Target scroll position
 let isMobileScrolling = false; // Whether user is currently scrolling
 let scrollIndicatorVisible = false; // Whether scroll indicator is visible
 let scrollIndicatorFadeTime = 0; // Time when scroll indicator should fade
+let mobileScrollVelocity = 0; // Inertia velocity for aligned mobile scroll (position units per ms)
+
+// Touch interaction state (iPhone/iPad)
+let lastTouchX = 0;
+let lastTouchY = 0;
+let lastTouchTime = 0;
+let isPinching = false;
+let pinchStartDistance = 0;
+let pinchStartZoom = 1.0;
+let useContinuousZoom = false; // Enable smooth, continuous zoom on touch devices
+
+function getTouchDistance(t1, t2) {
+    const dx = t2.clientX - t1.clientX;
+    const dy = t2.clientY - t1.clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+}
+
+function getTouchMidpoint(t1, t2) {
+    return {
+        x: (t1.clientX + t2.clientX) / 2,
+        y: (t1.clientY + t2.clientY) / 2
+    };
+}
 
 // Image list - use images from "Imgae test " directory (all unique images)
 const imagePaths = [
@@ -623,6 +646,12 @@ let touchStartScrollPosition = 0;
 
 function handleTouchStart(e) {
     if (e.touches.length > 0) {
+        const rect = canvas.getBoundingClientRect();
+        lastTouchX = e.touches[0].clientX - rect.left;
+        lastTouchY = e.touches[0].clientY - rect.top;
+        lastTouchTime = performance.now();
+        mobileScrollVelocity = 0;
+
         touchStartY = e.touches[0].clientY;
         touchStartScrollPosition = mobileScrollPosition;
         
@@ -634,19 +663,36 @@ function handleTouchStart(e) {
             scrollIndicatorFadeTime = performance.now() + 3000;
         }
     }
+
+    // Two-finger pinch to zoom (smooth, native feel)
+    if (e.touches.length === 2) {
+        const rect = canvas.getBoundingClientRect();
+        isPinching = true;
+        useContinuousZoom = true;
+        // Disable drag while pinching
+        isDragging = false;
+        pinchStartDistance = getTouchDistance(e.touches[0], e.touches[1]);
+        pinchStartZoom = targetZoomLevel || globalZoomLevel || 1.0;
+        const mid = getTouchMidpoint(e.touches[0], e.touches[1]);
+        zoomFocalPointX = mid.x - rect.left;
+        zoomFocalPointY = mid.y - rect.top;
+        isZoomTransitioning = false;
+    }
 }
 
 // Touch move handler
 function handleTouchMove(e) {
-    e.preventDefault();
     const isMobile = window.innerWidth < 768 || ('ontouchstart' in window);
     
     if (e.touches.length > 0) {
         const rect = canvas.getBoundingClientRect();
+        const touchX = e.touches[0].clientX - rect.left;
         const touchY = e.touches[0].clientY - rect.top;
+        const now = performance.now();
         
         // Handle mobile vertical scroll when emojis are aligned
         if (isMobile && alignedEmojiIndex !== null) {
+            e.preventDefault();
             // Check if this is a vertical scroll gesture (if not already scrolling, detect it)
             if (!isMobileScrolling) {
                 const deltaY = Math.abs(touchY - touchStartY);
@@ -663,7 +709,10 @@ function handleTouchMove(e) {
                 const screenHeight = canvas.height;
                 // Convert touch delta to scroll position (0 to 1) - more sensitive
                 const scrollDelta = -deltaY / (screenHeight * 1.5); // More sensitive scrolling
-                targetMobileScrollPosition = Math.max(0, Math.min(1, touchStartScrollPosition + scrollDelta));
+                const nextPos = Math.max(0, Math.min(1, touchStartScrollPosition + scrollDelta));
+                const dt = Math.max(16, now - lastTouchTime);
+                mobileScrollVelocity = (nextPos - targetMobileScrollPosition) / dt;
+                targetMobileScrollPosition = nextPos;
                 scrollIndicatorVisible = true;
                 scrollIndicatorFadeTime = performance.now() + 3000;
             } else {
@@ -672,16 +721,69 @@ function handleTouchMove(e) {
                 targetMouseY = e.touches[0].clientY - rect.top;
             }
         } else {
-            // Desktop touch or no alignment - normal touch movement
-        targetMouseX = e.touches[0].clientX - rect.left;
-        targetMouseY = e.touches[0].clientY - rect.top;
-    }
+            // Pinch zoom (two-finger)
+            if (e.touches.length === 2) {
+                e.preventDefault();
+                isPinching = true;
+                useContinuousZoom = true;
+                const dist = getTouchDistance(e.touches[0], e.touches[1]);
+                const scale = dist / Math.max(1, pinchStartDistance);
+                let newTargetZoom = pinchStartZoom * scale;
+                newTargetZoom = Math.max(minZoom, Math.min(maxZoom, newTargetZoom));
+                targetZoomLevel = newTargetZoom;
+                isZoomTransitioning = false;
+
+                const mid = getTouchMidpoint(e.touches[0], e.touches[1]);
+                zoomFocalPointX = mid.x - rect.left;
+                zoomFocalPointY = mid.y - rect.top;
+
+                // Keep midpoint stable by updating target pan for the new zoom
+                const centerX = canvas.width / 2;
+                const centerY = canvas.height / 2;
+                const worldX = ((zoomFocalPointX - centerX - cameraPanX) / globalZoomLevel) + centerX;
+                const worldY = ((zoomFocalPointY - centerY - cameraPanY) / globalZoomLevel) + centerY;
+                targetCameraPanX = zoomFocalPointX - centerX - (worldX - centerX) * newTargetZoom;
+                targetCameraPanY = zoomFocalPointY - centerY - (worldY - centerY) * newTargetZoom;
+                return;
+            }
+
+            // One-finger pan (native map feel) + inertia
+            e.preventDefault();
+            if (isPinching) {
+                isPinching = false;
+            }
+
+            const deltaX = touchX - lastTouchX;
+            const deltaY = touchY - lastTouchY;
+            const dt = Math.max(16, now - lastTouchTime);
+
+            targetCameraPanX += deltaX;
+            targetCameraPanY += deltaY;
+            cameraPanX = targetCameraPanX;
+            cameraPanY = targetCameraPanY;
+
+            panVelocityX = deltaX / dt;
+            panVelocityY = deltaY / dt;
+
+            lastTouchX = touchX;
+            lastTouchY = touchY;
+            lastTouchTime = now;
+
+            // Keep parallax responsive
+            targetMouseX = touchX;
+            targetMouseY = touchY;
+        }
+
+        lastTouchTime = now;
     }
 }
 
 // Touch end handler
 function handleTouchEnd(e) {
     isMobileScrolling = false;
+    if (e.touches.length < 2) {
+        isPinching = false;
+    }
 }
 
 // Mouse leave handler (reset to center)
@@ -1676,8 +1778,8 @@ function draw() {
             isZoomTransitioning = false;
             globalZoomLevel = zoomTransitionTargetLevel;
         }
-    } else if (alignedEmojiIndex !== null || isFilterMode) {
-        // Smooth gradual zoom interpolation in selection/filter mode (towards mouse focal point)
+    } else if (alignedEmojiIndex !== null || isFilterMode || useContinuousZoom) {
+        // Smooth gradual zoom interpolation (selection/filter mode and touch pinch zoom)
         const zoomSmoothness = 0.15; // Smooth interpolation factor (adjust for speed: lower = slower/smoother)
         globalZoomLevel += (targetZoomLevel - globalZoomLevel) * zoomSmoothness;
         
@@ -1706,11 +1808,24 @@ function draw() {
     } else {
         // Default: use discrete zoom level
         globalZoomLevel = zoomLevels[currentZoomIndex];
+        targetZoomLevel = globalZoomLevel;
     }
     
     // Mobile vertical scroll interpolation (mobile only)
     const isMobile = window.innerWidth < 768 || ('ontouchstart' in window);
     if (isMobile && alignedEmojiIndex !== null) {
+        // Apply inertial scrolling when user lifts finger
+        if (!isMobileScrolling && Math.abs(mobileScrollVelocity) > 0.00001) {
+            targetMobileScrollPosition = Math.max(
+                0,
+                Math.min(1, targetMobileScrollPosition + mobileScrollVelocity * 16)
+            );
+            mobileScrollVelocity *= 0.92;
+            if (targetMobileScrollPosition === 0 || targetMobileScrollPosition === 1) {
+                mobileScrollVelocity = 0;
+            }
+        }
+
         mobileScrollPosition += (targetMobileScrollPosition - mobileScrollPosition) * 0.15; // Smooth scroll
         
         // Calculate scroll offset and apply to camera pan Y
