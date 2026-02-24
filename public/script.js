@@ -1144,6 +1144,7 @@ const imagePaths = [
     'Imgae test /gate #instal/Screenshot 2024-11-24 at 20.47.07.png',
     'Imgae test /gate #instal/Screenshot 2026-02-22 at 15.52.12.png',
     'Imgae test /gate #instal/pasted-image.png',
+    'Imgae test /gula merah #stage/IMG_5170.JPG',
     'Imgae test /gula merah #stage/IMG_5248.HEIC.jpg',
     'Imgae test /gula merah #stage/IMG_5307.HEIC.jpg',
     'Imgae test /gula merah #stage/Screenshot 2026-02-22 at 16.06.52.png',
