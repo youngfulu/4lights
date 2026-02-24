@@ -1,0 +1,11 @@
+# 4lights — рабочая версия (local + GitHub Pages)
+
+## Что зафиксировано как рабочее
+
+**Локально** (npm run dev / npm run build + npm run preview):
+- `vite.config.js`: dev `base: '/'`, production `base: './'` для совместимости с GitHub Pages.
+- `App.jsx`: базовый путь через `getBasePath()` (pathname), `__IMAGE_BASE__` и `__BASE_URL__` для скриптов и картинок.
+- Картинки: папка `Imgae test ` — в корне проекта или в `public/`; dev сервер раздаёт её по `/img/`; при билде копируется в `dist/img` с заменой `#` → `%23` в именах.
+- В `script.js`: для URL картинок `#` кодируется дважды (`%2523`), иначе браузер обрезает путь по фрагменту.
+
+**Не менять без необходимости**: логику base path, кодирование `#` в путях и имена в dist (safeName в copy-img-to-dist).

@@ -12,15 +12,11 @@ function App() {
     if (scriptsLoaded.current) return;
     scriptsLoaded.current = true;
 
-    // Base path from current page URL (GitHub Pages /4lights/ or local /)
+    // Base path: / for local, /4lights/ for GitHub Pages
     function getBasePath() {
       const pathname = (window.location && window.location.pathname) || '';
-      if (!pathname.startsWith('/') || pathname.startsWith('//') || pathname.includes(':')) {
-        return '/';
-      }
-      if (pathname === '/4lights' || pathname === '/4lights/' || pathname.startsWith('/4lights/')) {
-        return '/4lights/';
-      }
+      if (!pathname.startsWith('/') || pathname.startsWith('//') || pathname.includes(':')) return '/';
+      if (pathname === '/4lights' || pathname === '/4lights/' || pathname.startsWith('/4lights/')) return '/4lights/';
       if (pathname === '/' || pathname === '') return '/';
       const match = pathname.match(/^(.+\/)\.?/);
       return match ? match[1] : '/';

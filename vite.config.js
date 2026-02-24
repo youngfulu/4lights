@@ -3,16 +3,22 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 import fs from 'fs';
 
-const IMG_SOURCE = path.resolve(process.cwd(), 'public', 'Imgae test ');
+// Image folder: project root or public/ (same as compress-images.js for CI)
+const IMG_SOURCE =
+  (() => {
+    const root = path.resolve(process.cwd(), 'Imgae test ');
+    const pub = path.resolve(process.cwd(), 'public', 'Imgae test ');
+    if (fs.existsSync(root)) return root;
+    if (fs.existsSync(pub)) return pub;
+    return pub; // default for build
+  })();
 
 export default defineConfig(({ command }) => {
   const isProd = command === 'build';
-  // Dev: root. Build: relative so it works at any subpath (e.g. github.io/4lights/)
   const base = isProd ? './' : '/';
-
   return {
-    base,
-    plugins: [
+  base,
+  plugins: [
       react(),
       // Dev: serve "Imgae test " at /img/ so imagePaths work locally
       {
@@ -46,11 +52,15 @@ export default defineConfig(({ command }) => {
             const outDir = path.resolve(process.cwd(), 'dist');
             const imgDest = path.join(outDir, 'img');
             if (!fs.existsSync(IMG_SOURCE)) return;
+            // Encode # as %23 in names so URL path (with double-encoded #) matches filesystem
+            function safeName(name) {
+              return name.replace(/#/g, '%23');
+            }
             function copyRecursive(src, dest) {
               fs.mkdirSync(dest, { recursive: true });
               for (const e of fs.readdirSync(src, { withFileTypes: true })) {
                 const s = path.join(src, e.name);
-                const d = path.join(dest, e.name);
+                const d = path.join(dest, safeName(e.name));
                 if (e.isDirectory()) copyRecursive(s, d);
                 else fs.copyFileSync(s, d);
               }

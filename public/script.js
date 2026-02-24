@@ -1532,7 +1532,9 @@ function loadImageOnce(path) {
         const pathForUrl = (typeof window !== 'undefined' && window.__IMAGE_BASE__)
           ? path.replace(/^Imgae test \//, '')
           : path;
-        const encodedPath = pathForUrl.split('/').map(part => encodeURIComponent(part)).join('/');
+        let encodedPath = pathForUrl.split('/').map(part => encodeURIComponent(part)).join('/');
+        // Double-encode # so browser doesn't treat it as URL fragment (would break /img/... paths)
+        encodedPath = encodedPath.replace(/%23/g, '%2523');
         const base = (typeof window !== 'undefined' && window.location && window.location.origin) ? window.location.origin : '';
         const prefix = (typeof window !== 'undefined' && window.__IMAGE_BASE__) ? window.__IMAGE_BASE__.replace(/\/$/, '') : '';
         img.src = base + (prefix ? prefix + '/' : '/') + encodedPath.replace(/^\//, '');
