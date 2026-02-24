@@ -5451,11 +5451,12 @@ function loadAndDisplayAboutText(folderPath) {
         return;
     }
     
-    // Fetch via /img/ so the same middleware that serves images (and handles encoded paths) serves about.txt
+    // Fetch via /img/ (respect base path for GitHub Pages, e.g. /4lights/img/)
     const pathWithoutPrefix = folderPath.replace(/^Imgae test \//, '');
     const encodedPath = pathWithoutPrefix.split('/').map(segment => encodeURIComponent(segment)).join('/');
-    const base = (typeof window !== 'undefined' && window.location && window.location.origin) ? window.location.origin : '';
-    const aboutUrl = base + '/img/' + encodedPath.replace(/^\//, '') + '/about.txt';
+    const origin = (typeof window !== 'undefined' && window.location && window.location.origin) ? window.location.origin : '';
+    const pathPrefix = (typeof window !== 'undefined' && window.__BASE_URL__) ? window.__BASE_URL__.replace(/\/$/, '') : '';
+    const aboutUrl = origin + pathPrefix + '/img/' + encodedPath.replace(/^\//, '') + '/about.txt';
     
     fetch(aboutUrl)
         .then(response => {

@@ -4,6 +4,7 @@ import path from 'path';
 import fs from 'fs';
 
 export default defineConfig({
+  base: '/4lights/', // GitHub Pages: https://youngfulu.github.io/4lights/
   plugins: [
     react(),
     // Serve "Imgae test " folder at /img/ to avoid path/encoding issues in browser

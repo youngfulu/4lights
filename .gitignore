@@ -21,8 +21,35 @@ build/
 # Vite
 *.local
 
-# Large image/video assets (keep locally; deploy via CDN or add separately)
+# Root assets folder: never commit (raw/originals stay local only)
 Imgae test /
-public/Imgae test /
+
+# Non-web formats: never commit (push only web-ready: jpg, png, gif, webp, svg)
 *.MOV
 *.mov
+*.mp4
+*.MP4
+*.avi
+*.AVI
+*.wmv
+*.WMV
+*.mkv
+*.MKV
+*.webm
+*.WEBM
+*.pdf
+*.PDF
+*.HEIC
+*.heic
+*.HEIF
+*.heif
+*.raw
+*.RAW
+*.cr2
+*.CR2
+*.nef
+*.NEF
+*.arw
+*.ARW
+
+# public/Imgae test / is tracked; only web formats (above ignored) are excluded

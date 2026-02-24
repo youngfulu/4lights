@@ -11,8 +11,11 @@ function App() {
   useEffect(() => {
     if (scriptsLoaded.current) return;
     scriptsLoaded.current = true;
-    // Use /img/ alias so images load reliably (no spaces in URL path)
-    window.__IMAGE_BASE__ = '/img';
+    // Base URL for GitHub Pages (e.g. /4lights/) or / in dev
+    const base = typeof import.meta.env?.BASE_URL === 'string' ? import.meta.env.BASE_URL : '/';
+    const baseNoTrailing = base.replace(/\/$/, '') || '';
+    window.__IMAGE_BASE__ = baseNoTrailing + '/img';
+    window.__BASE_URL__ = base;
 
     const loadScript = (src) =>
       new Promise((resolve, reject) => {
@@ -24,8 +27,8 @@ function App() {
       });
 
     // Load about.js first (defines ABOUT_TEXT), then script.js (uses it and starts app)
-    loadScript('/about.js')
-      .then(() => loadScript('/script.js'))
+    loadScript(base + 'about.js')
+      .then(() => loadScript(base + 'script.js'))
       .catch((err) => console.error('4lights script load error:', err));
   }, []);
 
