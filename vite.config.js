@@ -7,7 +7,8 @@ const IMG_SOURCE = path.resolve(process.cwd(), 'public', 'Imgae test ');
 
 export default defineConfig(({ command }) => {
   const isProd = command === 'build';
-  const base = isProd ? '/4lights/' : '/'; // GitHub Pages subpath only in production; dev at root
+  // Dev: root. Build: relative so it works at any subpath (e.g. github.io/4lights/)
+  const base = isProd ? './' : '/';
 
   return {
     base,

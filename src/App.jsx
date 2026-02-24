@@ -11,8 +11,18 @@ function App() {
   useEffect(() => {
     if (scriptsLoaded.current) return;
     scriptsLoaded.current = true;
-    // Base URL for GitHub Pages (e.g. /4lights/) or / in dev
-    const base = typeof import.meta.env?.BASE_URL === 'string' ? import.meta.env.BASE_URL : '/';
+
+    // Base path from current page URL so it works on GitHub Pages (e.g. /4lights/) and locally (/)
+    function getBasePath() {
+      const pathname = (window.location && window.location.pathname) || '';
+      if (pathname === '/4lights' || pathname === '/4lights/' || pathname.startsWith('/4lights/')) {
+        return '/4lights/';
+      }
+      if (pathname === '/' || pathname === '') return '/';
+      const match = pathname.match(/^(.+\/)\.?/);
+      return match ? match[1] : '/';
+    }
+    const base = getBasePath();
     const baseNoTrailing = base.replace(/\/$/, '') || '';
     window.__IMAGE_BASE__ = baseNoTrailing + '/img';
     window.__BASE_URL__ = base;
