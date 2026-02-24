@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Editor / OS
+.DS_Store
+*.log
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Vite
+*.local
+
+# Large image/video assets (keep locally; deploy via CDN or add separately)
+Imgae test /
+public/Imgae test /
+*.MOV
+*.mov

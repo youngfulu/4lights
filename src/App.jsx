@@ -1,0 +1,88 @@
+import { useEffect, useRef } from 'react';
+
+/**
+ * React shell for 4lights: renders the same DOM structure as the original
+ * index.html so the legacy script.js (canvas, grid, filters, about) finds
+ * all elements by id. Scripts are loaded after mount to preserve behavior.
+ */
+function App() {
+  const scriptsLoaded = useRef(false);
+
+  useEffect(() => {
+    if (scriptsLoaded.current) return;
+    scriptsLoaded.current = true;
+    // Use /img/ alias so images load reliably (no spaces in URL path)
+    window.__IMAGE_BASE__ = '/img';
+
+    const loadScript = (src) =>
+      new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = src;
+        s.onload = () => resolve();
+        s.onerror = () => reject(new Error(`Failed to load ${src}`));
+        document.body.appendChild(s);
+      });
+
+    // Load about.js first (defines ABOUT_TEXT), then script.js (uses it and starts app)
+    loadScript('/about.js')
+      .then(() => loadScript('/script.js'))
+      .catch((err) => console.error('4lights script load error:', err));
+  }, []);
+
+  return (
+    <>
+      <div id="loadingIndicator" className="loading-indicator">
+        <div id="loadingText" className="loading-text"></div>
+      </div>
+
+      <canvas id="canvas"></canvas>
+
+      <div id="aboutText" className="about-text" style={{ display: 'none' }}></div>
+
+      <div id="projectAboutText" className="project-about-text" style={{ display: 'none' }}>
+        <div id="projectName" className="project-name"></div>
+        <div id="projectInfo" className="project-info"></div>
+      </div>
+
+      <div id="filterButtons" className="filter-buttons">
+        <span className="filter-button" data-tag="stage">stage design</span>
+        <span className="filter-button" data-tag="install">installation</span>
+        <span className="filter-button" data-tag="tech">technical solutions</span>
+        <span className="filter-button" data-tag="concept">concepts</span>
+        <span className="filter-button" data-tag="spatial">spatial design</span>
+        <span className="filter-button" id="weAreButton">we are</span>
+        <button id="backButton" className="back-button" type="button" style={{ display: 'none' }}>
+          back
+        </button>
+      </div>
+
+      <div id="indexFolderList" className="index-folder-list"></div>
+
+      <div id="mobileHomepageNav" className="mobile-homepage-nav">
+        <svg id="mobileNavLines" className="mobile-nav-lines" viewBox="0 0 100 100" preserveAspectRatio="none">
+          {/* Lines drawn by script.js */}
+        </svg>
+        <div className="mobile-nav-labels">
+          <div className="mobile-nav-label" data-category="we-are">we are</div>
+          <div className="mobile-nav-label" data-category="stage">stage design</div>
+          <div className="mobile-nav-label" data-category="install">installation</div>
+          <div className="mobile-nav-label" data-category="tech">technical solutions</div>
+          <div className="mobile-nav-label" data-category="spatial">spatial design</div>
+        </div>
+      </div>
+
+      <div id="mobileCategoryContent" className="mobile-category-content">
+        <button id="mobileCategoryBack" className="mobile-category-back">back</button>
+        <div className="mobile-category-content-inner">
+          <div id="mobileCategoryTitle" className="mobile-category-title"></div>
+          <div id="mobileCategoryBody"></div>
+        </div>
+      </div>
+
+      <button id="selectionPrevBtn" className="selection-nav-btn selection-prev" type="button" aria-label="prev" style={{ display: 'none', opacity: 0 }}>&lt;</button>
+      <button id="selectionNextBtn" className="selection-nav-btn selection-next" type="button" aria-label="next" style={{ display: 'none', opacity: 0 }}>&gt;</button>
+    </>
+  );
+}
+
+export default App;

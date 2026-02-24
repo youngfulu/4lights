@@ -1,0 +1,10 @@
+// About text content - embedded to avoid CORS issues with file:// protocol
+const ABOUT_TEXT = `We are a smalll studio working across spatial design, stage environments, spatial sound, and concept development. Our practice starts from sound — not as an overlay, but as a spatial force that organizes movement, attention, and time.
+
+We work through research-led processes, drawing from acoustics, perception studies, media theory, and system design. Sound, light, and media are treated as architectural agents: shaping behavior, defining thresholds, and producing spatial intensity. Our expertise lies in spatial audio, real-time and generative media, interactive environments, and custom-built technical systems.
+
+From early conceptual research to on-site implementation, we design coherent spatial ecosystems where media, structure, and temporality operate as one. Precision is central to our process — from signal flow and spatial calibration to material presence and audience interaction.
+
+Our projects include concerts, fashion shows, exhibitions, and site-specific spatial works. We collaborate with premium brands and with other studios through close, authorial partnerships, engaging in shared research and long-term thinking rather than service-based production.
+
+We design environments that listen back — spaces defined by resonance, duration, and cultural pressure, built for situations where experience unfolds over time.`;
