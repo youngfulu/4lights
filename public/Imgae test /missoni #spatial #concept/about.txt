@@ -1,0 +1,7 @@
+name: (Veawings)
+#
+Project type: (Spatial design)
+Client: (Missoni)
+Agency:(neu.team)
+Status: (unreleased)
+year: (2024)
