@@ -12,9 +12,12 @@ function App() {
     if (scriptsLoaded.current) return;
     scriptsLoaded.current = true;
 
-    // Base path from current page URL so it works on GitHub Pages (e.g. /4lights/) and locally (/)
+    // Base path from current page URL (GitHub Pages /4lights/ or local /)
     function getBasePath() {
       const pathname = (window.location && window.location.pathname) || '';
+      if (!pathname.startsWith('/') || pathname.startsWith('//') || pathname.includes(':')) {
+        return '/';
+      }
       if (pathname === '/4lights' || pathname === '/4lights/' || pathname.startsWith('/4lights/')) {
         return '/4lights/';
       }
@@ -36,9 +39,9 @@ function App() {
         document.body.appendChild(s);
       });
 
-    // Load about.js first (defines ABOUT_TEXT), then script.js (uses it and starts app)
-    loadScript(base + 'about.js')
-      .then(() => loadScript(base + 'script.js'))
+    const scriptBase = base.startsWith('/') ? (window.location.origin || '') + base : base;
+    loadScript(scriptBase + 'about.js')
+      .then(() => loadScript(scriptBase + 'script.js'))
       .catch((err) => console.error('4lights script load error:', err));
   }, []);
 

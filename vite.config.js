@@ -38,23 +38,27 @@ export default defineConfig(({ command }) => {
           });
         },
       },
-      // Build: copy public/Imgae test to dist/img so /4lights/img/... works on GitHub Pages
+      // Build: copy public/Imgae test to dist/img so img/... works when deployed
       {
         name: 'copy-img-to-dist',
         closeBundle() {
-          const outDir = path.resolve(process.cwd(), 'dist');
-          const imgDest = path.join(outDir, 'img');
-          if (!fs.existsSync(IMG_SOURCE)) return;
-          function copyRecursive(src, dest) {
-            fs.mkdirSync(dest, { recursive: true });
-            for (const e of fs.readdirSync(src, { withFileTypes: true })) {
-              const s = path.join(src, e.name);
-              const d = path.join(dest, e.name);
-              if (e.isDirectory()) copyRecursive(s, d);
-              else fs.copyFileSync(s, d);
+          try {
+            const outDir = path.resolve(process.cwd(), 'dist');
+            const imgDest = path.join(outDir, 'img');
+            if (!fs.existsSync(IMG_SOURCE)) return;
+            function copyRecursive(src, dest) {
+              fs.mkdirSync(dest, { recursive: true });
+              for (const e of fs.readdirSync(src, { withFileTypes: true })) {
+                const s = path.join(src, e.name);
+                const d = path.join(dest, e.name);
+                if (e.isDirectory()) copyRecursive(s, d);
+                else fs.copyFileSync(s, d);
+              }
             }
+            copyRecursive(IMG_SOURCE, imgDest);
+          } catch (err) {
+            console.warn('copy-img-to-dist:', err.message);
           }
-          copyRecursive(IMG_SOURCE, imgDest);
         },
       },
     ],
