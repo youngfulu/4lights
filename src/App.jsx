@@ -9,11 +9,18 @@ function App() {
   const scriptsLoaded = useRef(false);
   const [loadingProgress, setLoadingProgress] = useState({ loaded: 0, total: 0 });
 
+  // Progress bar: poll global written by script.js (avoids timing/callback ordering issues)
   useEffect(() => {
-    window.__UPDATE_LOADING_PROGRESS__ = (loaded, total) => {
-      setLoadingProgress((prev) => (prev.loaded === loaded && prev.total === total ? prev : { loaded, total }));
-    };
-    return () => { window.__UPDATE_LOADING_PROGRESS__ = null; };
+    if (typeof window === 'undefined') return;
+    window.__LOADING_PROGRESS__ = window.__LOADING_PROGRESS__ || { loaded: 0, total: 0 };
+    const id = setInterval(() => {
+      const p = window.__LOADING_PROGRESS__;
+      if (!p) return;
+      setLoadingProgress((prev) =>
+        prev.loaded === p.loaded && prev.total === p.total ? prev : { loaded: p.loaded, total: p.total }
+      );
+    }, 80);
+    return () => clearInterval(id);
   }, []);
 
   useEffect(() => {

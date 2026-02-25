@@ -1273,8 +1273,11 @@ const SELECTION_MODE_COOLDOWN = 2000; // 2 seconds cooldown after all images loa
 const CONNECTION_MODE_COOLDOWN = 2000; // 2 seconds cooldown after loading screen - no dotted line animation
 
 // Update loading progress bar (Mac-style bar under "Welcome to Spatial Playground")
-// React drives the fill via window.__UPDATE_LOADING_PROGRESS__; also set DOM for non-React fallback
+// React reads window.__LOADING_PROGRESS__ on a timer; script always writes current values here
 function updateLoadingProgressBar() {
+    if (typeof window !== 'undefined') {
+        window.__LOADING_PROGRESS__ = { loaded: imagesLoaded, total: totalImages };
+    }
     if (typeof window.__UPDATE_LOADING_PROGRESS__ === 'function') {
         window.__UPDATE_LOADING_PROGRESS__(imagesLoaded, totalImages);
     }
@@ -1382,6 +1385,9 @@ function loadImages() {
     totalImages = uniquePaths.length;
     imagesLoaded = 0;
     imagesLoadedSuccessfully = 0;
+    if (typeof window !== 'undefined') {
+        window.__LOADING_PROGRESS__ = { loaded: 0, total: totalImages };
+    }
     updateLoadingProgressBar();
     
     if (uniquePaths.length === 0) {
@@ -1466,8 +1472,9 @@ function loadImageWithRetry(path, retries) {
 
 function loadImageOnce(path) {
     return new Promise((resolve, reject) => {
-        // If already cached, just count it as loaded (no double counting)
         if (imageCache[path]) {
+            imagesLoaded++;
+            updateLoadingProgressBar();
             resolve(imageCache[path]);
             return;
         }
