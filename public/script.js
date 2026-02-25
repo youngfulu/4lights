@@ -1273,21 +1273,15 @@ const SELECTION_MODE_COOLDOWN = 2000; // 2 seconds cooldown after all images loa
 const CONNECTION_MODE_COOLDOWN = 2000; // 2 seconds cooldown after loading screen - no dotted line animation
 
 // Update loading progress bar (Mac-style bar under "Welcome to Spatial Playground")
-// React reads window.__LOADING_PROGRESS__ on a timer; script always writes current values here
+// Only script sets width; React must NOT set width on the fill or it overwrites this on re-render
 function updateLoadingProgressBar() {
-    if (typeof window !== 'undefined') {
-        window.__LOADING_PROGRESS__ = { loaded: imagesLoaded, total: totalImages };
-    }
-    if (typeof window.__UPDATE_LOADING_PROGRESS__ === 'function') {
-        window.__UPDATE_LOADING_PROGRESS__(imagesLoaded, totalImages);
-    }
-    const fillEl = document.getElementById('loadingProgressBarFill');
+    var fillEl = document.getElementById('loadingProgressBarFill');
     if (!fillEl) return;
     if (totalImages === 0) {
         fillEl.style.setProperty('width', '100%');
         return;
     }
-    const pct = Math.min(100, Math.round((imagesLoaded / totalImages) * 100));
+    var pct = Math.min(100, Math.round((imagesLoaded / totalImages) * 100));
     fillEl.style.setProperty('width', pct + '%');
 }
 
@@ -1385,9 +1379,6 @@ function loadImages() {
     totalImages = uniquePaths.length;
     imagesLoaded = 0;
     imagesLoadedSuccessfully = 0;
-    if (typeof window !== 'undefined') {
-        window.__LOADING_PROGRESS__ = { loaded: 0, total: totalImages };
-    }
     updateLoadingProgressBar();
     
     if (uniquePaths.length === 0) {

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 
 /**
  * React shell for 4lights: renders the same DOM structure as the original
@@ -7,21 +7,6 @@ import { useEffect, useRef, useState } from 'react';
  */
 function App() {
   const scriptsLoaded = useRef(false);
-  const [loadingProgress, setLoadingProgress] = useState({ loaded: 0, total: 0 });
-
-  // Progress bar: poll global written by script.js (avoids timing/callback ordering issues)
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    window.__LOADING_PROGRESS__ = window.__LOADING_PROGRESS__ || { loaded: 0, total: 0 };
-    const id = setInterval(() => {
-      const p = window.__LOADING_PROGRESS__;
-      if (!p) return;
-      setLoadingProgress((prev) =>
-        prev.loaded === p.loaded && prev.total === p.total ? prev : { loaded: p.loaded, total: p.total }
-      );
-    }, 80);
-    return () => clearInterval(id);
-  }, []);
 
   useEffect(() => {
     if (scriptsLoaded.current) return;
@@ -75,15 +60,11 @@ function App() {
               flexShrink: 0,
             }}
           >
+            {/* Width is set ONLY by script.js (updateLoadingProgressBar). Do not set width here or React will overwrite it on re-render. */}
             <div
               id="loadingProgressBarFill"
               className="loading-progress-bar-fill"
-              style={{
-                height: '100%',
-                background: '#fff',
-                borderRadius: 2,
-                width: loadingProgress.total > 0 ? `${Math.min(100, Math.round((loadingProgress.loaded / loadingProgress.total) * 100))}%` : '0%',
-              }}
+              style={{ height: '100%', background: '#fff', borderRadius: 2 }}
             />
           </div>
         </div>
