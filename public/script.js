@@ -89,10 +89,9 @@ function resizeCanvas() {
     canvas.width = width;
     canvas.height = height;
 }
-// Only resize if canvas is available
+// Only resize if canvas is available (single initial run; resize handler is in runAppInit with rAF debounce)
 if (canvas) {
-resizeCanvas();
-window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
 }
 
 // Emoji size settings - MUST be declared before use
@@ -2325,27 +2324,25 @@ canvas.addEventListener('mouseenter', () => {
 });
 }
 
-// Global document listener to catch mouse movements over non-canvas elements
-// This ensures mouseOverCanvas is properly set even when moving directly between elements
+// Global document listener to catch mouse leaving canvas (throttled to reduce work when moving over page)
+var lastDocumentMouseOut = 0;
 document.addEventListener('mousemove', (e) => {
-    // If target is not the canvas, ensure mouseOverCanvas is false
     if (e.target !== canvas) {
-        if (mouseOverCanvas) {
-            mouseOverCanvas = false;
-            // Clear hover state
-            if (hoveredPoint !== null) {
-                const prevHoveredPoint = hoveredPoint;
-                hoveredPoint = null;
-                hoverStartTime = 0;
-                // Reset hover size on the point that was hovered
-                if (prevHoveredPoint) {
-                    prevHoveredPoint.isHovered = false;
-                    prevHoveredPoint.hoverSize = 1.0;
-                }
-                // If auto-hover connection mode was active, exit it
-                if (isConnectionMode && !isConnectionModeClicked) {
-                    exitConnectionMode();
-                }
+        if (!mouseOverCanvas) return;
+        var now = performance.now();
+        if (now - lastDocumentMouseOut < 100) return;
+        lastDocumentMouseOut = now;
+        mouseOverCanvas = false;
+        if (hoveredPoint !== null) {
+            const prevHoveredPoint = hoveredPoint;
+            hoveredPoint = null;
+            hoverStartTime = 0;
+            if (prevHoveredPoint) {
+                prevHoveredPoint.isHovered = false;
+                prevHoveredPoint.hoverSize = 1.0;
+            }
+            if (isConnectionMode && !isConnectionModeClicked) {
+                exitConnectionMode();
             }
         }
     }
@@ -4711,9 +4708,11 @@ function draw() {
     }
 }
 
-// Animation loop
+// Animation loop (pauses when tab hidden to save CPU/battery)
 function animate() {
-    draw();
+    if (!document.hidden) {
+        draw();
+    }
     requestAnimationFrame(animate);
 }
 
@@ -5283,22 +5282,21 @@ function runAppInit() {
     // Cache back button for performance
     cachedBackButton = document.getElementById('backButton');
     if (cachedBackButton) {
-        cachedBackButton.addEventListener('click', () => {
-            // Mobile version: always return to main page (homepage with navigation)
+        var lastBackTap = 0;
+        var handleBack = function () {
+            var now = Date.now();
+            if (now - lastBackTap < 400) return;
+            lastBackTap = now;
             if (isMobileVersion) {
                 mobileReturnHome();
                 return;
             }
-            // Desktop version: handle different modes
             if (isWeAreMode) {
                 clearWeAreMode();
             } else if (isIndexMode) {
-                // Index mode: 2-level navigation
                 if (selectedIndexFolder !== null || alignedEmojiIndex !== null) {
-                    // First click: return to folder selection
                     returnToFolderSelection();
                 } else {
-                    // Second click: return to home screen
                     exitIndexMode();
                 }
             } else if (isFilterMode) {
@@ -5308,7 +5306,16 @@ function runAppInit() {
             } else {
                 unalignEmojis();
             }
+        };
+        cachedBackButton.addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            handleBack();
         });
+        cachedBackButton.addEventListener('touchstart', function (e) {
+            e.preventDefault();
+            handleBack();
+        }, { passive: false });
     }
     
     // Setup filter buttons (only for desktop)
@@ -5637,6 +5644,21 @@ function parseAndDisplayAboutText(text) {
             const value = (match[1] || match[2] || '').trim();
             if (value) aboutLines.push({ label: item.key, value: value });
         }
+    });
+    
+    // Include any line that looks like "Label: value" and was not already matched by labelMap
+    const lines = aboutBlock.split(/\r?\n/);
+    lines.forEach(function (rawLine) {
+        const line = rawLine.trim();
+        if (!line) return;
+        var alreadyMatched = labelMap.some(function (item) { return item.re.test(line); });
+        if (alreadyMatched) return;
+        const colonMatch = line.match(/^([^:#]+):\s*([\s\S]*)$/);
+        if (!colonMatch) return;
+        const fileLabel = colonMatch[1].trim().toLowerCase().replace(/\s+/g, ' ');
+        const value = colonMatch[2].trim();
+        if (!value) return;
+        aboutLines.push({ label: fileLabel, value: value });
     });
     
     displayProjectAboutText(name, aboutLines);

@@ -53,8 +53,9 @@ function App() {
             style={{
               height: 5,
               minHeight: 5,
+              width: 174,
               background: 'rgba(255,255,255,0.5)',
-              border: '1px solid rgba(255,255,255,0.8)',
+              border: '1px solid rgba(255,255,255,0.5)',
               borderRadius: 3,
               overflow: 'hidden',
               flexShrink: 0,
@@ -64,7 +65,7 @@ function App() {
             <div
               id="loadingProgressBarFill"
               className="loading-progress-bar-fill"
-              style={{ height: '100%', background: '#fff', borderRadius: 2 }}
+              style={{ height: '100%', background: 'rgba(255,255,255,0.5)', borderRadius: 2 }}
             />
           </div>
         </div>
