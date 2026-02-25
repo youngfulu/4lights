@@ -50,13 +50,14 @@ body {
     gap: 20px;
 }
 
-/* Minimalistic Mac-style horizontal progress bar (black & white) */
+/* Minimalistic Mac-style horizontal progress bar (black & white) - high contrast so it’s always visible */
 .loading-progress-bar {
     width: 260px;
-    height: 4px;
-    background: rgba(255, 255, 255, 0.25);
-    border: 1px solid rgba(255, 255, 255, 0.5);
-    border-radius: 2px;
+    height: 5px;
+    min-height: 5px;
+    background: rgba(255, 255, 255, 0.45);
+    border: 1px solid rgba(255, 255, 255, 0.75);
+    border-radius: 3px;
     overflow: hidden;
     z-index: 10000 !important;
     flex-shrink: 0;
@@ -64,6 +65,7 @@ body {
 }
 
 .loading-progress-bar-fill {
+    display: block;
     height: 100%;
     width: 0%;
     max-width: 100%;
@@ -404,6 +406,13 @@ body {
         top: calc(16px + env(safe-area-inset-top, 0px));
         left: calc(16px + env(safe-area-inset-left, 0px));
     }
+    .mobile-nav-label[data-category="we-are"] {
+        overflow: visible;
+        /* Default center so circle is visible until script repositions */
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+    }
     .mobile-nav-label[data-category="we-are"]::before {
         content: '';
         position: absolute;
@@ -413,11 +422,12 @@ body {
         width: 160px;
         height: 160px;
         aspect-ratio: 1;
-        border: 0.5px dashed #fff;
+        border: 1px dashed rgba(255, 255, 255, 0.9);
         border-radius: 50%;
-        opacity: 0.8;
+        opacity: 1;
         pointer-events: none;
-        z-index: 1;
+        z-index: 0;
+        box-sizing: border-box;
     }
     .mobile-nav-label:hover,
     .mobile-nav-label:active {

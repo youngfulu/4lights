@@ -1273,16 +1273,19 @@ const SELECTION_MODE_COOLDOWN = 2000; // 2 seconds cooldown after all images loa
 const CONNECTION_MODE_COOLDOWN = 2000; // 2 seconds cooldown after loading screen - no dotted line animation
 
 // Update loading progress bar (Mac-style bar under "Welcome to Spatial Playground")
+// React drives the fill via window.__UPDATE_LOADING_PROGRESS__; also set DOM for non-React fallback
 function updateLoadingProgressBar() {
-    const barEl = document.getElementById('loadingProgressBar');
+    if (typeof window.__UPDATE_LOADING_PROGRESS__ === 'function') {
+        window.__UPDATE_LOADING_PROGRESS__(imagesLoaded, totalImages);
+    }
     const fillEl = document.getElementById('loadingProgressBarFill');
-    if (!barEl || !fillEl) return;
+    if (!fillEl) return;
     if (totalImages === 0) {
-        fillEl.style.width = '100%';
+        fillEl.style.setProperty('width', '100%');
         return;
     }
     const pct = Math.min(100, Math.round((imagesLoaded / totalImages) * 100));
-    fillEl.style.width = pct + '%';
+    fillEl.style.setProperty('width', pct + '%');
 }
 
 // Check if ready to show images (both words and images must be ready)
@@ -1493,6 +1496,7 @@ function loadImageOnce(path) {
 
             imagesLoaded++;
             imagesLoadedSuccessfully++;
+            updateLoadingProgressBar();
             debugLog(`Loaded image ${imagesLoadedSuccessfully}/${totalImages}: ${path} (${img.naturalWidth}x${img.naturalHeight})`);
             // If this image participates in the current desktop aligned row, relayout to prevent overlaps.
             scheduleAlignedDesktopRelayoutIfNeeded(path);
@@ -1503,6 +1507,7 @@ function loadImageOnce(path) {
 
         img.onerror = () => {
             imagesLoaded++;
+            updateLoadingProgressBar();
             console.warn('Image load failed:', path, '->', img.src);
             reject(new Error(`Failed to load image: ${path}`));
         };

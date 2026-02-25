@@ -351,10 +351,12 @@ body {
         padding: 8px;
     }
     
-    /* Position labels at different edges */
-    /* "we are" is positioned dynamically at intersection of lines */
+    /* "we are" at center by default; script may reposition at line intersection */
     .mobile-nav-label[data-category="we-are"] {
-        /* Position will be set dynamically in JavaScript */
+        overflow: visible;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
     }
     
     .mobile-nav-label[data-category="stage"] {
@@ -377,7 +379,10 @@ body {
         left: calc(16px + env(safe-area-inset-left, 0px));
     }
     
-    /* Dotted circle around "we are" - perfect circle, 2.5x bigger */
+    .mobile-nav-label[data-category="we-are"] {
+        overflow: visible;
+    }
+    /* Dotted circle around "we are" - visible on all devices */
     .mobile-nav-label[data-category="we-are"]::before {
         content: '';
         position: absolute;
@@ -387,11 +392,12 @@ body {
         width: 160px;
         height: 160px;
         aspect-ratio: 1;
-        border: 0.5px dashed #fff;
+        border: 1px dashed rgba(255, 255, 255, 0.9);
         border-radius: 50%;
-        opacity: 0.8;
+        opacity: 1;
         pointer-events: none;
-        z-index: 1;
+        z-index: 0;
+        box-sizing: border-box;
     }
     
     .mobile-nav-label:hover,

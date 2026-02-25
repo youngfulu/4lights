@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 /**
  * React shell for 4lights: renders the same DOM structure as the original
@@ -7,6 +7,14 @@ import { useEffect, useRef } from 'react';
  */
 function App() {
   const scriptsLoaded = useRef(false);
+  const [loadingProgress, setLoadingProgress] = useState({ loaded: 0, total: 0 });
+
+  useEffect(() => {
+    window.__UPDATE_LOADING_PROGRESS__ = (loaded, total) => {
+      setLoadingProgress((prev) => (prev.loaded === loaded && prev.total === total ? prev : { loaded, total }));
+    };
+    return () => { window.__UPDATE_LOADING_PROGRESS__ = null; };
+  }, []);
 
   useEffect(() => {
     if (scriptsLoaded.current) return;
@@ -44,10 +52,32 @@ function App() {
   return (
     <>
       <div id="loadingIndicator" className="loading-indicator">
-        <div className="loading-indicator-inner">
+        <div className="loading-indicator-inner" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20 }}>
           <div id="loadingText" className="loading-text"></div>
-          <div id="loadingProgressBar" className="loading-progress-bar" aria-hidden="true">
-            <div id="loadingProgressBarFill" className="loading-progress-bar-fill"></div>
+          <div
+            id="loadingProgressBar"
+            className="loading-progress-bar"
+            aria-hidden="true"
+            style={{
+              height: 5,
+              minHeight: 5,
+              background: 'rgba(255,255,255,0.5)',
+              border: '1px solid rgba(255,255,255,0.8)',
+              borderRadius: 3,
+              overflow: 'hidden',
+              flexShrink: 0,
+            }}
+          >
+            <div
+              id="loadingProgressBarFill"
+              className="loading-progress-bar-fill"
+              style={{
+                height: '100%',
+                background: '#fff',
+                borderRadius: 2,
+                width: loadingProgress.total > 0 ? `${Math.min(100, Math.round((loadingProgress.loaded / loadingProgress.total) * 100))}%` : '0%',
+              }}
+            />
           </div>
         </div>
       </div>
