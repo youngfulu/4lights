@@ -72,7 +72,7 @@ if (!ctx && canvas) {
 const DEBUG = false;
 const IMAGE_LOAD_CONCURRENCY = 4; // Limit parallel decodes/downloads to reduce jank
 const INITIAL_IMAGES_TO_LOAD = 12; // Load a small set eagerly for faster first render
-const MAX_LOADING_SCREEN_WAIT_MS = 3000; // Safety: never block on all images
+const MAX_LOADING_SCREEN_WAIT_MS = 120000; // Only for real hangs (2 min); do not pass to home until all images loaded
 const APP_START_TIME = performance.now();
 
 function debugLog(...args) {
@@ -103,6 +103,8 @@ const hoverZoomTransitionDuration = 500; // Transition duration in milliseconds 
 const alignmentAnimationDuration = 1200; // Animation duration in milliseconds (1.2 seconds - matches phase 1)
 const alignedSizeMultiplier = 7.0; // Size multiplier when aligned (7x larger)
 const panSmoothness = 0.09; // Smoothness factor for camera pan interpolation (2x slower for smoother feel)
+const SELECTION_PAN_SMOOTHNESS = 0.045; // Slower, smoother pan in image selection mode (next/prev)
+const SELECTION_PAN_INERTIA_DECAY = 0.96; // Slight inertia decay in selection mode (smoother follow-through)
 // Opacity transition: fade to 0 (invisible) in 1 second (2x slower, linear interpolation)
 // Linear fade: current += (target - current) * smoothness
 // To reach ~0.01 in 1 second (60 frames) with linear interpolation: smoothness ≈ 0.017
@@ -1270,8 +1272,22 @@ let allImagesLoadedTime = null; // Time when all images finished loading
 const SELECTION_MODE_COOLDOWN = 2000; // 2 seconds cooldown after all images loaded
 const CONNECTION_MODE_COOLDOWN = 2000; // 2 seconds cooldown after loading screen - no dotted line animation
 
+// Update loading progress bar (Mac-style bar under "Welcome to Spatial Playground")
+function updateLoadingProgressBar() {
+    const barEl = document.getElementById('loadingProgressBar');
+    const fillEl = document.getElementById('loadingProgressBarFill');
+    if (!barEl || !fillEl) return;
+    if (totalImages === 0) {
+        fillEl.style.width = '100%';
+        return;
+    }
+    const pct = Math.min(100, Math.round((imagesLoaded / totalImages) * 100));
+    fillEl.style.width = pct + '%';
+}
+
 // Check if ready to show images (both words and images must be ready)
 function checkIfReadyToShowImages() {
+    updateLoadingProgressBar();
     // Keep "Welcome to Spatial Playground" visible until ALL images are loaded
     // Only hide when all words are visible AND all images have finished loading (success or error)
     // If no images (totalImages === 0), treat as loaded so mobile doesn't stay on white/loading
@@ -1363,6 +1379,7 @@ function loadImages() {
     totalImages = uniquePaths.length;
     imagesLoaded = 0;
     imagesLoadedSuccessfully = 0;
+    updateLoadingProgressBar();
     
     if (uniquePaths.length === 0) {
         console.warn('No image paths to load.');
@@ -4184,19 +4201,22 @@ function draw() {
         // Only apply smooth interpolation if not currently dragging (dragging uses direct update)
         // Allow navigation in all directions (no horizontal-only restriction)
         if (!isDragging) {
+            const inSelectionMode = alignedEmojiIndex !== null && !isMobileDevice();
+            const smooth = inSelectionMode ? SELECTION_PAN_SMOOTHNESS : panSmoothness;
+            const decay = inSelectionMode ? SELECTION_PAN_INERTIA_DECAY : 0.94;
             // Apply light velocity-based inertia when not dragging (only if there's significant velocity)
             if (Math.abs(panVelocityX) > 0.1 || Math.abs(panVelocityY) > 0.1) {
-                const inertiaStrength = 2; // 2x reduced multiplier for slower navigation
+                const inertiaStrength = inSelectionMode ? 1.2 : 2; // Gentler inertia in selection mode
                 targetCameraPanX += panVelocityX * inertiaStrength;
                 targetCameraPanY += panVelocityY * inertiaStrength;
                 // Decay velocity over time (slower decay for longer, smoother inertia)
-                panVelocityX *= 0.94;
-                panVelocityY *= 0.94;
+                panVelocityX *= decay;
+                panVelocityY *= decay;
             }
             
             // Smooth interpolation towards target (only when not dragging)
-            cameraPanX += (targetCameraPanX - cameraPanX) * panSmoothness;
-            cameraPanY += (targetCameraPanY - cameraPanY) * panSmoothness;
+            cameraPanX += (targetCameraPanX - cameraPanX) * smooth;
+            cameraPanY += (targetCameraPanY - cameraPanY) * smooth;
             
             // Infinite carousel: wrap pan in selection mode so right of last image shows first
             if (alignedEmojiIndex !== null && alignedRowTotalWidthWorld > 0 && !isMobileDevice()) {

@@ -50,6 +50,9 @@ function main() {
     console.log('Root "Imgae test " not found; nothing to copy.');
     process.exit(0);
   }
+  if (fs.existsSync(TARGET)) {
+    fs.rmSync(TARGET, { recursive: true });
+  }
   console.log('Copying web-only files to public/Imgae test /...');
   const { files } = copyDir(SOURCE, TARGET);
   console.log(`Copied ${files} web/allowlisted files.`);

@@ -44,9 +44,46 @@ body {
     pointer-events: none;
 }
 
-/* Ensure loading progress bar is above loading indicator */
+.loading-indicator-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+}
+
+/* Minimalistic Mac-style horizontal progress bar (black & white) */
 .loading-progress-bar {
-    z-index: 10000 !important; /* Above loading indicator (2000) */
+    width: 260px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-radius: 2px;
+    overflow: hidden;
+    z-index: 10000 !important;
+    flex-shrink: 0;
+    box-sizing: border-box;
+}
+
+.loading-progress-bar-fill {
+    height: 100%;
+    width: 0%;
+    max-width: 100%;
+    background: #fff;
+    border-radius: 2px;
+    transition: width 0.18s ease-out;
+}
+
+@media (max-width: 767px), (pointer: coarse) {
+    .loading-indicator-inner {
+        gap: 16px;
+        padding: 0 20px;
+        max-width: 100%;
+    }
+    .loading-progress-bar {
+        width: min(260px, 85vw);
+        height: 4px;
+    }
 }
 
 .loading-indicator.hidden {

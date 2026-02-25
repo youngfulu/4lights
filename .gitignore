@@ -21,8 +21,8 @@ build/
 # Vite
 *.local
 
-# Root assets folder: never commit (raw/originals stay local only)
-Imgae test /
+# Root assets folder only: never commit (raw/originals stay local). public/Imgae test / is tracked.
+/Imgae test /
 
 # Non-web formats: never commit (push only web-ready: jpg, png, gif, webp, svg)
 *.MOV

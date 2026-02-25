@@ -44,7 +44,12 @@ function App() {
   return (
     <>
       <div id="loadingIndicator" className="loading-indicator">
-        <div id="loadingText" className="loading-text"></div>
+        <div className="loading-indicator-inner">
+          <div id="loadingText" className="loading-text"></div>
+          <div id="loadingProgressBar" className="loading-progress-bar" aria-hidden="true">
+            <div id="loadingProgressBarFill" className="loading-progress-bar-fill"></div>
+          </div>
+        </div>
       </div>
 
       <canvas id="canvas"></canvas>
