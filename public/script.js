@@ -955,7 +955,6 @@ const imagePaths = [
     'Imgae test /2gis  #spatial/Snimok-ehkrana-2023-09-01-v-14.18.14.png',
     'Imgae test /2gis  #spatial/image10.jpg',
     'Imgae test /2gis  #spatial/image19.jpg',
-    'Imgae test /Addon 26 #instalation/IMG_3659.HEIC.jpg',
     'Imgae test /Addon 26 #instalation/Screenshot 2026-01-03 at 15.53.30.png',
     'Imgae test /Addon 26 #instalation/Screenshot 2026-01-03 at 15.53.45.png',
     'Imgae test /Addon 26 #instalation/TDMovieOut.0.png',
@@ -1099,10 +1098,6 @@ const imagePaths = [
     'Imgae test /Vegeterian #stage #installation /e7af5fe7403946483739d3efbce015c9.jpg',
     'Imgae test /Vegeterian #stage #installation /photo_2022-11-20_14-41-10.jpg',
     'Imgae test /Vegeterian #stage #installation /photo_2022-11-20_14-42-02.jpg',
-    'Imgae test /bipolar express #stage #tech/IMG_2470.HEIC.jpg',
-    'Imgae test /bipolar express #stage #tech/IMG_2695.HEIC.jpg',
-    'Imgae test /bipolar express #stage #tech/IMG_2726.HEIC.jpg',
-    'Imgae test /bipolar express #stage #tech/IMG_2742.HEIC.jpg',
     'Imgae test /bipolar express #stage #tech/Screenshot 2026-01-07 at 17.41.20.png',
     'Imgae test /bipolar express #stage #tech/Screenshot 2026-01-07 at 17.41.35.png',
     'Imgae test /bipolar express #stage #tech/Screenshot 2026-01-07 at 17.41.47.png',
@@ -1111,14 +1106,11 @@ const imagePaths = [
     'Imgae test /fixtures decoratif #concept/pasted-image-2.png',
     'Imgae test /fixtures decoratif #concept/pasted-image.png',
     'Imgae test /fixtures decoratif #concept/photo_2022-09-11_20-12-15.jpg',
-    'Imgae test /gate #instal/IMG_1970.HEIC.jpg',
     'Imgae test /gate #instal/Screenshot 2024-11-24 at 20.45.22.png',
     'Imgae test /gate #instal/Screenshot 2024-11-24 at 20.47.07.png',
     'Imgae test /gate #instal/Screenshot 2026-02-22 at 15.52.12.png',
     'Imgae test /gate #instal/pasted-image.png',
     'Imgae test /gula merah #stage/IMG_5170.JPG',
-    'Imgae test /gula merah #stage/IMG_5248.HEIC.jpg',
-    'Imgae test /gula merah #stage/IMG_5307.HEIC.jpg',
     'Imgae test /gula merah #stage/Screenshot 2026-02-22 at 16.06.52.png',
     'Imgae test /gula merah #stage/Screenshot 2026-02-22 at 16.06.57.png',
     'Imgae test /gula merah #stage/photo_2022-08-12_13-03-47.jpg',
@@ -1175,9 +1167,6 @@ const imagePaths = [
     'Imgae test /tower building #spatial #installation/ComfyUI_00010_.png',
     'Imgae test /tower building #spatial #installation/ComfyUI_00023_.png',
     'Imgae test /tower building #spatial #installation/ComfyUI_00024_.png',
-    'Imgae test /wish circles #spatial #installation/IMG_1965.HEIC.jpg',
-    'Imgae test /wish circles #spatial #installation/IMG_2021.HEIC.jpg',
-    'Imgae test /wish circles #spatial #installation/IMG_2034.HEIC.jpg',
     'Imgae test /wish circles #spatial #installation/Screenshot 2024-11-24 at 20.45.35.png',
     'Imgae test /wish circles #spatial #installation/Screenshot 2024-11-24 at 22.02.56.png',
     'Imgae test /wish circles #spatial #installation/Screenshot 2026-02-22 at 15.27.19.png',
@@ -1486,15 +1475,16 @@ function loadImageOnce(path) {
             let drawable = img;
             let width = img.naturalWidth;
             let height = img.naturalHeight;
-            // Preserve EXIF orientation (fix rotated images on mobile) by using createImageBitmap
-            if (typeof createImageBitmap === 'function') {
+            // Preserve EXIF orientation on desktop only (createImageBitmap can break mobile loading)
+            const isMobile = typeof window !== 'undefined' && (window.innerWidth < 768 || ('ontouchstart' in window));
+            if (!isMobile && typeof createImageBitmap === 'function') {
                 try {
                     const bitmap = await createImageBitmap(img, { imageOrientation: 'from-image' });
                     drawable = bitmap;
                     width = bitmap.width;
                     height = bitmap.height;
                 } catch {
-                    // Fallback: use img as-is (may show wrong orientation on some devices)
+                    // Fallback: use img as-is
                 }
             }
 
