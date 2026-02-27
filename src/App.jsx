@@ -51,12 +51,12 @@ function App() {
             className="loading-progress-bar"
             aria-hidden="true"
             style={{
-              height: 5,
-              minHeight: 5,
+              height: 2.5,
+              minHeight: 2.5,
               width: 174,
-              background: 'rgba(255,255,255,0.5)',
-              border: '1px solid rgba(255,255,255,0.5)',
-              borderRadius: 3,
+              background: 'rgba(255,255,255,0.4)',
+              border: '1px solid rgba(255,255,255,0.4)',
+              borderRadius: 2,
               overflow: 'hidden',
               flexShrink: 0,
             }}
@@ -65,7 +65,7 @@ function App() {
             <div
               id="loadingProgressBarFill"
               className="loading-progress-bar-fill"
-              style={{ height: '100%', background: 'rgba(255,255,255,0.5)', borderRadius: 2 }}
+              style={{ height: '100%', background: 'rgba(255,255,255,0.4)', borderRadius: 2 }}
             />
           </div>
         </div>

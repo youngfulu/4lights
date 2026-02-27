@@ -52,12 +52,12 @@ body {
     gap: 20px;
 }
 
-/* Minimalistic Mac-style horizontal progress bar, 1/3 shorter, 50% opacity */
+/* Minimalistic Mac-style horizontal progress bar, half height, 40% opacity */
 .loading-progress-bar {
     width: 174px;
-    height: 4px;
-    background: rgba(255, 255, 255, 0.5);
-    border: 1px solid rgba(255, 255, 255, 0.5);
+    height: 2.5px;
+    background: rgba(255, 255, 255, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.4);
     border-radius: 2px;
     overflow: hidden;
     z-index: 10000 !important;
@@ -69,7 +69,7 @@ body {
     height: 100%;
     width: 0%;
     max-width: 100%;
-    background: rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.4);
     border-radius: 2px;
     transition: width 0.18s ease-out;
 }
@@ -82,7 +82,7 @@ body {
     }
     .loading-progress-bar {
         width: min(174px, 85vw);
-        height: 4px;
+        height: 2px;
     }
 }
 

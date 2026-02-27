@@ -1483,21 +1483,34 @@ function loadImageOnce(path) {
                 }
             }
 
+            let drawable = img;
+            let width = img.naturalWidth;
+            let height = img.naturalHeight;
+            // Preserve EXIF orientation (fix rotated images on mobile) by using createImageBitmap
+            if (typeof createImageBitmap === 'function') {
+                try {
+                    const bitmap = await createImageBitmap(img, { imageOrientation: 'from-image' });
+                    drawable = bitmap;
+                    width = bitmap.width;
+                    height = bitmap.height;
+                } catch {
+                    // Fallback: use img as-is (may show wrong orientation on some devices)
+                }
+            }
+
             imageCache[path] = {
-                img,
-                width: img.naturalWidth,
-                height: img.naturalHeight,
-                aspectRatio: img.naturalWidth / img.naturalHeight,
+                img: drawable,
+                width,
+                height,
+                aspectRatio: width / height,
                 error: false
             };
 
             imagesLoaded++;
             imagesLoadedSuccessfully++;
             updateLoadingProgressBar();
-            debugLog(`Loaded image ${imagesLoadedSuccessfully}/${totalImages}: ${path} (${img.naturalWidth}x${img.naturalHeight})`);
-            // If this image participates in the current desktop aligned row, relayout to prevent overlaps.
+            debugLog(`Loaded image ${imagesLoadedSuccessfully}/${totalImages}: ${path} (${width}x${height})`);
             scheduleAlignedDesktopRelayoutIfNeeded(path);
-            // If this image participates in the current mobile aligned column, relayout to preserve equal widths.
             scheduleAlignedMobileRelayoutIfNeeded(path);
             resolve(imageCache[path]);
         };
@@ -5169,11 +5182,12 @@ function handleMobileCategoryBack() {
     
     // If in folder list mode, exit to main screen
     if (isIndexMode) {
-        hideIndexFolderList();
-        exitIndexMode();
-        currentMobileCategory = null;
-        
-        // Hide mobile category content overlay to restore touch navigation
+        // Immediately unblock canvas so scroll/pan works on home (fixes mobile scroll after back)
+        const indexList = document.getElementById('indexFolderList');
+        if (indexList) {
+            indexList.style.setProperty('pointer-events', 'none', 'important');
+            indexList.style.setProperty('display', 'none', 'important');
+        }
         const categoryContent = document.getElementById('mobileCategoryContent');
         if (categoryContent) {
             categoryContent.classList.remove('visible');
@@ -5187,6 +5201,9 @@ function handleMobileCategoryBack() {
             contentInner.style.visibility = 'hidden';
             contentInner.style.opacity = '0';
         }
+        hideIndexFolderList();
+        exitIndexMode();
+        currentMobileCategory = null;
         
         // Show navigation again
         setMobileNavVisibility(true);

@@ -53,11 +53,11 @@ body {
 /* Minimalistic Mac-style horizontal progress bar (black & white) - high contrast so it’s always visible */
 .loading-progress-bar {
     width: 174px;
-    height: 5px;
-    min-height: 5px;
-    background: rgba(255, 255, 255, 0.5);
-    border: 1px solid rgba(255, 255, 255, 0.5);
-    border-radius: 3px;
+    height: 2.5px;
+    min-height: 2.5px;
+    background: rgba(255, 255, 255, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    border-radius: 2px;
     overflow: hidden;
     z-index: 10000 !important;
     flex-shrink: 0;
@@ -69,7 +69,7 @@ body {
     height: 100%;
     width: 0%;
     max-width: 100%;
-    background: rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.4);
     border-radius: 2px;
     transition: width 0.18s ease-out;
 }
@@ -86,7 +86,7 @@ body {
     }
     .loading-progress-bar {
         width: min(174px, 85vw);
-        height: 4px;
+        height: 2px;
         -webkit-tap-highlight-color: transparent;
     }
 }
