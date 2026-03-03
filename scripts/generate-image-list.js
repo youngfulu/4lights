@@ -12,12 +12,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(__dirname, '..');
 
 const WEB_IMAGE_EXT = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg'];
-// Only scan public/Imgae test so every listed image is actually served at /img/ (no 404s)
-const IMAGE_DIRS = [
-  path.join(projectRoot, 'public', 'Imgae test '),
-];
-// Fallback: if public folder missing, use project root (user must copy to public for /img to serve)
-const FALLBACK_IMAGE_DIR = path.join(projectRoot, 'Imgae test ');
+// Only scan public/Imgae test — root "Imgae test " is ignored so grid uses only served images
+const IMAGE_DIR = path.join(projectRoot, 'public', 'Imgae test ');
 
 function getWebImagePaths(dir, baseDir) {
   const results = [];
@@ -41,23 +37,14 @@ function getWebImagePaths(dir, baseDir) {
 
 function main() {
   const allPaths = new Set();
-  let scanned = false;
-  for (const imageDir of IMAGE_DIRS) {
-    if (!fs.existsSync(imageDir)) continue;
-    scanned = true;
-    const baseDir = path.dirname(imageDir);
-    const relDir = path.relative(projectRoot, imageDir);
-    const files = getWebImagePaths(imageDir, baseDir);
-    files.forEach((p) => allPaths.add(p));
-    console.log(`Scanned ${relDir}: ${files.length} web images (all loadable via /img/)`);
+  if (!fs.existsSync(IMAGE_DIR)) {
+    console.error('public/Imgae test not found. Only this folder is scanned; root files are ignored.');
+    process.exit(1);
   }
-  if (!scanned && fs.existsSync(FALLBACK_IMAGE_DIR)) {
-    console.warn('public/Imgae test not found; using project root Imgae test (copy to public for /img/ to serve).');
-    const baseDir = path.dirname(FALLBACK_IMAGE_DIR);
-    const files = getWebImagePaths(FALLBACK_IMAGE_DIR, baseDir);
-    files.forEach((p) => allPaths.add(p));
-    console.log(`Scanned Imgae test (root): ${files.length} web images`);
-  }
+  const baseDir = path.dirname(IMAGE_DIR);
+  const files = getWebImagePaths(IMAGE_DIR, baseDir);
+  files.forEach((p) => allPaths.add(p));
+  console.log(`Scanned public/Imgae test: ${files.length} web images (root Imgae test ignored)`);
 
   const sorted = Array.from(allPaths).sort();
   console.log(`Total unique web-displayable images: ${sorted.length}`);

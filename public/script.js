@@ -166,14 +166,18 @@ let alignedRelayoutRaf = 0;
 function setMobileNavVisibility(visible) {
     const mobileNav = document.getElementById('mobileHomepageNav');
     if (!mobileNav) return;
+    const labels = mobileNav.querySelectorAll('.mobile-nav-label');
     if (visible) {
         mobileNav.classList.add('visible');
         mobileNav.style.opacity = '1';
-        mobileNav.style.pointerEvents = 'auto';
+        // Container: none so touches pass through to canvas for pan; only labels are clickable
+        mobileNav.style.pointerEvents = 'none';
+        labels.forEach(function (el) { el.style.pointerEvents = 'auto'; });
     } else {
         mobileNav.classList.remove('visible');
         mobileNav.style.opacity = '0';
         mobileNav.style.pointerEvents = 'none';
+        labels.forEach(function (el) { el.style.pointerEvents = 'none'; });
     }
 }
 
@@ -1380,21 +1384,22 @@ function loadImages() {
     const eagerPaths = uniquePaths.slice(0, INITIAL_IMAGES_TO_LOAD);
     const deferredPaths = uniquePaths.slice(INITIAL_IMAGES_TO_LOAD);
 
-    // Eager: start quickly to get first pixels.
-    loadImagesWithConcurrency(eagerPaths).finally(() => {
-        checkIfReadyToShowImages();
-    });
+    // Eager: start quickly to get first pixels (progress bar updates via checkIfReadyToShowImages in each .finally)
+    loadImagesWithConcurrency(eagerPaths);
 
     // Deferred: avoid competing with main-thread startup work.
-    // On mobile devices, use setTimeout instead of requestIdleCallback for better compatibility
     const startDeferred = () => loadImagesWithConcurrency(deferredPaths);
     const isMobile = window.innerWidth < 768 || ('ontouchstart' in window);
-    if (!isMobile && 'requestIdleCallback' in window) {
-        window.requestIdleCallback(startDeferred, { timeout: 2000 });
+    if (!isMobile && typeof requestIdleCallback !== 'undefined') {
+        requestIdleCallback(startDeferred, { timeout: 2000 });
     } else {
-        // Mobile: start immediately or with minimal delay to ensure images load
         setTimeout(startDeferred, 100);
     }
+
+    // Home screen only after ALL image load attempts have settled (success or error)
+    Promise.allSettled(uniquePaths.map(p => loadImageWithRetry(p, 2))).then(() => {
+        checkIfReadyToShowImages();
+    });
     
     // Safety timeout: if loading hangs, force completion to reveal the canvas
     setTimeout(() => {
@@ -1463,46 +1468,52 @@ function loadImageOnce(path) {
         img.decoding = 'async';
 
         img.onload = async () => {
-            // Ensure decode has completed before first draw to reduce jank
-            if (typeof img.decode === 'function') {
-                try {
-                    await img.decode();
-                } catch {
-                    // decode() can reject for some formats; safe to ignore
+            try {
+                if (typeof img.decode === 'function') {
+                    try {
+                        await img.decode();
+                    } catch {
+                        // decode() can reject for some formats; safe to ignore
+                    }
                 }
-            }
 
-            let drawable = img;
-            let width = img.naturalWidth;
-            let height = img.naturalHeight;
-            // Preserve EXIF orientation on desktop only (createImageBitmap can break mobile loading)
-            const isMobile = typeof window !== 'undefined' && (window.innerWidth < 768 || ('ontouchstart' in window));
-            if (!isMobile && typeof createImageBitmap === 'function') {
-                try {
-                    const bitmap = await createImageBitmap(img, { imageOrientation: 'from-image' });
-                    drawable = bitmap;
-                    width = bitmap.width;
-                    height = bitmap.height;
-                } catch {
-                    // Fallback: use img as-is
+                var drawable = img;
+                var width = img.naturalWidth;
+                var height = img.naturalHeight;
+                // Preserve EXIF orientation on desktop only (createImageBitmap can break mobile)
+                var isMobile = typeof window !== 'undefined' && (window.innerWidth < 768 || ('ontouchstart' in window));
+                if (!isMobile && typeof createImageBitmap === 'function') {
+                    try {
+                        var bitmap = await createImageBitmap(img, { imageOrientation: 'from-image' });
+                        drawable = bitmap;
+                        width = bitmap.width;
+                        height = bitmap.height;
+                    } catch {
+                        // fallback: use img as-is
+                    }
                 }
+
+                imageCache[path] = {
+                    img: drawable,
+                    width: width,
+                    height: height,
+                    aspectRatio: width / height,
+                    error: false
+                };
+
+                imagesLoaded++;
+                imagesLoadedSuccessfully++;
+                updateLoadingProgressBar();
+                debugLog('Loaded image ' + imagesLoadedSuccessfully + '/' + totalImages + ': ' + path + ' (' + width + 'x' + height + ')');
+                scheduleAlignedDesktopRelayoutIfNeeded(path);
+                scheduleAlignedMobileRelayoutIfNeeded(path);
+                resolve(imageCache[path]);
+            } catch (err) {
+                console.warn('Image onload error:', path, err);
+                imagesLoaded++;
+                updateLoadingProgressBar();
+                reject(err);
             }
-
-            imageCache[path] = {
-                img: drawable,
-                width,
-                height,
-                aspectRatio: width / height,
-                error: false
-            };
-
-            imagesLoaded++;
-            imagesLoadedSuccessfully++;
-            updateLoadingProgressBar();
-            debugLog(`Loaded image ${imagesLoadedSuccessfully}/${totalImages}: ${path} (${width}x${height})`);
-            scheduleAlignedDesktopRelayoutIfNeeded(path);
-            scheduleAlignedMobileRelayoutIfNeeded(path);
-            resolve(imageCache[path]);
         };
 
         img.onerror = () => {
@@ -1525,14 +1536,20 @@ function loadImageOnce(path) {
     });
 }
 
-// Start loading images - wait for DOM to be ready
+// Start loading images when DOM is ready and required elements exist (React may mount after script load)
+function runLoadImagesWhenReady() {
+    var loadingText = document.getElementById('loadingText');
+    var canvasEl = document.getElementById('canvas');
+    if (loadingText && canvasEl) {
+        loadImages();
+        return;
+    }
+    setTimeout(runLoadImagesWhenReady, 50);
+}
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-loadImages();
-    });
+    document.addEventListener('DOMContentLoaded', runLoadImagesWhenReady);
 } else {
-    // DOM is already ready
-    loadImages();
+    runLoadImagesWhenReady();
 }
 
 // Calculate bounding box (1/5 from top and bottom)
@@ -1933,6 +1950,29 @@ function handleTouchMove(e) {
         // Handle mobile vertical scroll when emojis are aligned
         if (isMobile && alignedEmojiIndex !== null) {
             e.preventDefault();
+            // Native pinch zoom in selection/gallery mode (iOS/Android)
+            if (e.touches.length === 2) {
+                var curDist = getTouchDistance(e.touches[0], e.touches[1]);
+                if (pinchStartDistance > 0) {
+                    var ratio = curDist / pinchStartDistance;
+                    var newZoom = pinchStartZoom * ratio;
+                    var cX = canvas.width / 2;
+                    var cY = canvas.height / 2;
+                    var curZ = targetZoomLevel || globalZoomLevel || 1.0;
+                    var curPanX = cameraPanX;
+                    var curPanY = cameraPanY;
+                    newZoom = Math.max(minZoom, Math.min(maxZoom, newZoom));
+                    var focX = (zoomFocalPointX != null && zoomFocalPointX !== undefined) ? zoomFocalPointX : cX;
+                    var focY = (zoomFocalPointY != null && zoomFocalPointY !== undefined) ? zoomFocalPointY : cY;
+                    var wX = ((focX - cX - curPanX) / curZ) + cX;
+                    var wY = ((focY - cY - curPanY) / curZ) + cY;
+                    targetZoomLevel = newZoom;
+                    targetCameraPanX = focX - cX - (wX - cX) * newZoom;
+                    targetCameraPanY = focY - cY - (wY - cY) * newZoom;
+                    lastInteractionTime = performance.now();
+                }
+                return;
+            }
             // Check if this is a vertical scroll gesture (if not already scrolling, detect it)
             if (!isMobileScrolling) {
                 const deltaY = Math.abs(touchY - touchStartY);
@@ -1961,7 +2001,7 @@ function handleTouchMove(e) {
                 targetMouseY = e.touches[0].clientY - rect.top;
             }
         } else {
-            // Pinch zoom (two-finger) — disabled on mobile
+            // Pinch zoom (two-finger) — only disabled on mobile when NOT in selection mode
             if (isMobile && e.touches.length === 2) {
                 return;
             }
@@ -5161,6 +5201,7 @@ function handleMobileCategoryBack() {
         updateBackButtonVisibility();
         updateMobileGridPointerState();
         startMobileAutoConnections();
+        requestAnimationFrame(function () { updateMobileGridPointerState(); });
         return;
     }
     
@@ -5213,6 +5254,7 @@ function handleMobileCategoryBack() {
         updateBackButtonVisibility();
         updateMobileGridPointerState();
         startMobileAutoConnections();
+        requestAnimationFrame(function () { updateMobileGridPointerState(); });
         return;
     }
     
@@ -5260,6 +5302,11 @@ function handleMobileCategoryBack() {
     if (mobileBack) {
         mobileBack.style.display = 'none';
     }
+    
+    // Re-apply canvas pointer-events on next frame so touch/pan works after back
+    requestAnimationFrame(function () {
+        updateMobileGridPointerState();
+    });
 }
 
 function runAppInit() {
