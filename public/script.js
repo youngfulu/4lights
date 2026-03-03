@@ -70,8 +70,8 @@ if (!ctx && canvas) {
 
 // Performance/debug flags
 const DEBUG = false;
-const IMAGE_LOAD_CONCURRENCY = 4; // Limit parallel decodes/downloads to reduce jank
-const INITIAL_IMAGES_TO_LOAD = 12; // Load a small set eagerly for faster first render
+const IMAGE_LOAD_CONCURRENCY = 6; // Thumbnails are small; allow more parallel loads
+const INITIAL_IMAGES_TO_LOAD = 24; // Load more thumbs quickly for faster first paint
 const MAX_LOADING_SCREEN_WAIT_MS = 120000; // Only for real hangs (2 min); do not pass to home until all images loaded
 const APP_START_TIME = performance.now();
 
@@ -327,6 +327,12 @@ let connectedFolderPath = null; // Folder path for connected images
 let mobileLastTappedPoint = null; // Track last tapped point on mobile for two-tap behavior
 let isConnectionModeClicked = false; // Whether connection mode was entered via click (true) or auto-hover (false)
 let autoHoverTriggerPoint = null; // Track which point triggered auto-hover connection mode
+// image_names: labels above images in connection (dotted line) mode. Set IMAGE_NAMES_ENABLED = true to re-enable.
+const IMAGE_NAMES_ENABLED = false;
+let connectionModeLabelsOpacity = 0;
+let connectionModeLabelsFadeStartTime = 0;
+let connectionModeLabelsFadeIn = false;
+let lastConnectedPointsForLabels = []; // Used during 0.1s fade-out after exit
 
 function isMobileDevice() {
     return window.innerWidth < 768 || ('ontouchstart' in window);
@@ -542,6 +548,7 @@ function layoutAlignedEmojisDesktop(animate = true) {
     if (isMobileDevice()) return;
     if (!alignedEmojis || alignedEmojis.length === 0) return;
 
+    loadFullResForPaths(alignedEmojis.map(p => p.imagePath));
     const now = performance.now();
     // Desktop selection:
     // - Images have equal WIDTH (scale proportionally)
@@ -576,9 +583,9 @@ function layoutAlignedEmojisDesktop(animate = true) {
         const imageData = imageCache[point.imagePath];
         const aspectRatio = (imageData && imageData.aspectRatio) ? imageData.aspectRatio : 1;
 
-        // If missing, request load so we can relayout when it arrives
+        // If missing, request full-res load so we can relayout when it arrives
         if (!imageData) {
-            loadImageWithRetry(point.imagePath, 2).then(() => {
+            loadImageWithRetry(point.imagePath, 2, false).then(() => {
                 scheduleAlignedDesktopRelayoutIfNeeded(point.imagePath);
             }).catch(() => {});
         }
@@ -737,6 +744,7 @@ function layoutAlignedEmojisMobileVertical(animate = true) {
     if (!isMobileDevice()) return;
     if (!alignedEmojis || alignedEmojis.length === 0) return;
 
+    loadFullResForPaths(alignedEmojis.map(p => p.imagePath));
     const selectedZoom = zoomLevels[initialZoomIndex]; // 1.0
     // Equal left and right margin (e.g. 14px or 4% each side), images use remaining width
     const marginScreen = Math.max(14, canvas.width * 0.04);
@@ -1182,8 +1190,7 @@ const imagePaths = [
 ];
 
 
-// Image cache - stores loaded Image objects
-// Each entry can have: img (full-res), thumbnail (low-res), loading (boolean)
+// Image cache: thumb = grid (small), img = full-res (selection mode). Draw uses img || thumb.
 const imageCache = {};
 let imagesLoaded = 0;
 let totalImages = 0;
@@ -1428,59 +1435,82 @@ function loadImagesWithConcurrency(paths) {
     return Promise.all(workers).then(() => undefined);
 }
 
-function loadImageWithRetry(path, retries) {
-    // De-dupe concurrent requests
-    if (imageLoadPromises.has(path)) return imageLoadPromises.get(path);
+function loadImageWithRetry(path, retries, useThumb) {
+    if (useThumb === undefined) useThumb = true;
+    const key = path + (useThumb ? ':thumb' : ':full');
+    if (imageLoadPromises.has(key)) return imageLoadPromises.get(key);
 
     const promise = (async () => {
+        const skipProgress = !useThumb; // don't affect loading bar when loading full-res for selection
         for (let attempt = 0; attempt <= retries; attempt++) {
             try {
-                const imageData = await loadImageOnce(path);
+                const imageData = await loadImageOnce(path, useThumb, skipProgress);
                 if (imageData) return imageData;
             } catch (e) {
                 if (attempt < retries) {
-                    // Small backoff
                     await new Promise(r => setTimeout(r, 250 * (attempt + 1)));
                 }
             }
         }
         return null;
     })().finally(() => {
-        // Keep the promise cached so we never re-request the same image
-        checkIfReadyToShowImages();
+        if (useThumb) checkIfReadyToShowImages();
     });
 
-    imageLoadPromises.set(path, promise);
+    imageLoadPromises.set(key, promise);
     return promise;
 }
 
-function loadImageOnce(path) {
+// Load full-res for selection mode (does not affect loading screen progress)
+function loadFullResForPaths(paths) {
+    if (!paths || paths.length === 0) return;
+    paths.forEach(p => {
+        const cached = imageCache[p];
+        if (cached && cached.img) return; // already have full-res
+        loadImageWithRetry(p, 2, false);
+    });
+}
+
+function getImageUrl(path, useThumb) {
+    if (typeof window !== 'undefined' && window.__IMAGE_BASE__ === undefined) window.__IMAGE_BASE__ = '/img';
+    const subPath = (typeof window !== 'undefined' && window.__IMAGE_BASE__)
+      ? path.replace(/^Imgae test \//, '')
+      : path;
+    const pathForUrl = useThumb ? ('thumb/' + subPath) : subPath;
+    let encoded = pathForUrl.split('/').map(part => encodeURIComponent(part)).join('/');
+    encoded = encoded.replace(/%23/g, '%2523');
+    const base = (typeof window !== 'undefined' && window.location && window.location.origin) ? window.location.origin : '';
+    const prefix = (typeof window !== 'undefined' && window.__IMAGE_BASE__) ? window.__IMAGE_BASE__.replace(/\/$/, '') : '';
+    return base + (prefix ? prefix + '/' : '/') + encoded.replace(/^\//, '');
+}
+
+function loadImageOnce(path, useThumb, skipProgress) {
+    if (useThumb === undefined) useThumb = true;
+    if (skipProgress === undefined) skipProgress = false;
+
     return new Promise((resolve, reject) => {
-        if (imageCache[path]) {
-            imagesLoaded++;
-            updateLoadingProgressBar();
-            resolve(imageCache[path]);
+        const cached = imageCache[path];
+        if (useThumb && cached && (cached.thumb || cached.img)) {
+            if (!skipProgress) { imagesLoaded++; updateLoadingProgressBar(); }
+            resolve(cached);
+            return;
+        }
+        if (!useThumb && cached && cached.img) {
+            resolve(cached);
             return;
         }
 
         const img = new Image();
-        // Hint the browser to decode off the critical path where possible
         img.decoding = 'async';
 
         img.onload = async () => {
             try {
                 if (typeof img.decode === 'function') {
-                    try {
-                        await img.decode();
-                    } catch {
-                        // decode() can reject for some formats; safe to ignore
-                    }
+                    try { await img.decode(); } catch {}
                 }
-
                 var drawable = img;
                 var width = img.naturalWidth;
                 var height = img.naturalHeight;
-                // Preserve EXIF orientation on desktop only (createImageBitmap can break mobile)
                 var isMobile = typeof window !== 'undefined' && (window.innerWidth < 768 || ('ontouchstart' in window));
                 if (!isMobile && typeof createImageBitmap === 'function') {
                     try {
@@ -1488,51 +1518,49 @@ function loadImageOnce(path) {
                         drawable = bitmap;
                         width = bitmap.width;
                         height = bitmap.height;
-                    } catch {
-                        // fallback: use img as-is
-                    }
+                    } catch {}
                 }
 
-                imageCache[path] = {
-                    img: drawable,
-                    width: width,
-                    height: height,
-                    aspectRatio: width / height,
-                    error: false
-                };
+                if (!imageCache[path]) {
+                    imageCache[path] = { thumb: null, img: null, width: 0, height: 0, aspectRatio: 1, error: false };
+                }
+                const entry = imageCache[path];
+                if (useThumb) {
+                    entry.thumb = drawable;
+                    entry.width = width;
+                    entry.height = height;
+                    entry.aspectRatio = width / height;
+                } else {
+                    entry.img = drawable;
+                    entry.width = width;
+                    entry.height = height;
+                    entry.aspectRatio = width / height;
+                }
+                entry.error = false;
 
-                imagesLoaded++;
-                imagesLoadedSuccessfully++;
-                updateLoadingProgressBar();
-                debugLog('Loaded image ' + imagesLoadedSuccessfully + '/' + totalImages + ': ' + path + ' (' + width + 'x' + height + ')');
+                if (!skipProgress) {
+                    imagesLoaded++;
+                    imagesLoadedSuccessfully++;
+                    updateLoadingProgressBar();
+                    debugLog('Loaded ' + (useThumb ? 'thumb' : 'full') + ' ' + path);
+                }
                 scheduleAlignedDesktopRelayoutIfNeeded(path);
                 scheduleAlignedMobileRelayoutIfNeeded(path);
-                resolve(imageCache[path]);
+                resolve(entry);
             } catch (err) {
                 console.warn('Image onload error:', path, err);
-                imagesLoaded++;
-                updateLoadingProgressBar();
+                if (!skipProgress) { imagesLoaded++; updateLoadingProgressBar(); }
                 reject(err);
             }
         };
 
         img.onerror = () => {
-            imagesLoaded++;
-            updateLoadingProgressBar();
+            if (!skipProgress) { imagesLoaded++; updateLoadingProgressBar(); }
             console.warn('Image load failed:', path, '->', img.src);
-            reject(new Error(`Failed to load image: ${path}`));
+            reject(new Error('Failed to load image: ' + path));
         };
 
-        // Use /img/ alias when set (Vite/React) to avoid path encoding issues; otherwise use full path
-        const pathForUrl = (typeof window !== 'undefined' && window.__IMAGE_BASE__)
-          ? path.replace(/^Imgae test \//, '')
-          : path;
-        let encodedPath = pathForUrl.split('/').map(part => encodeURIComponent(part)).join('/');
-        // Double-encode # so browser doesn't treat it as URL fragment (would break /img/... paths)
-        encodedPath = encodedPath.replace(/%23/g, '%2523');
-        const base = (typeof window !== 'undefined' && window.location && window.location.origin) ? window.location.origin : '';
-        const prefix = (typeof window !== 'undefined' && window.__IMAGE_BASE__) ? window.__IMAGE_BASE__.replace(/\/$/, '') : '';
-        img.src = base + (prefix ? prefix + '/' : '/') + encodedPath.replace(/^\//, '');
+        img.src = getImageUrl(path, useThumb);
     });
 }
 
@@ -2136,9 +2164,12 @@ function handleMouseDown(e) {
         }
     }
     
-    // When in connection mode (dotted lines), click outside image/menu returns to random grid
+    // When in connection mode, click on empty space starts drag (pan navigation)
     if (isConnectionMode && !clickedPoint) {
-        exitConnectionMode();
+        isDragging = true;
+        lastDragX = mouseX;
+        lastDragY = mouseY;
+        canvas.style.cursor = 'grabbing';
         e.preventDefault();
         return;
     }
@@ -2249,8 +2280,8 @@ function handleWheel(e) {
     zoomFocalPointX = mouseX;
     zoomFocalPointY = mouseY;
     
-    // If in image selection mode or filter mode, use smooth gradual zoom towards mouse position with inertia
-    if (alignedEmojiIndex !== null || isFilterMode) {
+    // If in selection, filter, or connection (dotted line) mode, use smooth gradual zoom/pan at any zoom level
+    if (alignedEmojiIndex !== null || isFilterMode || isConnectionMode) {
         const centerX = canvas.width / 2;
         const centerY = canvas.height / 2;
         
@@ -2461,6 +2492,10 @@ function findPointAtMouse(mouseX, mouseY) {
         // Skip inactive points (faded out in selection mode)
         if (point.isInactive) {
             continue; // Skip inactive points - they are not available for interaction
+        }
+        // Skip effectively invisible points so pan-on-empty-space works after zoom (no invisible hit targets)
+        if (point.opacity < 0.15) {
+            continue;
         }
         
         // Use appropriate size based on layer and alignment
@@ -2714,7 +2749,9 @@ function enterConnectionMode(clickedPoint, isClicked = false, allowMobileAuto = 
     
     isConnectionMode = true;
     connectedFolderPath = clickedFolderPath;
-    
+    connectionModeLabelsFadeStartTime = performance.now();
+    connectionModeLabelsFadeIn = true;
+
     // Keep images from same folder visible, others fade out
     points.forEach(p => {
         let pFolder = p.folderPath;
@@ -2753,13 +2790,16 @@ function enterConnectionMode(clickedPoint, isClicked = false, allowMobileAuto = 
 
 // Exit connection mode
 function exitConnectionMode() {
+    lastConnectedPointsForLabels = connectedPoints.length > 0 ? [...connectedPoints] : [];
+    connectionModeLabelsFadeStartTime = performance.now();
+    connectionModeLabelsFadeIn = false;
     isConnectionMode = false;
     isConnectionModeClicked = false;
     connectedPoints = [];
     connectedFolderPath = null;
     mobileLastTappedPoint = null; // Reset mobile tap tracking
     autoHoverTriggerPoint = null; // Clear auto-hover trigger point
-    
+
     // Restore opacity for all images and reset inactive flag
     points.forEach(p => {
         p.targetOpacity = 1.0;
@@ -3989,6 +4029,15 @@ function draw() {
     const centerX = canvas.width / 2;
     const centerY = canvas.height / 2;
     
+    // Connection mode labels: fade in 0.5s, fade out 0.1s on exit
+    const labelsNow = performance.now();
+    if (connectionModeLabelsFadeIn && isConnectionMode) {
+        connectionModeLabelsOpacity = Math.min(1, (labelsNow - connectionModeLabelsFadeStartTime) / 500);
+    } else if (!connectionModeLabelsFadeIn && lastConnectedPointsForLabels.length > 0) {
+        connectionModeLabelsOpacity = Math.max(0, 1 - (labelsNow - connectionModeLabelsFadeStartTime) / 100);
+        if (connectionModeLabelsOpacity <= 0) lastConnectedPointsForLabels = [];
+    }
+    
     // Handle selection animation phases (desktop only)
     if (selectionAnimationPhase !== 0 && !isMobile) {
         const now = performance.now();
@@ -4242,9 +4291,9 @@ function draw() {
         
         // Smooth camera pan interpolation with inertia (desktop only when not in mobile aligned mode)
         // Only apply smooth interpolation if not currently dragging (dragging uses direct update)
-        // Allow navigation in all directions (no horizontal-only restriction)
+        // Allow navigation in connection mode (dotted lines) and selection mode
         if (!isDragging) {
-            const inSelectionMode = alignedEmojiIndex !== null && !isMobileDevice();
+            const inSelectionMode = (alignedEmojiIndex !== null || isConnectionMode) && !isMobileDevice();
             const smooth = inSelectionMode ? SELECTION_PAN_SMOOTHNESS : panSmoothness;
             const decay = inSelectionMode ? SELECTION_PAN_INERTIA_DECAY : 0.94;
             // Apply light velocity-based inertia when not dragging (only if there's significant velocity)
@@ -4567,9 +4616,9 @@ function draw() {
             imageSize = point.currentSize * point.hoverSize;
         }
         
-        // Get image from cache
+        // Get image from cache (prefer full-res in selection, else thumbnail for grid)
         const imageData = imageCache[point.imagePath];
-        const img = imageData ? imageData.img : null;
+        const img = imageData ? (imageData.img || imageData.thumb) : null;
         
         // PERFORMANCE: Use globalAlpha directly (more efficient than save/restore)
         // Only change globalAlpha if it's different (optimization)
@@ -4606,6 +4655,19 @@ function draw() {
             } catch (e) {
                 // If drawImage fails, skip drawing
                 // Don't draw placeholder to avoid grey rectangles
+            }
+            // image_names: small white label above image (name without extension), fade in 0.5s / fade out 0.1s
+            const showLabel = IMAGE_NAMES_ENABLED && connectionModeLabelsOpacity > 0.01 && (isConnectionMode ? connectedPoints.includes(point) : lastConnectedPointsForLabels.includes(point));
+            if (showLabel) {
+                const name = point.imagePath.split('/').pop().replace(/\.[^.]+$/, '') || 'image';
+                const prevAlpha = ctx.globalAlpha;
+                ctx.globalAlpha = connectionModeLabelsOpacity * point.opacity;
+                ctx.font = '14px Arial';
+                ctx.fillStyle = '#fff';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'bottom';
+                ctx.fillText(name, x, y - halfHeight - 6);
+                ctx.globalAlpha = prevAlpha;
             }
         }
     });
