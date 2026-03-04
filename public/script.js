@@ -556,6 +556,7 @@ function layoutAlignedEmojisDesktop(animate = true) {
     if (!alignedEmojis || alignedEmojis.length === 0) return;
 
     loadFullResForPaths(alignedEmojis.map(p => p.imagePath));
+    loadHighresForPaths(alignedEmojis.map(p => p.imagePath));
     const now = performance.now();
     // Desktop selection:
     // - Images have equal WIDTH (scale proportionally)
@@ -756,6 +757,7 @@ function layoutAlignedEmojisMobileVertical(animate = true) {
     if (!alignedEmojis || alignedEmojis.length === 0) return;
 
     loadFullResForPaths(alignedEmojis.map(p => p.imagePath));
+    loadHighresForPaths(alignedEmojis.map(p => p.imagePath));
     const selectedZoom = zoomLevels[initialZoomIndex]; // 1.0
     // Equal left and right margin (e.g. 14px or 4% each side), images use remaining width
     const marginScreen = Math.max(14, canvas.width * 0.04);
@@ -1489,6 +1491,60 @@ function loadFullResForPaths(paths) {
         const cached = imageCache[p];
         if (cached && cached.img) return; // already have full-res
         loadImageWithRetry(p, 2, false);
+    });
+}
+
+// Path to highres version: "Imgae test /folder/file.jpg" -> "Imgae test /folder/highres/file.jpg"
+function getHighresPath(path) {
+    if (!path || path.indexOf('/') < 0) return null;
+    const lastSlash = path.lastIndexOf('/');
+    const folder = path.substring(0, lastSlash);
+    const filename = path.substring(lastSlash + 1);
+    return folder + '/highres/' + filename;
+}
+
+// Load highres from folder/highres/ and upgrade cache when ready (smooth, non-blocking)
+function loadHighresOnce(originalPath) {
+    const highresPath = getHighresPath(originalPath);
+    if (!highresPath) return Promise.resolve();
+    const url = getImageUrl(highresPath, false);
+    return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = async () => {
+            try {
+                if (typeof img.decode === 'function') {
+                    try { await img.decode(); } catch (_) {}
+                }
+                let drawable = img;
+                const isMobile = typeof window !== 'undefined' && (window.innerWidth < 768 || ('ontouchstart' in window));
+                if (!isMobile && typeof createImageBitmap === 'function') {
+                    try {
+                        drawable = await createImageBitmap(img, { imageOrientation: 'from-image' });
+                    } catch (_) {}
+                }
+                const entry = imageCache[originalPath];
+                if (entry) {
+                    entry.img = drawable;
+                    entry.width = drawable.width || img.naturalWidth;
+                    entry.height = drawable.height || img.naturalHeight;
+                    entry.aspectRatio = (entry.width && entry.height) ? entry.width / entry.height : entry.aspectRatio;
+                    scheduleAlignedDesktopRelayoutIfNeeded(originalPath);
+                    scheduleAlignedMobileRelayoutIfNeeded(originalPath);
+                }
+            } catch (_) {}
+            resolve();
+        };
+        img.onerror = () => resolve();
+        img.src = url;
+    });
+}
+
+// Load highres for selection mode after full-res is shown (staggered, non-blocking)
+function loadHighresForPaths(paths) {
+    if (!paths || paths.length === 0) return;
+    const HIGHRES_STAGGER_MS = 80;
+    paths.forEach((p, index) => {
+        setTimeout(() => loadHighresOnce(p), index * HIGHRES_STAGGER_MS);
     });
 }
 
