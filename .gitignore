@@ -53,3 +53,12 @@ build/
 *.ARW
 
 # public/Imgae test / is tracked; only web formats (above ignored) are excluded
+
+# Legacy root files (app uses public/script.js, public/about.js, src/App.css)
+/about.js
+/images.js
+/script.js
+/style.css
+PERFORMANCE.md
+INDEX_DEPENDENCIES.md
+REFACTOR_PLAN.md
