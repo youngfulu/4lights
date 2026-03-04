@@ -26,14 +26,29 @@ export default defineConfig(({ command }) => {
         configureServer(server) {
           if (!fs.existsSync(IMG_SOURCE)) return;
           server.middlewares.use('/img', (req, res, next) => {
-            const raw = (req.url || '').replace(/^\//, '');
-            const urlPath = raw.split('/').map(segment => decodeURIComponent(segment)).join(path.sep);
-            const filePath = path.resolve(path.join(IMG_SOURCE, urlPath));
-            if (!filePath.startsWith(path.resolve(IMG_SOURCE)) || !fs.existsSync(filePath)) {
-              return next();
+            // req.url is e.g. /img/2gis%20%23spatial/14.png or /img/thumb/... — strip /img/ prefix
+            const raw = (req.url || '').replace(/^\//, '').replace(/^img\/?/, '');
+            const urlPath = raw.split('/').map(segment => decodeURIComponent(segment)).join(path.sep).replace(/%23/g, '#');
+            const imgBase = path.resolve(IMG_SOURCE);
+            let filePath = path.resolve(path.join(IMG_SOURCE, urlPath));
+            if (!filePath.startsWith(imgBase)) return next();
+            // If requesting thumb/... and file missing, serve full-size image so grid works without thumb folder
+            if (urlPath.startsWith('thumb' + path.sep) && !fs.existsSync(filePath)) {
+              const withoutThumb = urlPath.replace(/^thumb\/?/, '');
+              const fallbackPath = path.resolve(path.join(IMG_SOURCE, withoutThumb));
+              if (fallbackPath.startsWith(imgBase) && fs.existsSync(fallbackPath)) filePath = fallbackPath;
+            }
+            if (!fs.existsSync(filePath)) {
+              res.statusCode = 404;
+              res.end();
+              return;
             }
             const stat = fs.statSync(filePath);
-            if (!stat.isFile()) return next();
+            if (!stat.isFile()) {
+              res.statusCode = 404;
+              res.end();
+              return;
+            }
             fs.readFile(filePath, (err, data) => {
               if (err) return next();
               const ext = path.extname(filePath).toLowerCase();
