@@ -259,23 +259,23 @@ body {
     opacity: 1;
 }
 
-/* Mobile: project-about-text is a top-aligned content box; fonts 3x bigger, left-aligned with images */
+/* Mobile: same font size as web, compact block that does not overlap images */
 @media (max-width: 767px), (pointer: coarse) {
     .project-about-text.visible {
         padding: 12px 0 0 0;
         align-items: flex-start;
         text-align: left;
+        max-height: 32vh;
+        overflow-y: auto;
     }
     .project-about-text .project-name {
-        font-size: 66px;
+        font-size: 22px;
         white-space: normal;
         line-height: 1.3;
     }
-    .project-about-text .project-info {
-        font-size: 36px;
-    }
+    .project-about-text .project-info,
     .project-about-text .project-info .info-line {
-        font-size: 36px;
+        font-size: 14px;
     }
 }
 
@@ -301,34 +301,35 @@ body {
     transition: opacity 0.5s ease-out, transform 0.5s ease-out;
 }
 
-/* Selection mode prev/next: 1/5 from bottom, centered by X; transparent; smooth slower transition */
+/* Selection mode prev/next: middle of Y image space, 1/8 and 7/8 of X, on top of images */
 .selection-nav-btn {
   position: fixed;
-  bottom: 20%;
+  top: 50%;
   z-index: 10002;
-  width: 64px;
-  height: 64px;
+  width: 44px;
+  height: 44px;
   padding: 0;
   border: none;
   background: transparent;
   color: #fff;
-  font-size: 32px;
+  font-size: 22px;
   cursor: pointer;
   pointer-events: auto;
   transition: opacity 0.45s cubic-bezier(0.4, 0, 0.2, 1);
   border-radius: 4px;
+  transform: translateY(-50%);
 }
 .selection-nav-btn:hover {
   background: transparent;
   opacity: 0.85;
 }
 .selection-prev {
-  left: calc(50% - 90px);
-  transform: translateX(-50%);
+  left: 12.5%;
+  transform: translate(-50%, -50%);
 }
 .selection-next {
-  left: calc(50% + 26px);
-  transform: translateX(-50%);
+  left: 87.5%;
+  transform: translate(-50%, -50%);
 }
 
 @media (max-width: 767px), (pointer: coarse) {

@@ -78,6 +78,7 @@ function App() {
       <div id="projectAboutText" className="project-about-text" style={{ display: 'none' }}>
         <div id="projectName" className="project-name"></div>
         <div id="projectInfo" className="project-info"></div>
+        <div id="projectMore" className="project-more" style={{ display: 'none' }}></div>
       </div>
 
       <div id="filterButtons" className="filter-buttons">
