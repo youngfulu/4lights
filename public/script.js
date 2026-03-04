@@ -216,6 +216,7 @@ let selectionStartPanX = 0;
 let selectionStartPanY = 0;
 let selectionZoomOutPanX = 0;
 let selectionFinalPanX = 0;
+let selectionZoomOutExit = 1.0; // Zoom level for exit phase -1 (20% closer than selectionTargetZoomOut)
 
 // Exponential easing with tiny inertia at the end for natural, smooth feel
 // Overshoots slightly then settles back
@@ -233,6 +234,12 @@ function easeOutExpoInertia(t) {
 function easeOutLog(t) {
     const e = Math.E;
     return Math.log(1 + t * (e - 1)) / Math.log(e);
+}
+
+// Softer easing for phase 2 pan (10% smoother than expo)
+function easeOutCubic(t) {
+    if (t >= 1) return 1;
+    return 1 - Math.pow(1 - t, 3);
 }
 
 
@@ -2551,6 +2558,8 @@ function unalignEmojis() {
         exitConnectionMode();
     }
     
+    // Exit zoom target: 20% closer than full zoom-out level
+    selectionZoomOutExit = selectionTargetZoomOut + (1.0 - selectionTargetZoomOut) * 0.2;
     // Start reverse animation (phase -1): zoom out while images return
     selectionAnimationPhase = -1;
     selectionPhaseStartTime = now;
@@ -4104,14 +4113,15 @@ function draw() {
         } else if (selectionAnimationPhase === 2) {
             // Phase 2: Zoom in to leftmost image (1.2 seconds)
             const rawProgress = Math.min(phaseElapsed / SELECTION_PHASE2_DURATION, 1.0);
-            const easeProgress = easeOutExpoInertia(rawProgress); // Exponential with tiny inertia
+            const easeProgress = easeOutExpoInertia(rawProgress);
+            const easePan = easeOutCubic(rawProgress); // 10% smoother pan to final carousel position
             
             // Animate zoom in
             globalZoomLevel = selectionStartZoom + (selectionTargetZoomIn - selectionStartZoom) * easeProgress;
             targetZoomLevel = globalZoomLevel;
             
-            // Animate pan to left-align
-            cameraPanX = selectionStartPanX + (selectionFinalPanX - selectionStartPanX) * easeProgress;
+            // Animate pan to left-align (smoother curve)
+            cameraPanX = selectionStartPanX + (selectionFinalPanX - selectionStartPanX) * easePan;
             targetCameraPanX = cameraPanX;
             
             // Check if phase 2 is complete
@@ -4123,12 +4133,12 @@ function draw() {
                 targetCameraPanX = cameraPanX;
             }
         } else if (selectionAnimationPhase === -1) {
-            // Reverse Phase 1: Zoom out to show full grid + images start moving back (1.2 seconds)
+            // Reverse Phase 1: Zoom out (20% closer than full grid) + images start moving back (1.2 seconds)
             const rawProgress = Math.min(phaseElapsed / SELECTION_PHASE1_DURATION, 1.0);
-            const easeProgress = easeOutExpoInertia(rawProgress); // Exponential with tiny inertia
+            const easeProgress = easeOutExpoInertia(rawProgress);
             
-            // Animate zoom out to the zoomed-out level (show full grid)
-            globalZoomLevel = selectionStartZoom + (selectionTargetZoomOut - selectionStartZoom) * easeProgress;
+            // Animate zoom out to selectionZoomOutExit (20% closer than selectionTargetZoomOut)
+            globalZoomLevel = selectionStartZoom + (selectionZoomOutExit - selectionStartZoom) * easeProgress;
             targetZoomLevel = globalZoomLevel;
             
             // Animate pan to center
@@ -4141,18 +4151,17 @@ function draw() {
             if (rawProgress >= 1.0) {
                 selectionAnimationPhase = -2;
                 selectionPhaseStartTime = now;
-                // Lock camera at zoomed-out position
-                globalZoomLevel = selectionTargetZoomOut;
+                globalZoomLevel = selectionZoomOutExit;
                 cameraPanX = selectionZoomOutPanX;
                 cameraPanY = 0;
             }
         } else if (selectionAnimationPhase === -2) {
-            // Reverse Phase 2: Zoom to 1.0 (initial level) + images continue moving back (1.2 seconds)
+            // Reverse Phase 2: Zoom to 1.0 from selectionZoomOutExit (1.2 seconds)
             const rawProgress = Math.min(phaseElapsed / SELECTION_PHASE2_DURATION, 1.0);
-            const easeProgress = easeOutExpoInertia(rawProgress); // Exponential with tiny inertia
+            const easeProgress = easeOutExpoInertia(rawProgress);
             
-            // Animate zoom from zoomed-out to 1.0
-            globalZoomLevel = selectionTargetZoomOut + (1.0 - selectionTargetZoomOut) * easeProgress;
+            // Animate zoom from exit zoom level to 1.0
+            globalZoomLevel = selectionZoomOutExit + (1.0 - selectionZoomOutExit) * easeProgress;
             targetZoomLevel = globalZoomLevel;
             
             // Animate pan from zoomed-out center to 0,0
@@ -5833,34 +5842,42 @@ function parseAndDisplayAboutText(text, moreText) {
 function displayProjectAboutText(name, aboutLines, moreContent) {
     const { containerEl, nameEl, infoEl, moreEl } = createProjectAboutElements();
     
+    const aboutFirstDelay = 300;
+    const aboutLineStep = 250;
+    const aboutTransition = 'opacity 0.5s ease-out';
+
     nameEl.textContent = name || '~';
-    
+    nameEl.style.opacity = '0';
+    nameEl.style.transition = aboutTransition;
+    setTimeout(() => { nameEl.style.opacity = '1'; }, aboutFirstDelay);
+
     infoEl.innerHTML = '';
     aboutLines.forEach((line, index) => {
         const lineEl = document.createElement('div');
         lineEl.className = 'info-line';
         lineEl.textContent = `${line.label}: ${line.value}`;
         lineEl.style.opacity = '0';
+        lineEl.style.transition = aboutTransition;
         infoEl.appendChild(lineEl);
-        
-        // Exponential fade: first line 0.5s, each subsequent +0.25s
         setTimeout(() => {
             lineEl.style.opacity = '1';
-        }, 500 + (index * 250));
+        }, aboutFirstDelay + (index * aboutLineStep));
     });
-    
+
     if (moreEl) {
         if (moreContent && moreContent.trim()) {
             moreEl.textContent = moreContent.trim();
             moreEl.style.display = 'block';
             moreEl.style.visibility = 'visible';
-            moreEl.style.opacity = '1';
+            moreEl.style.opacity = '0';
+            moreEl.style.transition = aboutTransition;
+            setTimeout(() => { moreEl.style.opacity = '1'; }, aboutFirstDelay);
         } else {
             moreEl.textContent = '';
             moreEl.style.display = 'none';
         }
     }
-    
+
     containerEl.style.display = 'block';
     containerEl.style.visibility = 'visible';
     containerEl.style.opacity = '1';
@@ -5905,7 +5922,7 @@ function displayProjectAboutText(name, aboutLines, moreContent) {
         infoEl.style.top = '';
         if (moreEl && moreEl.textContent.trim()) moreEl.style.visibility = 'hidden';
         void containerEl.offsetHeight;
-        setTimeout(() => { nameEl.style.opacity = '1'; }, 100);
+        setTimeout(() => { nameEl.style.opacity = '1'; }, aboutFirstDelay);
         return;
     }
     
