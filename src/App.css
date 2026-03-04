@@ -301,7 +301,7 @@ body {
     transition: opacity 0.5s ease-out, transform 0.5s ease-out;
 }
 
-/* Selection mode prev/next: middle of Y image space, 1/8 and 7/8 of X, on top of images */
+/* Selection mode prev/next: middle of Y, 2.5% and 97.5% of X (1/10 closer to edges) */
 .selection-nav-btn {
   position: fixed;
   top: 50%;
@@ -324,11 +324,11 @@ body {
   opacity: 0.85;
 }
 .selection-prev {
-  left: 12.5%;
+  left: 2.5%;
   transform: translate(-50%, -50%);
 }
 .selection-next {
-  left: 87.5%;
+  left: 97.5%;
   transform: translate(-50%, -50%);
 }
 

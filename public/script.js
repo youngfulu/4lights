@@ -599,10 +599,13 @@ function layoutAlignedEmojisDesktop(animate = true) {
     });
 
     const totalWidth = imageWidths.reduce((sum, width) => sum + width, 0) + (alignedEmojis.length - 1) * horizontalGap;
-    alignedRowTotalWidthWorld = totalWidth; // For infinite carousel wrap
-    // Same gap left of first and right of last as between images
-    let startX = centerX - totalWidth / 2 - horizontalGap;
-    const worldLeftEdge = startX;
+    const totalWidthWithSideGaps = totalWidth + 2 * horizontalGap;
+    // Carousel period = totalWidth + horizontalGap so gap between last and (wrapped) first = horizontalGap
+    alignedRowTotalWidthWorld = totalWidth + horizontalGap;
+    // Same gap left of first and right of last as between images: row centered with side margins
+    const firstImageLeftEdge = centerX - totalWidthWithSideGaps / 2 + horizontalGap;
+    let startX = firstImageLeftEdge;
+    const worldLeftEdge = firstImageLeftEdge;
 
     // Check if this is a NEW alignment or a relayout
     const isNewAlignment = selectionAnimationPhase === 0;
@@ -648,9 +651,6 @@ function layoutAlignedEmojisDesktop(animate = true) {
         startX += imageWidth + horizontalGap;
     });
 
-    // Total row width including side gaps (same as between images)
-    const totalWidthWithSideGaps = totalWidth + 2 * horizontalGap;
-    
     // Calculate zoom levels
     // Zoom OUT: level that fits the ENTIRE grid centered in screen
     const screenPadding = 60;
@@ -6046,20 +6046,20 @@ function updateProjectAboutTextPosition(containerEl, nameEl, infoEl) {
         containerEl.style.display = 'block';
         containerEl.style.visibility = 'visible';
     } else {
-        // Desktop: fixed left; name has same distance from image top as info has from image bottom (textGap)
-        const fixedLeftPx = 40;
+        // Desktop: align about block to left edge of first image
         const textGap = 15;
+        const aboutLeftPx = Math.round(firstImageLeftScreenX);
         const firstImageBottomScreenY = firstImageTopScreenY + (firstImageHeight * zoom);
         const screenHeight = typeof window !== 'undefined' && window.innerHeight ? window.innerHeight : 600;
         nameEl.style.position = 'fixed';
-        nameEl.style.left = `${fixedLeftPx}px`;
+        nameEl.style.left = `${aboutLeftPx}px`;
         nameEl.style.right = 'auto';
         nameEl.style.top = 'auto';
         nameEl.style.bottom = `${screenHeight - firstImageTopScreenY + textGap}px`;
         nameEl.style.textAlign = 'left';
         
         infoEl.style.position = 'fixed';
-        infoEl.style.left = `${fixedLeftPx}px`;
+        infoEl.style.left = `${aboutLeftPx}px`;
         infoEl.style.right = 'auto';
         infoEl.style.top = `${firstImageBottomScreenY + textGap}px`;
         infoEl.style.textAlign = 'left';
@@ -6070,7 +6070,7 @@ function updateProjectAboutTextPosition(containerEl, nameEl, infoEl) {
             const marginRight = 48;
             const screenW = typeof window !== 'undefined' && window.innerWidth ? window.innerWidth : 1200;
             const screenH = typeof window !== 'undefined' && window.innerHeight ? window.innerHeight : 600;
-            const redZoneLeft = Math.max(fixedLeftPx + (infoEl.offsetWidth || 0) + gap, screenW * 0.38);
+            const redZoneLeft = Math.max(aboutLeftPx + (infoEl.offsetWidth || 0) + gap, screenW * 0.38);
             const redZoneWidth = Math.max(200, screenW - redZoneLeft - marginRight);
             const redZoneHeight = Math.max(180, screenH - (firstImageBottomScreenY + textGap) - 100);
             moreEl.style.position = 'fixed';
@@ -6085,7 +6085,7 @@ function updateProjectAboutTextPosition(containerEl, nameEl, infoEl) {
         }
         
         containerEl.style.position = 'fixed';
-        containerEl.style.left = `${fixedLeftPx}px`;
+        containerEl.style.left = `${aboutLeftPx}px`;
         containerEl.style.right = 'auto';
     }
 }
