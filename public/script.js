@@ -1184,6 +1184,7 @@ const imagePaths = [
     'Imgae test /port #stage/pt.jpg',
     'Imgae test /port #stage/red_min.png',
     'Imgae test /port #stage/stage concept.jpg',
+    'Imgae test /signal #spatial #installation/TDMovieOut.0.jpg',
     'Imgae test /signal #spatial #installation/pasted-image-2.png',
     'Imgae test /signal #spatial #installation/pasted-image-3.png',
     'Imgae test /signal #spatial #installation/pasted-image.png',
@@ -1632,8 +1633,14 @@ function loadImageOnce(path, useThumb, skipProgress) {
         };
 
         img.onerror = () => {
+            if (useThumb) {
+                loadImageOnce(path, false, skipProgress).then(resolve).catch(() => {
+                    if (!skipProgress) { imagesLoaded++; updateLoadingProgressBar(); }
+                    reject(new Error('Failed to load image: ' + path));
+                });
+                return;
+            }
             if (!skipProgress) { imagesLoaded++; updateLoadingProgressBar(); }
-            console.warn('Image load failed:', path, '->', img.src);
             reject(new Error('Failed to load image: ' + path));
         };
 

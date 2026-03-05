@@ -33,8 +33,9 @@ export default defineConfig(({ command }) => {
             let filePath = path.resolve(path.join(IMG_SOURCE, urlPath));
             if (!filePath.startsWith(imgBase)) return next();
             // If requesting thumb/... and file missing, serve full-size image so grid works without thumb folder
-            if (urlPath.startsWith('thumb' + path.sep) && !fs.existsSync(filePath)) {
-              const withoutThumb = urlPath.replace(/^thumb\/?/, '');
+            const thumbPrefix = /^thumb[/\\]/;
+            if (thumbPrefix.test(urlPath) && !fs.existsSync(filePath)) {
+              const withoutThumb = urlPath.replace(/^thumb[/\\]?/, '');
               const fallbackPath = path.resolve(path.join(IMG_SOURCE, withoutThumb));
               if (fallbackPath.startsWith(imgBase) && fs.existsSync(fallbackPath)) filePath = fallbackPath;
             }

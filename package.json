@@ -9,6 +9,7 @@
     "preview": "vite preview",
     "compress-images": "node scripts/compress-images.js",
     "generate-image-list": "node scripts/generate-image-list.js",
+    "generate-thumbnails": "node scripts/generate-thumbnails.js",
     "prepare-web-assets": "node scripts/prepare-web-assets.js",
     "prebuild": "npm run compress-images || true",
     "web-images": "npm run prepare-web-assets && npm run compress-images && npm run generate-image-list"
