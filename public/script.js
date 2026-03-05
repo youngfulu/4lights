@@ -218,6 +218,11 @@ let selectionZoomOutPanX = 0;
 let selectionFinalPanX = 0;
 let selectionZoomOutExit = 1.0; // Zoom level for exit phase -1 (20% closer than selectionTargetZoomOut)
 
+// Smoothed Y positions for desktop about block (avoids jitter during phase 2 / phase 0 transition)
+let aboutSmoothedNameBottomPx = null;
+let aboutSmoothedInfoTopPx = null;
+let aboutSmoothedMoreTopPx = null;
+
 // Exponential easing with tiny inertia at the end for natural, smooth feel
 // Overshoots slightly then settles back
 function easeOutExpoInertia(t) {
@@ -561,7 +566,7 @@ function layoutAlignedEmojisDesktop(animate = true) {
     // Desktop selection:
     // - Images have equal WIDTH (scale proportionally)
     // - Selection occupies the LEFT 2/3 of the screen
-    // - No selected image exceeds 2/3 of screen height (at zoom <= 1)
+    // - Images scaled so row height = 2/5 of vertical screen space
     const horizontalGap = 35;
     const centerX = canvas.width / 2;
     const centerY = canvas.height / 2;
@@ -569,18 +574,18 @@ function layoutAlignedEmojisDesktop(animate = true) {
     const regionLeft = 40;
     const regionRight = (canvas.width * 2) / 3 - 40;
     const regionWidth = Math.max(1, regionRight - regionLeft);
-    const heightCap = (canvas.height * 2) / 3;
+    const SELECTION_ROW_HEIGHT_FRACTION = 2 / 5; // row height = 2/5 of viewport height
+    const targetRowHeightScreen = canvas.height * SELECTION_ROW_HEIGHT_FRACTION;
 
-    // Cap height so all images fit within 2/3 screen height (equal height scaling)
-    // Find max aspect ratio to determine max width needed for equal height
+    // Find max aspect ratio so we can cap width if row would overflow region
     let maxAspectRatio = 0;
     alignedEmojis.forEach(point => {
         const imageData = imageCache[point.imagePath];
         const ar = (imageData && imageData.aspectRatio) ? imageData.aspectRatio : 1;
         maxAspectRatio = Math.max(maxAspectRatio, ar > 0 ? ar : 1);
     });
-    // For equal height, we need to ensure the widest image fits
-    const targetHeightScreen = Math.min(heightCap, regionWidth / maxAspectRatio);
+    // Use 2/5 of screen height; scale down only if row would exceed region width
+    const targetHeightScreen = Math.min(targetRowHeightScreen, regionWidth / maxAspectRatio);
     const targetHeightWorld = targetHeightScreen; // zoom=1 baseline; we will zoom out if needed
 
     const imageHeights = [];
@@ -1005,14 +1010,11 @@ function getTouchMidpoint(t1, t2) {
 // Image list - use images from "Imgae test " directory (all unique images)
 const imagePaths = [
     'Imgae test /2gis  #spatial/14.png',
-    'Imgae test /2gis  #spatial/2gis.jpg',
     'Imgae test /2gis  #spatial/45.png',
     'Imgae test /2gis  #spatial/53.png',
     'Imgae test /2gis  #spatial/Snimok-ehkrana-2023-09-01-v-14.16.29.png',
     'Imgae test /2gis  #spatial/Snimok-ehkrana-2023-09-01-v-14.16.47 (1).png',
     'Imgae test /2gis  #spatial/Snimok-ehkrana-2023-09-01-v-14.18.05.png',
-    'Imgae test /2gis  #spatial/Snimok-ehkrana-2023-09-01-v-14.18.14.png',
-    'Imgae test /2gis  #spatial/image10.jpg',
     'Imgae test /2gis  #spatial/image19.jpg',
     'Imgae test /Addon 26 #instalation/Screenshot 2026-01-03 at 15.53.30.png',
     'Imgae test /Addon 26 #instalation/Screenshot 2026-01-03 at 15.53.45.png',
@@ -1020,9 +1022,12 @@ const imagePaths = [
     'Imgae test /Addon 26 #instalation/TDMovieOut.10.png',
     'Imgae test /Addon 26 #instalation/TDMovieOut.2.png',
     'Imgae test /Addon 26 #instalation/addon pc.png',
-    'Imgae test /Addon 26 #instalation/layout.jpg',
     'Imgae test /Addon 26 #instalation/photo_2021-04-06_03-24-48.jpg',
     'Imgae test /Addon 26 #instalation/poster.jpg',
+    'Imgae test /Common Space #spatial #stage/ComfyUI_00025_.png',
+    'Imgae test /Common Space #spatial #stage/ComfyUI_00026_.png',
+    'Imgae test /Common Space #spatial #stage/photo_2022-06-17_15-23-43.jpg',
+    'Imgae test /Common Space #spatial #stage/taktik0004.jpg',
     'Imgae test /Concepts #spatial #concept/photo_2022-09-11_21-38-30.jpg',
     'Imgae test /Concepts #spatial #concept/photo_2022-09-11_21-38-31.jpg',
     'Imgae test /Dom Dolla Coachella #stage/3MvEimKw.jpeg',
@@ -1077,18 +1082,14 @@ const imagePaths = [
     'Imgae test /Ice Palace 2  #stage #concept/12.png',
     'Imgae test /Ice Palace 2  #stage #concept/18.png',
     'Imgae test /Ice Palace 2  #stage #concept/4.png',
-    'Imgae test /Justice   #stage/ .png',
-    'Imgae test /Justice   #stage/21.png',
     'Imgae test /Justice   #stage/484889846_17946141872956990_4837846011979273179_n.jpg',
     'Imgae test /Justice   #stage/Screenshot 2024-09-20 at 12.34.55.png',
     'Imgae test /Justice   #stage/Screenshot 2024-09-20 at 12.50.27.png',
     'Imgae test /Justice   #stage/Screenshot 2024-09-20 at 12.52.12.png',
     'Imgae test /Justice   #stage/Screenshot 2024-09-20 at 13.10.40.png',
     'Imgae test /Justice   #stage/Screenshot 2024-09-20 at 13.11.11-2.png',
-    'Imgae test /Justice   #stage/Screenshot 2024-09-29 at 02.38.32.png',
     'Imgae test /Justice   #stage/Screenshot 2024-09-29 at 02.40.18.png',
     'Imgae test /Justice   #stage/Screenshot 2024-09-29 at 02.42.38.png',
-    'Imgae test /Justice   #stage/Screenshot 2024-11-24 at 20.39.01-2.png',
     'Imgae test /Justice   #stage/Screenshot 2024-11-24 at 20.40.26-2.png',
     'Imgae test /Justice   #stage/TDMovieOut.10.png',
     'Imgae test /Justice   #stage/justice.jpg',
@@ -1119,12 +1120,17 @@ const imagePaths = [
     'Imgae test /Nina kravitz #stage/photo_2022-11-11_15-45-01.jpg',
     'Imgae test /Nina kravitz #stage/photo_2022-11-12_14-26-35.jpg',
     'Imgae test /Nina kravitz #stage/photo_2022-11-12_18-19-42.jpg',
+    'Imgae test /Nina kravitz #stage/photo_2022-11-17_13-32-40.jpg',
     'Imgae test /One Tower #spatial #concept/1 (5).png',
     'Imgae test /One Tower #spatial #concept/concept zabor.jpg',
+    'Imgae test /One Tower #spatial #concept/zabor pttrns (dragged).jpg',
     'Imgae test /One Tower #spatial #concept/zabor.jpg',
     'Imgae test /One Tower #spatial #concept/zabor2.jpg',
     'Imgae test /One Tower #spatial #concept/zabor3.jpg',
     'Imgae test /Potato head bali #stage/oli1 (2)-filtered.png',
+    'Imgae test /Potato head bali #stage/photo_2022-11-13_23-59-54.jpg',
+    'Imgae test /Potato head bali #stage/photo_2022-11-14_02-05-12.jpg',
+    'Imgae test /Potato head bali #stage/photo_2022-11-24_17-17-20.jpg',
     'Imgae test /Potato head bali #stage/photo_3830@13-11-2022_17-43-34-filtered.jpeg',
     'Imgae test /RHCP #stage #tech/490A2224.jpg',
     'Imgae test /RHCP #stage #tech/490A2253.jpg',
@@ -1133,19 +1139,6 @@ const imagePaths = [
     'Imgae test /Sophie #stage/Screenshot 2026-01-07 at 17.34.01.png',
     'Imgae test /Sophie #stage/Screenshot 2026-01-07 at 17.34.19.png',
     'Imgae test /Sophie #stage/f2a2a0dc27b7c19d5f41fc8c99b87319b33b8e23.png',
-    'Imgae test /Spatial design koridor #spatial #stage/ComfyUI_00025_.png',
-    'Imgae test /Spatial design koridor #spatial #stage/ComfyUI_00026_.png',
-    'Imgae test /Spatial design koridor #spatial #stage/ComfyUI_00027_.png',
-    'Imgae test /Spatial design koridor #spatial #stage/ComfyUI_00028_.png',
-    'Imgae test /Spatial design koridor #spatial #stage/ComfyUI_00029_.png',
-    'Imgae test /Spatial design koridor #spatial #stage/ComfyUI_00030_.png',
-    'Imgae test /Spatial design koridor #spatial #stage/photo_2022-06-17_15-23-43.jpg',
-    'Imgae test /Spatial design koridor #spatial #stage/photo_2022-06-17_15-23-51.jpg',
-    'Imgae test /Spatial design koridor #spatial #stage/taktik0001.jpg',
-    'Imgae test /Spatial design koridor #spatial #stage/taktik0003.jpg',
-    'Imgae test /Spatial design koridor #spatial #stage/taktik0004.jpg',
-    'Imgae test /Telegraph #spatial /13-denoise.png',
-    'Imgae test /Telegraph #spatial /ComfyUI_00020_.png',
     'Imgae test /Telegraph #spatial /ComfyUI_00021_.png',
     'Imgae test /Telegraph #spatial /Screenshot 2024-02-29 at 19.46.48.png',
     'Imgae test /Vegeterian #stage #installation /1f8621a766d563d6bbc3a36dbd1d04fa.jpg',
@@ -1160,15 +1153,13 @@ const imagePaths = [
     'Imgae test /bipolar express #stage #tech/Screenshot 2026-01-07 at 17.41.20.png',
     'Imgae test /bipolar express #stage #tech/Screenshot 2026-01-07 at 17.41.35.png',
     'Imgae test /bipolar express #stage #tech/Screenshot 2026-01-07 at 17.41.47.png',
-    'Imgae test /bipolar express #stage #tech/Screenshot 2026-01-08 at 11.44.18.png',
     'Imgae test /bipolar express #stage #tech/Screenshot 2026-01-08 at 11.44.28.png',
-    'Imgae test /fixtures decoratif #concept/pasted-image-2.png',
-    'Imgae test /fixtures decoratif #concept/pasted-image.png',
+    'Imgae test /bipolar express #stage #tech/Screenshot 2026-03-03 at 15.02.44.png',
     'Imgae test /fixtures decoratif #concept/photo_2022-09-11_20-12-15.jpg',
     'Imgae test /gate #instal/Screenshot 2024-11-24 at 20.45.22.png',
     'Imgae test /gate #instal/Screenshot 2024-11-24 at 20.47.07.png',
     'Imgae test /gate #instal/Screenshot 2026-02-22 at 15.52.12.png',
-    'Imgae test /gate #instal/pasted-image.png',
+    'Imgae test /gate #instal/Screenshot 2026-03-03 at 15.06.08.png',
     'Imgae test /gula merah #stage/IMG_5170.JPG',
     'Imgae test /gula merah #stage/Screenshot 2026-02-22 at 16.06.52.png',
     'Imgae test /gula merah #stage/Screenshot 2026-02-22 at 16.06.57.png',
@@ -1184,13 +1175,12 @@ const imagePaths = [
     'Imgae test /la fleurs  #spatial/hhhpng.png',
     'Imgae test /la fleurs  #spatial/ppp4.png',
     'Imgae test /la fleurs  #spatial/ppp5.png',
-    'Imgae test /mirag club #stage/photo_2020-11-30_16-45-16.jpg',
-    'Imgae test /mirag club #stage/photo_2020-12-01_20-08-32.jpg',
-    'Imgae test /mirag club #stage/photo_2020-12-02_23-41-24.jpg',
-    'Imgae test /mirag club #stage/photo_2022-03-21_02-24-47.jpg',
-    'Imgae test /mirag club #stage/photo_2022-03-21_02-26-15.jpg',
-    'Imgae test /mirag club #stage/photo_2022-03-28_03-46-47.jpg',
-    'Imgae test /mirag club #stage/photo_2022-08-04_18-43-59.jpg',
+    'Imgae test /mirag club #stage #tech/photo_2020-11-30_16-45-16.jpg',
+    'Imgae test /mirag club #stage #tech/photo_2020-12-01_20-08-32.jpg',
+    'Imgae test /mirag club #stage #tech/photo_2020-12-02_23-41-24.jpg',
+    'Imgae test /mirag club #stage #tech/photo_2022-03-21_02-24-47.jpg',
+    'Imgae test /mirag club #stage #tech/photo_2022-03-28_03-46-47.jpg',
+    'Imgae test /mirag club #stage #tech/photo_2022-08-04_18-43-59.jpg',
     'Imgae test /missoni #spatial #concept/11.png',
     'Imgae test /missoni #spatial #concept/17.png',
     'Imgae test /missoni #spatial #concept/19.png',
@@ -1199,19 +1189,19 @@ const imagePaths = [
     'Imgae test /port #stage/port - stage 6.jpg',
     'Imgae test /port #stage/port - stage 7 .jpg',
     'Imgae test /port #stage/port-stage 8 .jpg',
+    'Imgae test /port #stage/poster.png',
+    'Imgae test /port #stage/pt.jpg',
     'Imgae test /port #stage/red_min.png',
     'Imgae test /port #stage/stage concept.jpg',
+    'Imgae test /signal #spatial #installation/TDMovieOut.0.jpg',
     'Imgae test /signal #spatial #installation/pasted-image-2.png',
     'Imgae test /signal #spatial #installation/pasted-image-3.png',
     'Imgae test /signal #spatial #installation/pasted-image.png',
+    'Imgae test /signal #spatial #installation/signal2.jpg',
     'Imgae test /thresholds #installation/Screenshot 2024-11-24 at 22.18.45.png',
     'Imgae test /thresholds #installation/Screenshot 2024-11-24 at 22.21.12.png',
     'Imgae test /thresholds #installation/liminal8.png',
     'Imgae test /torus #spatial #installation/ComfyUI_00060_.png',
-    'Imgae test /torus #spatial #installation/ComfyUI_00067_.png',
-    'Imgae test /torus #spatial #installation/ComfyUI_00068_.png',
-    'Imgae test /torus #spatial #installation/Screenshot 2024-06-07 at 03.09.29.png',
-    'Imgae test /torus #spatial #installation/Screenshot 2024-06-07 at 03.36.29.png',
     'Imgae test /torus #spatial #installation/untitled11.png',
     'Imgae test /torus #spatial #installation/untitled16.png',
     'Imgae test /torus #spatial #installation/untitled18.png',
@@ -1221,16 +1211,12 @@ const imagePaths = [
     'Imgae test /tower building #spatial #installation/22.jpg',
     'Imgae test /tower building #spatial #installation/4.png',
     'Imgae test /tower building #spatial #installation/5.png',
-    'Imgae test /tower building #spatial #installation/ComfyUI_00006_.png',
     'Imgae test /tower building #spatial #installation/ComfyUI_00008_.png',
-    'Imgae test /tower building #spatial #installation/ComfyUI_00010_.png',
-    'Imgae test /tower building #spatial #installation/ComfyUI_00023_.png',
     'Imgae test /tower building #spatial #installation/ComfyUI_00024_.png',
     'Imgae test /wish circles #spatial #installation/Screenshot 2024-11-24 at 20.45.35.png',
     'Imgae test /wish circles #spatial #installation/Screenshot 2024-11-24 at 22.02.56.png',
     'Imgae test /wish circles #spatial #installation/Screenshot 2026-02-22 at 15.27.19.png',
     'Imgae test /wish circles #spatial #installation/Screenshot 2026-02-22 at 15.53.50.png',
-    'Imgae test /wish circles #spatial #installation/Screenshot 2026-02-22 at 15.55.13.png',
     'Imgae test /yndx interactive zone #spatial #installation/11.png',
     'Imgae test /yndx interactive zone #spatial #installation/14.png',
     'Imgae test /yndx interactive zone #spatial #installation/2.png'
@@ -1451,7 +1437,7 @@ function loadImages() {
     }
 
     // Home screen only after ALL image load attempts have settled (success or error)
-    Promise.allSettled(uniquePaths.map(p => loadImageWithRetry(p, 2))).then(() => {
+    Promise.allSettled(uniquePaths.map(p => loadImageWithRetry(p, 3))).then(() => {
         checkIfReadyToShowImages();
     });
     
@@ -1475,7 +1461,7 @@ function loadImagesWithConcurrency(paths) {
     const workers = Array.from({ length: workerCount }, async () => {
         while (nextIndex < paths.length) {
             const path = paths[nextIndex++];
-            await loadImageWithRetry(path, 2);
+            await loadImageWithRetry(path, 3);
         }
     });
 
@@ -6146,37 +6132,52 @@ function updateProjectAboutTextPosition(containerEl, nameEl, infoEl) {
         containerEl.style.display = 'block';
         containerEl.style.visibility = 'visible';
     } else {
-        // Desktop: fixed X and Y (no follow of first image — avoids jitter when first image animates)
-        const DESKTOP_ABOUT_LEFT_PX = 40;
-        const DESKTOP_ABOUT_NAME_BOTTOM_PX = 24;
-        const DESKTOP_ABOUT_INFO_TOP_PX = 100;
+        // Desktop: align about block to left edge of first image; smooth Y during phase 2/0 to avoid jitter
         const textGap = 15;
+        const aboutLeftPx = Math.round(firstImageLeftScreenX);
+        const firstImageBottomScreenY = firstImageTopScreenY + (firstImageHeight * zoom);
+        const screenHeight = typeof window !== 'undefined' && window.innerHeight ? window.innerHeight : 600;
         const screenW = typeof window !== 'undefined' && window.innerWidth ? window.innerWidth : 1200;
         const screenH = typeof window !== 'undefined' && window.innerHeight ? window.innerHeight : 600;
+        const rawNameBottom = screenHeight - firstImageTopScreenY + textGap;
+        const rawInfoTop = firstImageBottomScreenY + textGap;
+        const rawMoreTop = firstImageBottomScreenY + textGap;
+        // Stronger smoothing during selection animation (phase 2 or right after phase 0) so text doesn't jump
+        const duringPhase = selectionAnimationPhase !== 0;
+        const smoothFactor = duringPhase ? 0.1 : 0.22;
+        if (aboutSmoothedNameBottomPx == null) {
+            aboutSmoothedNameBottomPx = rawNameBottom;
+            aboutSmoothedInfoTopPx = rawInfoTop;
+            aboutSmoothedMoreTopPx = rawMoreTop;
+        } else {
+            aboutSmoothedNameBottomPx += (rawNameBottom - aboutSmoothedNameBottomPx) * smoothFactor;
+            aboutSmoothedInfoTopPx += (rawInfoTop - aboutSmoothedInfoTopPx) * smoothFactor;
+            aboutSmoothedMoreTopPx += (rawMoreTop - aboutSmoothedMoreTopPx) * smoothFactor;
+        }
         nameEl.style.position = 'fixed';
-        nameEl.style.left = `${DESKTOP_ABOUT_LEFT_PX}px`;
+        nameEl.style.left = `${aboutLeftPx}px`;
         nameEl.style.right = 'auto';
         nameEl.style.top = 'auto';
-        nameEl.style.bottom = `${DESKTOP_ABOUT_NAME_BOTTOM_PX}px`;
+        nameEl.style.bottom = `${Math.round(aboutSmoothedNameBottomPx)}px`;
         nameEl.style.textAlign = 'left';
         
         infoEl.style.position = 'fixed';
-        infoEl.style.left = `${DESKTOP_ABOUT_LEFT_PX}px`;
+        infoEl.style.left = `${aboutLeftPx}px`;
         infoEl.style.right = 'auto';
-        infoEl.style.top = `${DESKTOP_ABOUT_INFO_TOP_PX}px`;
+        infoEl.style.top = `${Math.round(aboutSmoothedInfoTopPx)}px`;
         infoEl.style.textAlign = 'left';
         
         const moreEl = document.getElementById('projectMore');
         if (moreEl && moreEl.style.display === 'block' && moreEl.textContent.trim()) {
             const gap = 24;
             const marginRight = 48;
-            const redZoneLeft = Math.max(400, Math.round(screenW * 0.38));
+            const redZoneLeft = Math.max(aboutLeftPx + (infoEl.offsetWidth || 0) + gap, screenW * 0.38);
             const redZoneWidth = Math.max(200, screenW - redZoneLeft - marginRight);
-            const redZoneHeight = Math.max(180, screenH - DESKTOP_ABOUT_INFO_TOP_PX - 100);
+            const redZoneHeight = Math.max(180, screenH - Math.round(aboutSmoothedMoreTopPx) - textGap - 100);
             moreEl.style.position = 'fixed';
             moreEl.style.left = `${redZoneLeft}px`;
             moreEl.style.right = 'auto';
-            moreEl.style.top = `${DESKTOP_ABOUT_INFO_TOP_PX + textGap}px`;
+            moreEl.style.top = `${Math.round(aboutSmoothedMoreTopPx)}px`;
             moreEl.style.width = `${redZoneWidth}px`;
             moreEl.style.maxHeight = `${redZoneHeight}px`;
             moreEl.style.fontSize = '14px';
@@ -6185,13 +6186,16 @@ function updateProjectAboutTextPosition(containerEl, nameEl, infoEl) {
         }
         
         containerEl.style.position = 'fixed';
-        containerEl.style.left = `${DESKTOP_ABOUT_LEFT_PX}px`;
+        containerEl.style.left = `${aboutLeftPx}px`;
         containerEl.style.right = 'auto';
     }
 }
 
 // Hide project about text (fade out in 0.1s when clicking back from selection)
 function hideProjectAboutText() {
+    aboutSmoothedNameBottomPx = null;
+    aboutSmoothedInfoTopPx = null;
+    aboutSmoothedMoreTopPx = null;
     // Also hide mobile about text
     if (isMobileDevice()) {
         hideMobileAboutText();

@@ -40,10 +40,10 @@ function getWebImagePaths(dir, baseDir) {
 
 function main() {
   const allPaths = new Set();
-  // Prefer public/Imgae test so list matches repo and deploy; fallback to root for local-only
-  const imageDir = fs.existsSync(PUBLIC_IMAGE_DIR)
-    ? PUBLIC_IMAGE_DIR
-    : ROOT_IMAGE_DIR;
+  // Same priority as Vite: root first (local build uses root), then public (deploy/CI)
+  const imageDir = fs.existsSync(ROOT_IMAGE_DIR)
+    ? ROOT_IMAGE_DIR
+    : PUBLIC_IMAGE_DIR;
   const baseDir = path.dirname(imageDir);
   if (!fs.existsSync(imageDir)) {
     console.error('Neither Imgae test nor public/Imgae test found.');
