@@ -12,14 +12,17 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(__dirname, '..');
 
 const WEB_IMAGE_EXT = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg'];
-// Only scan public/Imgae test — root "Imgae test " is ignored so grid uses only served images
-const IMAGE_DIR = path.join(projectRoot, 'public', 'Imgae test ');
+const ROOT_IMAGE_DIR = path.join(projectRoot, 'Imgae test ');
+const PUBLIC_IMAGE_DIR = path.join(projectRoot, 'public', 'Imgae test ');
+
+const THUMB_DIR_NAME = 'thumb';
 
 function getWebImagePaths(dir, baseDir) {
   const results = [];
   if (!fs.existsSync(dir)) return results;
   const entries = fs.readdirSync(dir, { withFileTypes: true });
   for (const e of entries) {
+    if (e.isDirectory() && e.name === THUMB_DIR_NAME) continue;
     const full = path.join(dir, e.name);
     if (e.isDirectory()) {
       results.push(...getWebImagePaths(full, baseDir));
@@ -37,14 +40,18 @@ function getWebImagePaths(dir, baseDir) {
 
 function main() {
   const allPaths = new Set();
-  if (!fs.existsSync(IMAGE_DIR)) {
-    console.error('public/Imgae test not found. Only this folder is scanned; root files are ignored.');
+  // Prefer public/Imgae test so list matches repo and deploy; fallback to root for local-only
+  const imageDir = fs.existsSync(PUBLIC_IMAGE_DIR)
+    ? PUBLIC_IMAGE_DIR
+    : ROOT_IMAGE_DIR;
+  const baseDir = path.dirname(imageDir);
+  if (!fs.existsSync(imageDir)) {
+    console.error('Neither Imgae test nor public/Imgae test found.');
     process.exit(1);
   }
-  const baseDir = path.dirname(IMAGE_DIR);
-  const files = getWebImagePaths(IMAGE_DIR, baseDir);
+  const files = getWebImagePaths(imageDir, baseDir);
   files.forEach((p) => allPaths.add(p));
-  console.log(`Scanned public/Imgae test: ${files.length} web images (root Imgae test ignored)`);
+  console.log(`Scanned ${imageDir === ROOT_IMAGE_DIR ? 'Imgae test (root)' : 'public/Imgae test'}: ${files.length} web images`);
 
   const sorted = Array.from(allPaths).sort();
   console.log(`Total unique web-displayable images: ${sorted.length}`);
