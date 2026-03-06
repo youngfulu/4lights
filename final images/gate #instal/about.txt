@@ -1,0 +1,10 @@
+name: (Gate)
+#
+Project type: (Installation)
+year: (2024)
+Location: Bali, Indonesia.
+Client: (Nuanu)
+Agency:(delivered)
+Status: (Finished)
+Contributor: (Ilya Duganov, Maksim Harin)
+

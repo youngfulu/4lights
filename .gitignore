@@ -21,8 +21,8 @@ build/
 # Vite
 *.local
 
-# Root assets folder only: never commit (raw/originals stay local). public/final images/ is tracked.
-/final images/
+# Root assets: final images and thumb are tracked in repo
+# /final images/  — now tracked
 
 # Non-web formats: never commit (push only web-ready: jpg, png, gif, webp, svg)
 *.MOV
@@ -58,9 +58,8 @@ build/
 /public/Imgae test /
 public/Imgae test /
 
-# Generated thumbnails (run scripts/generate-thumbnails.js)
-/thumb/
-thumb/
+# Thumb folder is tracked in repo
+# /thumb/ — now tracked
 
 # Legacy root files (app uses public/script.js, public/about.js, src/App.css)
 /about.js

@@ -1,0 +1,11 @@
+name: (Han Kang's The Vegetarian)
+#
+Project type: (Stage Design, Video content)
+Year: (2025)
+Location: (Heidelberg, Germany) 
+Client: (Theatre Alte Chirurgie) 
+Agency:(Inhouse)
+Status: (Finished)
+Contributor: (Alinna Tikhonova)
+
+

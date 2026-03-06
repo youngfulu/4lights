@@ -1,0 +1,10 @@
+name: (A-tower )
+#
+Project type: (Spatial design)
+year: (2024)
+Location: Moscow, Russia .
+Client: (NDA)
+Agency:(workin knowledge)
+Status: (Concept)
+Contributor: (Ilya Duganov)
+

@@ -1,0 +1,10 @@
+name: (Bluebird Castle)
+#
+Project type: (Stage Design, Video content)
+Year: (2023)
+Location: (Festspielhaus Baden-Baden, Germany)
+Client:(Festspielhaus, Germany)
+Agency:(Inhouse)
+Status: (Finished)
+Contributor: (Alinna Tikhonova)
+

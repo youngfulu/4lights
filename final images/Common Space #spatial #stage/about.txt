@@ -1,0 +1,10 @@
+name: (Common Space)
+#
+Project type: (Light Design, Spatial Design)
+year: (2022)
+Location: Moscow, Russia.
+Client: (NDA)
+Agency:(Stereo Tactics)
+Status: (Concept)
+Contributor: (Ilya Duganov)
+
