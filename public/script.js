@@ -222,6 +222,9 @@ let selectionZoomOutExit = 1.0; // Zoom level for exit phase -1 (20% closer than
 let aboutSmoothedNameBottomPx = null;
 let aboutSmoothedInfoTopPx = null;
 let aboutSmoothedMoreTopPx = null;
+// After selection animation completes: fix about/more block X; only Y follows images
+let selectionAboutFixedLeftPx = null;
+let selectionMoreFixedLeftPx = null;
 
 // Exponential easing with tiny inertia at the end for natural, smooth feel
 // Overshoots slightly then settles back
@@ -575,7 +578,7 @@ function layoutAlignedEmojisDesktop(animate = true) {
     const regionLeft = 40;
     const regionRight = (canvas.width * 2) / 3 - 40;
     const regionWidth = Math.max(1, regionRight - regionLeft);
-    const SELECTION_ROW_HEIGHT_FRACTION = 2 / 5; // row height = 2/5 of viewport height
+    const SELECTION_ROW_HEIGHT_FRACTION = (2 / 5) * 1.25; // row height = 2/5 of viewport, +25% min size
     const targetRowHeightScreen = canvas.height * SELECTION_ROW_HEIGHT_FRACTION;
 
     // Find max aspect ratio so we can cap width if row would overflow region
@@ -691,7 +694,9 @@ function layoutAlignedEmojisDesktop(animate = true) {
     const finalPanX = (regionLeft + horizontalGap) - screenLeftAtPan0;
 
     if (isNewAlignment && animate) {
-        // Start phased selection animation
+        // Start phased selection animation (reset fixed X so we capture it when phase 0)
+        selectionAboutFixedLeftPx = null;
+        selectionMoreFixedLeftPx = null;
         selectionAnimationPhase = 1;
         selectionPhaseStartTime = now;
         selectionBasePanX = finalPanX; // For infinite carousel wrap
@@ -779,6 +784,7 @@ function layoutAlignedEmojisMobileVertical(animate = true) {
 
     const widths = [];
     const heights = [];
+    // Mobile: no +25% (desktop keeps +25% in layoutAlignedEmojisDesktop)
     alignedEmojis.forEach(point => {
         const imageData = imageCache[point.imagePath];
         const ar = (imageData && imageData.aspectRatio) ? imageData.aspectRatio : 1;
@@ -2533,27 +2539,30 @@ const layer2Speed = 0.5; // Speed for layer_2 (slower for depth effect)
 
 // Grid rendering cache (pattern-based, much cheaper than per-line loops)
 const gridSize = 25;
-let gridPattern = null;
+let gridPatternDesktop = null;
+let gridPatternMobile = null;
 function getGridPattern() {
-    if (!ctx) return null; // Safety check
-    if (gridPattern) return gridPattern;
+    if (!ctx) return null;
+    const isMobile = typeof window !== 'undefined' && (window.innerWidth < 768 || ('ontouchstart' in window));
+    if (isMobile && gridPatternMobile) return gridPatternMobile;
+    if (!isMobile && gridPatternDesktop) return gridPatternDesktop;
     const tile = document.createElement('canvas');
     tile.width = gridSize;
     tile.height = gridSize;
     const tctx = tile.getContext('2d');
-    if (!tctx) return null; // Safety check
-    // Transparent background; draw only the grid lines (opacity reduced 20%)
-    tctx.strokeStyle = 'rgba(255, 255, 255, 0.24)';
+    if (!tctx) return null;
+    const gridOpacity = isMobile ? 0.24 * 0.8 : 0.24; // mobile: 20% less opacity
+    tctx.strokeStyle = `rgba(255, 255, 255, ${gridOpacity})`;
     tctx.lineWidth = 1;
-    // Draw top and left lines so the pattern tiles seamlessly
     tctx.beginPath();
     tctx.moveTo(0.5, 0);
     tctx.lineTo(0.5, gridSize);
     tctx.moveTo(0, 0.5);
     tctx.lineTo(gridSize, 0.5);
     tctx.stroke();
-    gridPattern = ctx.createPattern(tile, 'repeat');
-    return gridPattern;
+    const pattern = ctx.createPattern(tile, 'repeat');
+    if (isMobile) gridPatternMobile = pattern; else gridPatternDesktop = pattern;
+    return pattern;
 }
 
 // Find point at mouse position for click detection
@@ -4545,17 +4554,26 @@ function draw() {
             point.opacity = point.targetOpacity;
         }
         
-        // CRITICAL: Skip drawing if opacity is effectively 0 (for random grid fade out)
-        // This ensures random grid images don't render at all when faded out
-        // EXCEPT: In mobile version main screen, keep images visible as background (even if inactive)
+        // Mobile: in selection mode or with category menu open, never draw non-aligned grid (fixes first-time grid staying visible)
+        if (isMobileVersion && !point.isAligned && !point.isFiltered) {
+            if (alignedEmojiIndex !== null) {
+                point.opacity = 0;
+                point.targetOpacity = 0;
+                return;
+            }
+            if (currentMobileCategory !== null && !isWeAreMode) {
+                point.opacity = 0;
+                point.targetOpacity = 0;
+                return;
+            }
+        }
+        // Skip drawing if opacity effectively 0 (for random grid fade out)
         if (point.opacity < 0.01 && !point.isAligned && !point.isFiltered) {
-            // In mobile version, keep random grid visible as background (non-interactive)
             if (isMobileVersion && alignedEmojiIndex === null && !isFilterMode && !isConnectionMode && currentMobileCategory === null) {
-                // Keep images visible in mobile main screen, just ensure opacity is 1.0
                 point.opacity = 1.0;
                 point.targetOpacity = 1.0;
             } else {
-                return; // Skip drawing completely faded out random grid images
+                return;
             }
         }
         
@@ -5985,7 +6003,11 @@ function displayProjectAboutText(name, aboutLines, moreContent) {
     infoEl.style.visibility = 'visible';
     
     if (isMobileDevice()) {
-        // Mobile only: about text aligned with images by left (same margin as image column); top content box
+        // Mobile only: about text fixed at top of viewport (must not scroll with canvas/content)
+        // Move to body so no parent transform/overflow can break position:fixed
+        if (containerEl.parentNode && containerEl.parentNode !== document.body) {
+            document.body.appendChild(containerEl);
+        }
         const categoryContent = document.getElementById('mobileCategoryContent');
         if (categoryContent) {
             categoryContent.classList.add('visible');
@@ -5994,7 +6016,6 @@ function displayProjectAboutText(name, aboutLines, moreContent) {
             categoryContent.style.opacity = '1';
             categoryContent.style.background = 'transparent';
         }
-        // Use same left/right margin as layoutAlignedEmojisMobileVertical so about block aligns with images
         const marginPx = canvas ? Math.max(14, canvas.width * 0.04) : 14;
         const safeTop = Math.max(marginPx, 14);
         containerEl.style.position = 'fixed';
@@ -6002,12 +6023,15 @@ function displayProjectAboutText(name, aboutLines, moreContent) {
         containerEl.style.right = marginPx + 'px';
         containerEl.style.top = safeTop + 'px';
         containerEl.style.bottom = 'auto';
+        containerEl.style.transform = 'translateZ(0)';
+        containerEl.style.zIndex = '10002';
         containerEl.style.width = 'auto';
         containerEl.style.maxWidth = 'none';
         containerEl.style.display = 'flex';
         containerEl.style.flexDirection = 'column';
         containerEl.style.alignItems = 'stretch';
         containerEl.style.gap = '8px';
+        containerEl.style.overflow = 'visible';
         nameEl.style.position = 'static';
         nameEl.style.left = '';
         nameEl.style.right = '';
@@ -6161,15 +6185,22 @@ function updateProjectAboutTextPosition(containerEl, nameEl, infoEl) {
     } else {
         // Desktop: align about block to left edge of first image; smooth Y during phase 2/0 to avoid jitter
         const textGap = 15;
-        const aboutLeftPx = Math.round(firstImageLeftScreenX);
         const firstImageBottomScreenY = firstImageTopScreenY + (firstImageHeight * zoom);
         const screenHeight = typeof window !== 'undefined' && window.innerHeight ? window.innerHeight : 600;
         const screenW = typeof window !== 'undefined' && window.innerWidth ? window.innerWidth : 1200;
         const screenH = typeof window !== 'undefined' && window.innerHeight ? window.innerHeight : 600;
+        // After selection animation completes (phase 0): fix X so text only moves on Y when images pan
+        const animationComplete = selectionAnimationPhase === 0;
+        let aboutLeftPx;
+        if (animationComplete && selectionAboutFixedLeftPx != null) {
+            aboutLeftPx = selectionAboutFixedLeftPx;
+        } else {
+            aboutLeftPx = Math.round(firstImageLeftScreenX);
+            if (animationComplete) selectionAboutFixedLeftPx = aboutLeftPx;
+        }
         const rawNameBottom = screenHeight - firstImageTopScreenY + textGap;
         const rawInfoTop = firstImageBottomScreenY + textGap;
         const rawMoreTop = firstImageBottomScreenY + textGap;
-        // Stronger smoothing during selection animation (phase 2 or right after phase 0) so text doesn't jump
         const duringPhase = selectionAnimationPhase !== 0;
         const smoothFactor = duringPhase ? 0.1 : 0.22;
         if (aboutSmoothedNameBottomPx == null) {
@@ -6198,7 +6229,9 @@ function updateProjectAboutTextPosition(containerEl, nameEl, infoEl) {
         if (moreEl && moreEl.style.display === 'block' && moreEl.textContent.trim()) {
             const gap = 24;
             const marginRight = 48;
-            const redZoneLeft = Math.max(aboutLeftPx + (infoEl.offsetWidth || 0) + gap, screenW * 0.38);
+            let redZoneLeft = Math.max(aboutLeftPx + (infoEl.offsetWidth || 0) + gap, screenW * 0.38);
+            if (animationComplete && selectionMoreFixedLeftPx != null) redZoneLeft = selectionMoreFixedLeftPx;
+            else if (animationComplete) selectionMoreFixedLeftPx = redZoneLeft;
             const redZoneWidth = Math.max(200, screenW - redZoneLeft - marginRight);
             const redZoneHeight = Math.max(180, screenH - Math.round(aboutSmoothedMoreTopPx) - textGap - 100);
             moreEl.style.position = 'fixed';
@@ -6223,6 +6256,8 @@ function hideProjectAboutText() {
     aboutSmoothedNameBottomPx = null;
     aboutSmoothedInfoTopPx = null;
     aboutSmoothedMoreTopPx = null;
+    selectionAboutFixedLeftPx = null;
+    selectionMoreFixedLeftPx = null;
     // Also hide mobile about text
     if (isMobileDevice()) {
         hideMobileAboutText();
