@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
- * Generate thumbnails from all images in public/Imgae test (or Imgae test)
+ * Generate thumbnails from all images in final images (or public/final images)
  * for the random grid. Output: same folder structure under thumb/
- * (e.g. public/Imgae test /thumb/2gis  #spatial/14.png).
+ * (e.g. thumb/2gis  #spatial/14.png at project root).
  * Max width 480px for fast loading; aspect ratio preserved.
  */
 
@@ -13,9 +13,10 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(__dirname, '..');
 
+// Reference folder for deploy (do not modify source images); thumb/ created inside it
 const IMAGE_DIRS = [
-  path.join(projectRoot, 'public', 'Imgae test '),
-  path.join(projectRoot, 'Imgae test '),
+  path.join(projectRoot, 'final images'),   // reference first
+  path.join(projectRoot, 'public', 'final images'),
 ];
 
 const THUMB_DIR_NAME = 'thumb';
@@ -59,11 +60,12 @@ async function main() {
     }
   }
   if (!imageDir) {
-    console.error('No Imgae test folder found in project root or public/');
+    console.error('No final images folder found in project root or public/');
     process.exit(1);
   }
 
-  const thumbBase = path.join(imageDir, THUMB_DIR_NAME);
+  // Output to project root thumb/ (same relative path as under final images)
+  const thumbBase = path.join(projectRoot, THUMB_DIR_NAME);
   const files = getAllImagePaths(imageDir);
   console.log(`Generating thumbnails (max width ${MAX_WIDTH}px) from ${path.relative(projectRoot, imageDir)}`);
   console.log(`Output: ${path.relative(projectRoot, thumbBase)}`);

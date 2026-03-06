@@ -354,13 +354,14 @@ function isMobileDevice() {
 function rebuildMobileAutoFolders() {
     const folderMap = new Map();
     points.forEach(p => {
-        const folder = p.folderPath || p.imagePath.substring(0, p.imagePath.lastIndexOf('/')) || 'Imgae test ';
+        const folder = p.folderPath || p.imagePath.substring(0, p.imagePath.lastIndexOf('/')) || 'final images';
         if (!folderMap.has(folder)) {
             folderMap.set(folder, []);
         }
         folderMap.get(folder).push(p);
     });
     mobileAutoFolders = Array.from(folderMap.entries())
+        .filter(([folder]) => !folder.includes('/0_'))
         .filter(([, arr]) => arr.length > 1)
         .map(([folder, arr]) => {
             const sorted = [...arr].sort((a, b) => a.originalBaseX - b.originalBaseX || a.originalBaseY - b.originalBaseY);
@@ -1007,221 +1008,259 @@ function getTouchMidpoint(t1, t2) {
     };
 }
 
-// Image list - use images from "Imgae test " directory (all unique images)
+// Image list - use images from "final images" directory (all unique images)
 const imagePaths = [
-    'Imgae test /2gis  #spatial/14.png',
-    'Imgae test /2gis  #spatial/45.png',
-    'Imgae test /2gis  #spatial/53.png',
-    'Imgae test /2gis  #spatial/Snimok-ehkrana-2023-09-01-v-14.16.29.png',
-    'Imgae test /2gis  #spatial/Snimok-ehkrana-2023-09-01-v-14.16.47 (1).png',
-    'Imgae test /2gis  #spatial/Snimok-ehkrana-2023-09-01-v-14.18.05.png',
-    'Imgae test /2gis  #spatial/image19.jpg',
-    'Imgae test /Addon 26 #instalation/Screenshot 2026-01-03 at 15.53.30.png',
-    'Imgae test /Addon 26 #instalation/Screenshot 2026-01-03 at 15.53.45.png',
-    'Imgae test /Addon 26 #instalation/TDMovieOut.0.png',
-    'Imgae test /Addon 26 #instalation/TDMovieOut.10.png',
-    'Imgae test /Addon 26 #instalation/TDMovieOut.2.png',
-    'Imgae test /Addon 26 #instalation/addon pc.png',
-    'Imgae test /Addon 26 #instalation/photo_2021-04-06_03-24-48.jpg',
-    'Imgae test /Addon 26 #instalation/poster.jpg',
-    'Imgae test /Common Space #spatial #stage/ComfyUI_00025_.png',
-    'Imgae test /Common Space #spatial #stage/ComfyUI_00026_.png',
-    'Imgae test /Common Space #spatial #stage/photo_2022-06-17_15-23-43.jpg',
-    'Imgae test /Common Space #spatial #stage/taktik0004.jpg',
-    'Imgae test /Concepts #spatial #concept/photo_2022-09-11_21-38-30.jpg',
-    'Imgae test /Concepts #spatial #concept/photo_2022-09-11_21-38-31.jpg',
-    'Imgae test /Dom Dolla Coachella #stage/3MvEimKw.jpeg',
-    'Imgae test /Dom Dolla Coachella #stage/50mQd_Jg.jpeg',
-    'Imgae test /Dom Dolla Coachella #stage/IpIFlsBg.jpeg',
-    'Imgae test /Dom Dolla Coachella #stage/J8QrpcyA.jpeg',
-    'Imgae test /Dom Dolla Coachella #stage/KE0ZsNGw.jpeg',
-    'Imgae test /Dom Dolla Coachella #stage/U-yCPfrg.jpeg',
-    'Imgae test /Dom Dolla Coachella #stage/U4cm3y3w.jpeg',
-    'Imgae test /Dom Dolla Coachella #stage/WkNC8WDw.jpeg',
-    'Imgae test /Dom Dolla Coachella #stage/mCgZDAIw.jpeg',
-    'Imgae test /Dom Dolla Coachella #stage/nB6q8Rgg.jpeg',
-    'Imgae test /Extrema  #stage/320547899_2990237017948126_3243800018334461643_n.jpg',
-    'Imgae test /Extrema  #stage/320629370_818022955968613_1030656669808514981_n.jpg',
-    'Imgae test /Extrema  #stage/320686916_669758978159427_4780015944793822764_n.jpg',
-    'Imgae test /Extrema  #stage/320690080_955171568778844_2334285356422279150_n.jpg',
-    'Imgae test /Extrema  #stage/322025281_199616095956195_3940761391865284334_n.jpg',
-    'Imgae test /Extrema  #stage/323080705_1881136108885951_3399831401371450183_n.jpg',
-    'Imgae test /Extrema  #stage/323579819_696825955437089_5888966217247731061_n.jpg',
-    'Imgae test /Extrema  #stage/323876631_704630261041234_5887248445516184892_n.jpg',
-    'Imgae test /Extrema  #stage/8880.jpg',
-    'Imgae test /Hard Select  #stage #concept/Screenshot 2024-09-20 at 14.24.36.png',
-    'Imgae test /Hard Select  #stage #concept/Screenshot 2024-09-20 at 15.21.16.png',
-    'Imgae test /Hard Select  #stage #concept/Screenshot 2024-09-21 at 19.01.06.png',
-    'Imgae test /Hard Select  #stage #concept/Screenshot 2024-09-21 at 19.01.11.png',
-    'Imgae test /Hard Select  #stage #concept/Screenshot 2024-09-21 at 20.36.07.png',
-    'Imgae test /Hard Select 2   #stage #concept/Screenshot 2024-10-17 at 01.18.10.png',
-    'Imgae test /Hard Select 2   #stage #concept/Screenshot 2024-10-17 at 01.52.03.png',
-    'Imgae test /Hard Select 2   #stage #concept/Screenshot 2024-10-17 at 01.59.15.png',
-    'Imgae test /Hard Select 2   #stage #concept/Screenshot 2024-10-17 at 02.11.34.png',
-    'Imgae test /Hard Select 3   #stage #concept/Screenshot 2024-10-27 at 17.09.21.png',
-    'Imgae test /Hard Select 3   #stage #concept/Screenshot 2024-10-28 at 22.45.48.png',
-    'Imgae test /Hard Select 3   #stage #concept/Screenshot 2024-10-28 at 23.05.32.png',
-    'Imgae test /Hard Select 3   #stage #concept/photo_2024-11-19_23-07-27.jpg',
-    'Imgae test /Hard Select 3   #stage #concept/photo_2024-11-19_23-07-37.jpg',
-    'Imgae test /Hard Select 3   #stage #concept/scrn.png',
-    'Imgae test /Hard Select 3   #stage #concept/untitled55.png',
-    'Imgae test /Hard Select 3   #stage #concept/untitled56.png',
-    'Imgae test /Hard Select 3   #stage #concept/untitled57.png',
-    'Imgae test /Ice Palace   #stage #concept/10.png',
-    'Imgae test /Ice Palace   #stage #concept/11.png',
-    'Imgae test /Ice Palace   #stage #concept/20.png',
-    'Imgae test /Ice Palace   #stage #concept/22.png',
-    'Imgae test /Ice Palace   #stage #concept/23.png',
-    'Imgae test /Ice Palace   #stage #concept/Screenshot 2024-11-25 at 16.07.05.png',
-    'Imgae test /Ice Palace   #stage #concept/Screenshot 2024-11-27 at 16.49.00.png',
-    'Imgae test /Ice Palace   #stage #concept/Screenshot 2024-11-27 at 16.50.36.png',
-    'Imgae test /Ice Palace   #stage #concept/Screenshot 2024-11-27 at 17.51.46.png',
-    'Imgae test /Ice Palace   #stage #concept/Screenshot 2024-11-27 at 17.54.56.png',
-    'Imgae test /Ice Palace   #stage #concept/Screenshot 2024-11-27 at 19.10.28.png',
-    'Imgae test /Ice Palace 2  #stage #concept/1.png',
-    'Imgae test /Ice Palace 2  #stage #concept/12.png',
-    'Imgae test /Ice Palace 2  #stage #concept/18.png',
-    'Imgae test /Ice Palace 2  #stage #concept/4.png',
-    'Imgae test /Justice   #stage/484889846_17946141872956990_4837846011979273179_n.jpg',
-    'Imgae test /Justice   #stage/Screenshot 2024-09-20 at 12.34.55.png',
-    'Imgae test /Justice   #stage/Screenshot 2024-09-20 at 12.50.27.png',
-    'Imgae test /Justice   #stage/Screenshot 2024-09-20 at 12.52.12.png',
-    'Imgae test /Justice   #stage/Screenshot 2024-09-20 at 13.10.40.png',
-    'Imgae test /Justice   #stage/Screenshot 2024-09-20 at 13.11.11-2.png',
-    'Imgae test /Justice   #stage/Screenshot 2024-09-29 at 02.40.18.png',
-    'Imgae test /Justice   #stage/Screenshot 2024-09-29 at 02.42.38.png',
-    'Imgae test /Justice   #stage/Screenshot 2024-11-24 at 20.40.26-2.png',
-    'Imgae test /Justice   #stage/TDMovieOut.10.png',
-    'Imgae test /Justice   #stage/justice.jpg',
-    'Imgae test /Kedrina #stage/kedr.jpg',
-    'Imgae test /Kedrina #stage/kedr2.jpg',
-    'Imgae test /Kedrina #stage/kedr3.jpg',
-    'Imgae test /Kedrina #stage/photo_2021-08-07_21-17-07.jpg',
-    'Imgae test /Mirage Cinema #spatial/101.jpg',
-    'Imgae test /Mirage Cinema #spatial/637c8f2f83c5b.jpg',
-    'Imgae test /Mirage Cinema #spatial/mirag column.jpg',
-    'Imgae test /Mirage Cinema #spatial/pasted-image-2.png',
-    'Imgae test /Mirage Cinema #spatial/pasted-image.png',
-    'Imgae test /Mirage Cinema #spatial/photo_2627@28-07-2021_12-20-48.jpg',
-    'Imgae test /Mirage Cinema #spatial/photo_2659@07-08-2021_22-14-26.jpg',
-    'Imgae test /NXT Museum #spatial #installation/photo_2022-08-25_12-45-14.jpg',
-    'Imgae test /NXT Museum #spatial #installation/photo_2022-08-25_12-45-28.jpg',
-    'Imgae test /NXT Museum #spatial #installation/photo_2022-08-25_12-45-30.jpg',
-    'Imgae test /NXT Museum #spatial #installation/photo_2022-08-25_16-07-59.jpg',
-    'Imgae test /NXT Museum #spatial #installation/photo_2022-08-26_12-24-51.jpg',
-    'Imgae test /New star camp #stage/25.png',
-    'Imgae test /New star camp #stage/37.png',
-    'Imgae test /New star camp #stage/ComfyUI_00053_.png',
-    'Imgae test /New star camp #stage/fin6.png',
-    'Imgae test /Nina kravitz #stage/1767412367827-89738e9a-6d9b-42f3-80b0-81b3d7a50cdc.png',
-    'Imgae test /Nina kravitz #stage/ComfyUI_00057_.png',
-    'Imgae test /Nina kravitz #stage/ComfyUI_00058_.png',
-    'Imgae test /Nina kravitz #stage/god_rays11.png',
-    'Imgae test /Nina kravitz #stage/photo_2022-11-11_15-45-01.jpg',
-    'Imgae test /Nina kravitz #stage/photo_2022-11-12_14-26-35.jpg',
-    'Imgae test /Nina kravitz #stage/photo_2022-11-12_18-19-42.jpg',
-    'Imgae test /Nina kravitz #stage/photo_2022-11-17_13-32-40.jpg',
-    'Imgae test /One Tower #spatial #concept/1 (5).png',
-    'Imgae test /One Tower #spatial #concept/concept zabor.jpg',
-    'Imgae test /One Tower #spatial #concept/zabor pttrns (dragged).jpg',
-    'Imgae test /One Tower #spatial #concept/zabor.jpg',
-    'Imgae test /One Tower #spatial #concept/zabor2.jpg',
-    'Imgae test /One Tower #spatial #concept/zabor3.jpg',
-    'Imgae test /Potato head bali #stage/oli1 (2)-filtered.png',
-    'Imgae test /Potato head bali #stage/photo_2022-11-13_23-59-54.jpg',
-    'Imgae test /Potato head bali #stage/photo_2022-11-14_02-05-12.jpg',
-    'Imgae test /Potato head bali #stage/photo_2022-11-24_17-17-20.jpg',
-    'Imgae test /Potato head bali #stage/photo_3830@13-11-2022_17-43-34-filtered.jpeg',
-    'Imgae test /RHCP #stage #tech/490A2224.jpg',
-    'Imgae test /RHCP #stage #tech/490A2253.jpg',
-    'Imgae test /RHCP #stage #tech/490A2831.jpg',
-    'Imgae test /Sophie #stage/Screenshot 2026-01-07 at 17.33.47.png',
-    'Imgae test /Sophie #stage/Screenshot 2026-01-07 at 17.34.01.png',
-    'Imgae test /Sophie #stage/Screenshot 2026-01-07 at 17.34.19.png',
-    'Imgae test /Sophie #stage/f2a2a0dc27b7c19d5f41fc8c99b87319b33b8e23.png',
-    'Imgae test /Telegraph #spatial /ComfyUI_00021_.png',
-    'Imgae test /Telegraph #spatial /Screenshot 2024-02-29 at 19.46.48.png',
-    'Imgae test /Vegeterian #stage #installation /1f8621a766d563d6bbc3a36dbd1d04fa.jpg',
-    'Imgae test /Vegeterian #stage #installation /46838.jpeg',
-    'Imgae test /Vegeterian #stage #installation /76769.jpg',
-    'Imgae test /Vegeterian #stage #installation /789696 copy.jpg',
-    'Imgae test /Vegeterian #stage #installation /7d0a27ca170dc646851659dac4ab005b.jpg',
-    'Imgae test /Vegeterian #stage #installation /and-3210.jpg',
-    'Imgae test /Vegeterian #stage #installation /e7af5fe7403946483739d3efbce015c9.jpg',
-    'Imgae test /Vegeterian #stage #installation /photo_2022-11-20_14-41-10.jpg',
-    'Imgae test /Vegeterian #stage #installation /photo_2022-11-20_14-42-02.jpg',
-    'Imgae test /bipolar express #stage #tech/Screenshot 2026-01-07 at 17.41.20.png',
-    'Imgae test /bipolar express #stage #tech/Screenshot 2026-01-07 at 17.41.35.png',
-    'Imgae test /bipolar express #stage #tech/Screenshot 2026-01-07 at 17.41.47.png',
-    'Imgae test /bipolar express #stage #tech/Screenshot 2026-01-08 at 11.44.28.png',
-    'Imgae test /bipolar express #stage #tech/Screenshot 2026-03-03 at 15.02.44.png',
-    'Imgae test /fixtures decoratif #concept/photo_2022-09-11_20-12-15.jpg',
-    'Imgae test /gate #instal/Screenshot 2024-11-24 at 20.45.22.png',
-    'Imgae test /gate #instal/Screenshot 2024-11-24 at 20.47.07.png',
-    'Imgae test /gate #instal/Screenshot 2026-02-22 at 15.52.12.png',
-    'Imgae test /gate #instal/Screenshot 2026-03-03 at 15.06.08.png',
-    'Imgae test /gula merah #stage/IMG_5170.JPG',
-    'Imgae test /gula merah #stage/Screenshot 2026-02-22 at 16.06.52.png',
-    'Imgae test /gula merah #stage/Screenshot 2026-02-22 at 16.06.57.png',
-    'Imgae test /gula merah #stage/photo_2022-08-12_13-03-47.jpg',
-    'Imgae test /gula merah #stage/photo_2022-08-12_13-03-54.jpg',
-    'Imgae test /la fleurs  #spatial/ComfyUI_00012_.png',
-    'Imgae test /la fleurs  #spatial/ComfyUI_00013_.png',
-    'Imgae test /la fleurs  #spatial/ComfyUI_00015_.png',
-    'Imgae test /la fleurs  #spatial/ComfyUI_00016_.png',
-    'Imgae test /la fleurs  #spatial/ComfyUI_00018_.png',
-    'Imgae test /la fleurs  #spatial/ComfyUI_00019_.png',
-    'Imgae test /la fleurs  #spatial/fleurs4.png',
-    'Imgae test /la fleurs  #spatial/hhhpng.png',
-    'Imgae test /la fleurs  #spatial/ppp4.png',
-    'Imgae test /la fleurs  #spatial/ppp5.png',
-    'Imgae test /mirag club #stage #tech/photo_2020-11-30_16-45-16.jpg',
-    'Imgae test /mirag club #stage #tech/photo_2020-12-01_20-08-32.jpg',
-    'Imgae test /mirag club #stage #tech/photo_2020-12-02_23-41-24.jpg',
-    'Imgae test /mirag club #stage #tech/photo_2022-03-21_02-24-47.jpg',
-    'Imgae test /mirag club #stage #tech/photo_2022-03-28_03-46-47.jpg',
-    'Imgae test /mirag club #stage #tech/photo_2022-08-04_18-43-59.jpg',
-    'Imgae test /missoni #spatial #concept/11.png',
-    'Imgae test /missoni #spatial #concept/17.png',
-    'Imgae test /missoni #spatial #concept/19.png',
-    'Imgae test /missoni #spatial #concept/20.png',
-    'Imgae test /missoni #spatial #concept/4.png',
-    'Imgae test /port #stage/port - stage 6.jpg',
-    'Imgae test /port #stage/port - stage 7 .jpg',
-    'Imgae test /port #stage/port-stage 8 .jpg',
-    'Imgae test /port #stage/poster.png',
-    'Imgae test /port #stage/pt.jpg',
-    'Imgae test /port #stage/red_min.png',
-    'Imgae test /port #stage/stage concept.jpg',
-    'Imgae test /signal #spatial #installation/TDMovieOut.0.jpg',
-    'Imgae test /signal #spatial #installation/pasted-image-2.png',
-    'Imgae test /signal #spatial #installation/pasted-image-3.png',
-    'Imgae test /signal #spatial #installation/pasted-image.png',
-    'Imgae test /signal #spatial #installation/signal2.jpg',
-    'Imgae test /thresholds #installation/Screenshot 2024-11-24 at 22.18.45.png',
-    'Imgae test /thresholds #installation/Screenshot 2024-11-24 at 22.21.12.png',
-    'Imgae test /thresholds #installation/liminal8.png',
-    'Imgae test /torus #spatial #installation/ComfyUI_00060_.png',
-    'Imgae test /torus #spatial #installation/untitled11.png',
-    'Imgae test /torus #spatial #installation/untitled16.png',
-    'Imgae test /torus #spatial #installation/untitled18.png',
-    'Imgae test /torus #spatial #installation/untitled19.png',
-    'Imgae test /tower building #spatial #installation/19.png',
-    'Imgae test /tower building #spatial #installation/2.png',
-    'Imgae test /tower building #spatial #installation/22.jpg',
-    'Imgae test /tower building #spatial #installation/4.png',
-    'Imgae test /tower building #spatial #installation/5.png',
-    'Imgae test /tower building #spatial #installation/ComfyUI_00008_.png',
-    'Imgae test /tower building #spatial #installation/ComfyUI_00024_.png',
-    'Imgae test /wish circles #spatial #installation/Screenshot 2024-11-24 at 20.45.35.png',
-    'Imgae test /wish circles #spatial #installation/Screenshot 2024-11-24 at 22.02.56.png',
-    'Imgae test /wish circles #spatial #installation/Screenshot 2026-02-22 at 15.27.19.png',
-    'Imgae test /wish circles #spatial #installation/Screenshot 2026-02-22 at 15.53.50.png',
-    'Imgae test /yndx interactive zone #spatial #installation/11.png',
-    'Imgae test /yndx interactive zone #spatial #installation/14.png',
-    'Imgae test /yndx interactive zone #spatial #installation/2.png'
+    'final images/2gis  #spatial/14.png',
+    'final images/2gis  #spatial/45.png',
+    'final images/2gis  #spatial/53.png',
+    'final images/2gis  #spatial/Snimok-ehkrana-2023-09-01-v-14.16.47 (1).png',
+    'final images/2gis  #spatial/Snimok-ehkrana-2023-09-01-v-14.18.05.png',
+    'final images/Addon 26 #instal/IMG_3654.png',
+    'final images/Addon 26 #instal/IMG_3659.png',
+    'final images/Addon 26 #instal/Screenshot 2026-01-03 at 15.53.30.png',
+    'final images/Addon 26 #instal/Screenshot 2026-01-03 at 15.53.45.png',
+    'final images/Addon 26 #instal/Screenshot 2026-01-03 at 15.54.20.png',
+    'final images/Addon 26 #instal/TDMovieOut.0.png',
+    'final images/Addon 26 #instal/TDMovieOut.10.png',
+    'final images/Addon 26 #instal/TDMovieOut.2.png',
+    'final images/Addon 26 #instal/addon pc.png',
+    'final images/Addon 26 #instal/photo_2021-04-06_03-24-48.jpg',
+    'final images/Addon 26 #instal/poster.jpg',
+    'final images/Azerbaijan pavilion VInece Beinalle   #instal/CR.png',
+    'final images/Azerbaijan pavilion VInece Beinalle   #instal/Screenshot 2026-03-06 at 13.46.40.png',
+    'final images/Azerbaijan pavilion VInece Beinalle   #instal/anim-post Screenshot 2026-03-06 at 13.29.47-color-denoise-enhance-1.8x.jpeg',
+    'final images/Bluebeard Castle #stage design/1f8621a766d563d6bbc3a36dbd1d04fa.jpg',
+    'final images/Bluebeard Castle #stage design/4.jpg',
+    'final images/Bluebeard Castle #stage design/76769.jpg',
+    'final images/Bluebeard Castle #stage design/789696 copy.jpg',
+    'final images/Bluebeard Castle #stage design/7d0a27ca170dc646851659dac4ab005b.jpg',
+    'final images/Bluebeard Castle #stage design/and-3210.jpg',
+    'final images/Bluebeard Castle #stage design/d3c63d82a8d15e4eea067a766f0b665e.jpg',
+    'final images/Bluebeard Castle #stage design/e7af5fe7403946483739d3efbce015c9.jpg',
+    'final images/Common Space #spatial #stage/ComfyUI_00025_.png',
+    'final images/Common Space #spatial #stage/ComfyUI_00026_.png',
+    'final images/Common Space #spatial #stage/photo_2022-06-17_15-23-43.jpg',
+    'final images/Common Space #spatial #stage/taktik0004.jpg',
+    'final images/Concepts #spatial #concept/photo_2022-09-11_21-38-30.jpg',
+    'final images/Concepts #spatial #concept/photo_2022-09-11_21-38-31.jpg',
+    'final images/Dom Dolla Coachella #stage/34.jpg',
+    'final images/Dom Dolla Coachella #stage/3MvEimKw.jpeg',
+    'final images/Dom Dolla Coachella #stage/44.jpg',
+    'final images/Dom Dolla Coachella #stage/51.jpg',
+    'final images/Dom Dolla Coachella #stage/54.jpg',
+    'final images/Dom Dolla Coachella #stage/Coachella.jpg',
+    'final images/Dom Dolla Coachella #stage/IpIFlsBg.jpeg',
+    'final images/Dom Dolla Coachella #stage/J8QrpcyA.jpeg',
+    'final images/Dom Dolla Coachella #stage/KE0ZsNGw.jpeg',
+    'final images/Dom Dolla Coachella #stage/U-yCPfrg.jpeg',
+    'final images/Dom Dolla Coachella #stage/U4cm3y3w.jpeg',
+    'final images/Dom Dolla Coachella #stage/WkNC8WDw.jpeg',
+    'final images/Dom Dolla Coachella #stage/mCgZDAIw.jpeg',
+    'final images/Dom Dolla Coachella #stage/nB6q8Rgg.jpeg',
+    'final images/Dom Dolla Coachella #stage/upscale6.jpeg',
+    'final images/Dom Dolla Coachella #stage/upscaleTDMovieOut.12.jpeg',
+    'final images/Dom Dolla Coachella #stage/upscaleTDMovieOut.4.jpeg',
+    'final images/Extrema  #stage/320547899_2990237017948126_3243800018334461643_n.jpg',
+    'final images/Extrema  #stage/320629370_818022955968613_1030656669808514981_n.jpg',
+    'final images/Extrema  #stage/320686916_669758978159427_4780015944793822764_n.jpg',
+    'final images/Extrema  #stage/320690080_955171568778844_2334285356422279150_n.jpg',
+    'final images/Extrema  #stage/322025281_199616095956195_3940761391865284334_n.jpg',
+    'final images/Extrema  #stage/323080705_1881136108885951_3399831401371450183_n.jpg',
+    'final images/Extrema  #stage/323579819_696825955437089_5888966217247731061_n.jpg',
+    'final images/Extrema  #stage/323876631_704630261041234_5887248445516184892_n.jpg',
+    'final images/Extrema  #stage/8880.jpg',
+    'final images/Extrema  #stage/upscale5555.jpeg',
+    'final images/Extrema  #stage/upscale888.jpeg',
+    'final images/Han Kang\'s The Vegetarian #stage #installation /TDMovieOut.0.jpg',
+    'final images/Han Kang\'s The Vegetarian #stage #installation /TDMovieOut.066.jpg',
+    'final images/Han Kang\'s The Vegetarian #stage #installation /TDMovieOut.1.jpg',
+    'final images/Han Kang\'s The Vegetarian #stage #installation /TDMovieOut.2.jpg',
+    'final images/Han Kang\'s The Vegetarian #stage #installation /TDMovieOut.4.jpg',
+    'final images/Han Kang\'s The Vegetarian #stage #installation /TDMovieOut.5.jpg',
+    'final images/Han Kang\'s The Vegetarian #stage #installation /Vegetarierin_Online_SR_019.jpg',
+    'final images/Han Kang\'s The Vegetarian #stage #installation /photo_2025-09-27_17-58-17.jpg',
+    'final images/Hard Select  #stage #concept/Screenshot 2024-09-20 at 14.24.36.png',
+    'final images/Hard Select  #stage #concept/Screenshot 2024-09-20 at 15.21.16.png',
+    'final images/Hard Select  #stage #concept/Screenshot 2024-09-21 at 19.01.06.png',
+    'final images/Hard Select  #stage #concept/Screenshot 2024-09-21 at 19.01.11.png',
+    'final images/Hard Select  #stage #concept/Screenshot 2024-09-21 at 20.36.07.png',
+    'final images/Hard Select 2   #stage #concept/Screenshot 2024-10-17 at 01.18.10.png',
+    'final images/Hard Select 2   #stage #concept/Screenshot 2024-10-17 at 01.52.03.png',
+    'final images/Hard Select 2   #stage #concept/Screenshot 2024-10-17 at 01.59.15.png',
+    'final images/Hard Select 2   #stage #concept/Screenshot 2024-10-17 at 02.11.34.png',
+    'final images/Hard Select 3   #stage #concept/Screenshot 2024-10-27 at 17.09.21.png',
+    'final images/Hard Select 3   #stage #concept/Screenshot 2024-10-28 at 22.45.48.png',
+    'final images/Hard Select 3   #stage #concept/Screenshot 2024-10-28 at 23.05.32.png',
+    'final images/Hard Select 3   #stage #concept/photo_2024-11-19_23-07-27.jpg',
+    'final images/Hard Select 3   #stage #concept/photo_2024-11-19_23-07-37.jpg',
+    'final images/Hard Select 3   #stage #concept/scrn.png',
+    'final images/Hard Select 3   #stage #concept/untitled55.png',
+    'final images/Hard Select 3   #stage #concept/untitled56.png',
+    'final images/Hard Select 3   #stage #concept/untitled57.png',
+    'final images/Ice Palace   #stage #concept/10.png',
+    'final images/Ice Palace   #stage #concept/11.png',
+    'final images/Ice Palace   #stage #concept/20.png',
+    'final images/Ice Palace   #stage #concept/22.png',
+    'final images/Ice Palace   #stage #concept/23.png',
+    'final images/Ice Palace   #stage #concept/Screenshot 2024-11-25 at 16.07.05.png',
+    'final images/Ice Palace   #stage #concept/Screenshot 2024-11-27 at 16.49.00.png',
+    'final images/Ice Palace   #stage #concept/Screenshot 2024-11-27 at 16.50.36.png',
+    'final images/Ice Palace   #stage #concept/Screenshot 2024-11-27 at 17.51.46.png',
+    'final images/Ice Palace   #stage #concept/Screenshot 2024-11-27 at 17.54.56.png',
+    'final images/Ice Palace   #stage #concept/Screenshot 2024-11-27 at 19.10.28.png',
+    'final images/Ice Palace 2  #stage #concept/1.png',
+    'final images/Ice Palace 2  #stage #concept/12.png',
+    'final images/Ice Palace 2  #stage #concept/18.png',
+    'final images/Ice Palace 2  #stage #concept/4.png',
+    'final images/Justice   #stage/484889846_17946141872956990_4837846011979273179_n.jpg',
+    'final images/Justice   #stage/Screenshot 2024-09-20 at 12.34.55.png',
+    'final images/Justice   #stage/Screenshot 2024-09-20 at 12.50.27.png',
+    'final images/Justice   #stage/Screenshot 2024-09-20 at 12.52.12.png',
+    'final images/Justice   #stage/Screenshot 2024-09-20 at 13.10.40.png',
+    'final images/Justice   #stage/Screenshot 2024-09-20 at 13.11.11-2.png',
+    'final images/Justice   #stage/Screenshot 2024-09-29 at 02.40.18.png',
+    'final images/Justice   #stage/Screenshot 2024-09-29 at 02.42.38.png',
+    'final images/Justice   #stage/Screenshot 2024-11-24 at 20.40.26-2.png',
+    'final images/Justice   #stage/TDMovieOut.10.png',
+    'final images/Justice   #stage/justice.jpg',
+    'final images/Kedrina #stage/kedr.jpg',
+    'final images/Kedrina #stage/kedr2.jpg',
+    'final images/Kedrina #stage/kedr3.jpg',
+    'final images/Kedrina #stage/photo_2021-08-07_21-17-07.jpg',
+    'final images/Mirage Cinema #spatial/101.jpg',
+    'final images/Mirage Cinema #spatial/637c8f2f83c5b.jpg',
+    'final images/Mirage Cinema #spatial/mirag column.jpg',
+    'final images/Mirage Cinema #spatial/pasted-image-2.png',
+    'final images/Mirage Cinema #spatial/pasted-image.png',
+    'final images/Mirage Cinema #spatial/photo_2627@28-07-2021_12-20-48.jpg',
+    'final images/Mirage Cinema #spatial/photo_2659@07-08-2021_22-14-26.jpg',
+    'final images/NXT Museum #spatial #installation/photo_2022-08-25_12-45-14.jpg',
+    'final images/NXT Museum #spatial #installation/photo_2022-08-25_12-45-28.jpg',
+    'final images/NXT Museum #spatial #installation/photo_2022-08-25_12-45-30.jpg',
+    'final images/NXT Museum #spatial #installation/photo_2022-08-25_16-07-59.jpg',
+    'final images/NXT Museum #spatial #installation/photo_2022-08-26_12-24-51.jpg',
+    'final images/New star camp #stage/25.png',
+    'final images/New star camp #stage/37.png',
+    'final images/New star camp #stage/ComfyUI_00053_.png',
+    'final images/New star camp #stage/fin6.png',
+    'final images/Nina kravitz #stage/1767412367827-89738e9a-6d9b-42f3-80b0-81b3d7a50cdc.png',
+    'final images/Nina kravitz #stage/ComfyUI_00009_.png',
+    'final images/Nina kravitz #stage/ComfyUI_00057_.png',
+    'final images/Nina kravitz #stage/ComfyUI_00058_.png',
+    'final images/Nina kravitz #stage/god_rays11.png',
+    'final images/Nina kravitz #stage/photo_2022-11-11_15-45-01.jpg',
+    'final images/Nina kravitz #stage/photo_2022-11-12_14-26-35.jpg',
+    'final images/Nina kravitz #stage/photo_2022-11-12_18-19-42.jpg',
+    'final images/Nina kravitz #stage/photo_2022-11-17_13-32-40.jpg',
+    'final images/One Tower #spatial #concept/1 (5).png',
+    'final images/One Tower #spatial #concept/ComfyUI_00030_.png',
+    'final images/One Tower #spatial #concept/ComfyUI_00031_.png',
+    'final images/One Tower #spatial #concept/concept zabor.jpg',
+    'final images/One Tower #spatial #concept/zabor pttrns (dragged).jpg',
+    'final images/One Tower #spatial #concept/zabor.jpg',
+    'final images/One Tower #spatial #concept/zabor2.jpg',
+    'final images/One Tower #spatial #concept/zabor3.jpg',
+    'final images/Phillaronie de Luxemburg  #stage/449681302_862376975938475_809333232580353241_n.jpg',
+    'final images/Phillaronie de Luxemburg  #stage/449693476_862376902605149_1496274342160015583_n.jpg',
+    'final images/Phillaronie de Luxemburg  #stage/96.gif',
+    'final images/Phillaronie de Luxemburg  #stage/lux.jpg',
+    'final images/Potato head bali #stage/oli1 (2)-filtered.png',
+    'final images/Potato head bali #stage/photo_2022-11-13_23-59-54.jpg',
+    'final images/Potato head bali #stage/photo_2022-11-14_02-05-12.jpg',
+    'final images/Potato head bali #stage/photo_2022-11-24_17-17-20.jpg',
+    'final images/Potato head bali #stage/photo_3830@13-11-2022_17-43-34-filtered.jpeg',
+    'final images/RHCP #stage #tech/490A2224.jpg',
+    'final images/RHCP #stage #tech/490A2253.jpg',
+    'final images/RHCP #stage #tech/490A2831.jpg',
+    'final images/Sophie #stage/000.jpg',
+    'final images/Sophie #stage/496709872_18008736773727365_777694170845982356_n.jpg',
+    'final images/Sophie #stage/ClesseysSF6-8-Retocada-scaled-r64cni1wd3gyg6elc2c2cq21ftxonw3gcgmr7rt3e8.jpg',
+    'final images/Sophie #stage/ComfyUI_00015_.png',
+    'final images/Sophie #stage/ComfyUI_00016_.png',
+    'final images/Sophie #stage/ComfyUI_00017_.png',
+    'final images/Sophie #stage/f2a2a0dc27b7c19d5f41fc8c99b87319b33b8e23.png',
+    'final images/Telegraph #spatial /ComfyUI_00021_.png',
+    'final images/Telegraph #spatial /Screenshot 2024-02-29 at 19.46.48.png',
+    'final images/Vaba Laba  #stage /43edf180-0aa1-438c-bad4-c5fdaa7208e89.png',
+    'final images/Vaba Laba  #stage /737412h8081t27_1620_8.jpg',
+    'final images/Vaba Laba  #stage /NP5_4058-1024x683 (1).jpg',
+    'final images/Vaba Laba  #stage /d1f174b2-b030-4ee0-bf3d-b1cbd44474f09.png',
+    'final images/bipolar express #stage #tech/IMG_1970.png',
+    'final images/bipolar express #stage #tech/IMG_2470.png',
+    'final images/bipolar express #stage #tech/IMG_2695.png',
+    'final images/bipolar express #stage #tech/IMG_2742.png',
+    'final images/bipolar express #stage #tech/Screenshot 2026-01-07 at 17.41.20.png',
+    'final images/bipolar express #stage #tech/Screenshot 2026-01-07 at 17.41.35.png',
+    'final images/bipolar express #stage #tech/Screenshot 2026-01-07 at 17.41.47.png',
+    'final images/bipolar express #stage #tech/Screenshot 2026-01-08 at 11.44.28.png',
+    'final images/bipolar express #stage #tech/Screenshot 2026-03-03 at 15.02.44.png',
+    'final images/fixtures decoratif #concept/photo_2022-09-11_20-12-15.jpg',
+    'final images/gate #instal/ComfyUI_00075_.png',
+    'final images/gate #instal/ComfyUI_00077_.png',
+    'final images/gate #instal/Screenshot 2024-11-24 at 20.47.07.png',
+    'final images/gate #instal/Screenshot 2026-02-22 at 15.52.12.png',
+    'final images/gula merah #stage/IMG_5170.JPG',
+    'final images/gula merah #stage/Screenshot 2026-02-22 at 16.06.52.png',
+    'final images/gula merah #stage/Screenshot 2026-02-22 at 16.06.57.png',
+    'final images/gula merah #stage/photo_2022-08-12_13-03-47.jpg',
+    'final images/gula merah #stage/photo_2022-08-12_13-03-54.jpg',
+    'final images/la fleurs  #spatial/ComfyUI_00012_.png',
+    'final images/la fleurs  #spatial/ComfyUI_00013_.png',
+    'final images/la fleurs  #spatial/ComfyUI_00015_.png',
+    'final images/la fleurs  #spatial/ComfyUI_00016_.png',
+    'final images/la fleurs  #spatial/ComfyUI_00018_.png',
+    'final images/la fleurs  #spatial/ComfyUI_00019_.png',
+    'final images/la fleurs  #spatial/fleurs4.png',
+    'final images/la fleurs  #spatial/hhhpng.png',
+    'final images/la fleurs  #spatial/ppp4.png',
+    'final images/la fleurs  #spatial/ppp5.png',
+    'final images/mirag club #stage #tech/photo_2020-11-30_16-45-16.jpg',
+    'final images/mirag club #stage #tech/photo_2020-12-01_20-08-32.jpg',
+    'final images/mirag club #stage #tech/photo_2020-12-02_23-41-24.jpg',
+    'final images/mirag club #stage #tech/photo_2022-03-21_02-24-47.jpg',
+    'final images/mirag club #stage #tech/photo_2022-03-28_03-46-47.jpg',
+    'final images/mirag club #stage #tech/photo_2022-08-04_18-43-59.jpg',
+    'final images/missoni #spatial #concept/11.png',
+    'final images/missoni #spatial #concept/17.png',
+    'final images/missoni #spatial #concept/19.png',
+    'final images/missoni #spatial #concept/20.png',
+    'final images/missoni #spatial #concept/4.png',
+    'final images/port #stage/port - stage 6.jpg',
+    'final images/port #stage/port - stage 7 .jpg',
+    'final images/port #stage/port-stage 8 .jpg',
+    'final images/port #stage/poster.png',
+    'final images/port #stage/pt.jpg',
+    'final images/port #stage/red_min.png',
+    'final images/port #stage/stage concept.jpg',
+    'final images/signal #spatial #installation/ComfyUI_00008_.png',
+    'final images/signal #spatial #installation/TDMovieOut.0.jpg',
+    'final images/signal #spatial #installation/pasted-image-2.png',
+    'final images/signal #spatial #installation/pasted-image-3.png',
+    'final images/signal #spatial #installation/pasted-image.png',
+    'final images/signal #spatial #installation/signal2.jpg',
+    'final images/thresholds #installation/Screenshot 2024-11-24 at 22.18.45.png',
+    'final images/thresholds #installation/Screenshot 2024-11-24 at 22.21.12.png',
+    'final images/thresholds #installation/liminal8.png',
+    'final images/torus #spatial #installation/ComfyUI_00060_.png',
+    'final images/torus #spatial #installation/untitled11.png',
+    'final images/torus #spatial #installation/untitled16.png',
+    'final images/torus #spatial #installation/untitled18.png',
+    'final images/torus #spatial #installation/untitled19.png',
+    'final images/tower building #spatial #installation/19.png',
+    'final images/tower building #spatial #installation/2.png',
+    'final images/tower building #spatial #installation/22.jpg',
+    'final images/tower building #spatial #installation/4.png',
+    'final images/tower building #spatial #installation/5.png',
+    'final images/tower building #spatial #installation/ComfyUI_00008_.png',
+    'final images/tower building #spatial #installation/ComfyUI_00024_.png',
+    'final images/wish circles #spatial #installation/Screenshot 2024-11-24 at 20.45.35.png',
+    'final images/wish circles #spatial #installation/Screenshot 2024-11-24 at 22.02.56.png',
+    'final images/wish circles #spatial #installation/Screenshot 2026-02-22 at 15.27.19.png',
+    'final images/wish circles #spatial #installation/Screenshot 2026-02-22 at 15.53.50.png',
+    'final images/yndx interactive zone #spatial #installation/11.png',
+    'final images/yndx interactive zone #spatial #installation/14.png',
+    'final images/yndx interactive zone #spatial #installation/cc.png'
 ];
-
 
 // Image cache: thumb = grid (small), img = full-res (selection mode). Draw uses img || thumb.
 const imageCache = {};
@@ -1352,7 +1391,7 @@ function precomputeConnectionTrajectories() {
     points.forEach(point => {
         const folder = point.folderPath || point.imagePath.substring(0, point.imagePath.lastIndexOf('/'));
         if (folder === point.imagePath || folder === '') {
-            folder = 'Imgae test ';
+            folder = 'final images';
         }
         
         if (!folderGroups.has(folder)) {
@@ -1504,7 +1543,7 @@ function loadFullResForPaths(paths) {
     });
 }
 
-// Path to highres version: "Imgae test /folder/file.jpg" -> "Imgae test /folder/highres/file.jpg"
+// Path to highres version: "final images/folder/file.jpg" -> "final images/folder/highres/file.jpg"
 function getHighresPath(path) {
     if (!path || path.indexOf('/') < 0) return null;
     const lastSlash = path.lastIndexOf('/');
@@ -1561,14 +1600,14 @@ function loadHighresForPaths(paths) {
 function getImageUrl(path, useThumb) {
     if (typeof window !== 'undefined' && window.__IMAGE_BASE__ === undefined) window.__IMAGE_BASE__ = '/img';
     const subPath = (typeof window !== 'undefined' && window.__IMAGE_BASE__)
-      ? path.replace(/^Imgae test \//, '')
+      ? path.replace(/^final images\/+/, '')
       : path;
     const pathForUrl = useThumb ? ('thumb/' + subPath) : subPath;
-    let encoded = pathForUrl.split('/').map(part => encodeURIComponent(part)).join('/');
-    encoded = encoded.replace(/%23/g, '%2523');
+    const encoded = pathForUrl.split('/').map(part => encodeURIComponent(part)).join('/');
     const base = (typeof window !== 'undefined' && window.location && window.location.origin) ? window.location.origin : '';
-    const prefix = (typeof window !== 'undefined' && window.__IMAGE_BASE__) ? window.__IMAGE_BASE__.replace(/\/$/, '') : '';
-    return base + (prefix ? prefix + '/' : '/') + encoded.replace(/^\//, '');
+    const prefix = (typeof window !== 'undefined' && window.__IMAGE_BASE__) ? String(window.__IMAGE_BASE__).replace(/\/+$/, '') : '';
+    const sep = prefix && !prefix.startsWith('/') ? '/' : '';
+    return base + (prefix ? sep + prefix + '/' : '/') + encoded;
 }
 
 function loadImageOnce(path, useThumb, skipProgress) {
@@ -1704,7 +1743,6 @@ function generatePoints(count, minDistance) {
     const points = [];
     const maxAttempts = 5000;
     
-    // Create a shuffled array of unique images to avoid duplicates
     const shuffledImages = [...imagePaths];
     // Fisher-Yates shuffle
     for (let i = shuffledImages.length - 1; i > 0; i--) {
@@ -1745,9 +1783,9 @@ function generatePoints(count, minDistance) {
             
             // Get folder path for grouping (handle images in root folder)
             let folderPath = imagePath.substring(0, imagePath.lastIndexOf('/'));
-            // If no '/' found, it's in root - use 'Imgae test ' as folder
+            // If no '/' found, it's in root - use 'final images' as folder
             if (folderPath === imagePath || folderPath === '') {
-                folderPath = 'Imgae test ';
+                folderPath = 'final images';
             }
             point = {
                 x: Math.random() * box.width + box.x,
@@ -1819,8 +1857,8 @@ function generatePoints(count, minDistance) {
     return points;
 }
 
-// Grid point count: cap so all points fit with minDistance; allow up to 280 so all images can appear
-const GRID_POINT_COUNT = Math.min(imagePaths.length, 280);
+// Grid point count: cap so all points fit with minDistance
+const GRID_POINT_COUNT = Math.min(imagePaths.length, 500);
 const points = generatePoints(GRID_POINT_COUNT, 50);
 
 // Initialize current sizes and opacity for all points
@@ -2803,7 +2841,7 @@ function enterConnectionMode(clickedPoint, isClicked = false, allowMobileAuto = 
     if (!clickedFolderPath) {
         clickedFolderPath = clickedPoint.imagePath.substring(0, clickedPoint.imagePath.lastIndexOf('/'));
         if (clickedFolderPath === clickedPoint.imagePath || clickedFolderPath === '') {
-            clickedFolderPath = 'Imgae test ';
+            clickedFolderPath = 'final images';
         }
     }
     
@@ -2813,7 +2851,7 @@ function enterConnectionMode(clickedPoint, isClicked = false, allowMobileAuto = 
         if (!pFolder) {
             pFolder = p.imagePath.substring(0, p.imagePath.lastIndexOf('/'));
             if (pFolder === p.imagePath || pFolder === '') {
-                pFolder = 'Imgae test ';
+                pFolder = 'final images';
             }
         }
         return pFolder === clickedFolderPath;
@@ -2853,7 +2891,7 @@ function enterConnectionMode(clickedPoint, isClicked = false, allowMobileAuto = 
         if (!pFolder) {
             pFolder = p.imagePath.substring(0, p.imagePath.lastIndexOf('/'));
             if (pFolder === p.imagePath || pFolder === '') {
-                pFolder = 'Imgae test ';
+                pFolder = 'final images';
             }
         }
         if (pFolder !== clickedFolderPath) {
@@ -2930,9 +2968,9 @@ function handleEmojiClick(clickedPoint) {
     let clickedFolderPath = clickedPoint.folderPath;
     if (!clickedFolderPath) {
         clickedFolderPath = clickedPoint.imagePath.substring(0, clickedPoint.imagePath.lastIndexOf('/'));
-        // If no '/' found, it's in root - use 'Imgae test ' as folder
+        // If no '/' found, it's in root - use 'final images' as folder
         if (clickedFolderPath === clickedPoint.imagePath || clickedFolderPath === '') {
-            clickedFolderPath = 'Imgae test ';
+            clickedFolderPath = 'final images';
         }
     }
     
@@ -2941,9 +2979,9 @@ function handleEmojiClick(clickedPoint) {
         let pFolder = p.folderPath;
         if (!pFolder) {
             pFolder = p.imagePath.substring(0, p.imagePath.lastIndexOf('/'));
-            // If no '/' found, it's in root - use 'Imgae test ' as folder
+            // If no '/' found, it's in root - use 'final images' as folder
             if (pFolder === p.imagePath || pFolder === '') {
-                pFolder = 'Imgae test ';
+                pFolder = 'final images';
             }
         }
         return pFolder === clickedFolderPath;
@@ -2954,7 +2992,7 @@ function handleEmojiClick(clickedPoint) {
     const allImagesFromFolder = imagePaths.filter(path => {
         let pathFolder = path.substring(0, path.lastIndexOf('/'));
         if (pathFolder === path || pathFolder === '') {
-            pathFolder = 'Imgae test ';
+            pathFolder = 'final images';
         }
         return pathFolder === clickedFolderPath;
     });
@@ -3256,6 +3294,7 @@ function filterByTag(tag) {
     
     points.forEach(point => {
         const folderPath = point.folderPath || point.imagePath.substring(0, point.imagePath.lastIndexOf('/'));
+        if (folderPath.includes('/0_')) return; // hide 0_ prefixed projects from menus
         const folderName = (folderPath.split('/').pop() || '').trim();
         
         // Check if this folder has the tag (supports embedded hashtags or manual map)
@@ -3984,12 +4023,17 @@ function showWeAreAbout() {
     if (aboutTextEl && typeof ABOUT_TEXT !== 'undefined') {
         // Format text: preserve line breaks
         aboutTextEl.innerHTML = ABOUT_TEXT.split('\n').map(line => {
-            if (line.trim() === '') {
-                return '<br>';
-            }
+            const t = line.trim();
+            if (t === '') return '<br>';
+            if (t.startsWith('<')) return t;
             return `<p>${line}</p>`;
         }).join('');
         aboutTextEl.style.display = 'block';
+        const weAreBtn = document.getElementById('weAreButton');
+        if (weAreBtn) {
+            const rect = weAreBtn.getBoundingClientRect();
+            aboutTextEl.style.left = `${rect.left}px`;
+        }
         aboutTextEl.style.opacity = '0';
         // Fade in after images fade out (1 second)
         setTimeout(() => {
@@ -5320,9 +5364,9 @@ function showMobileCategoryContent(category) {
         if (typeof ABOUT_TEXT !== 'undefined' && ABOUT_TEXT) {
             // Format text: preserve line breaks and paragraphs
             const formattedText = ABOUT_TEXT.split('\n').map(line => {
-                if (line.trim() === '') {
-                    return '<br>';
-                }
+                const t = line.trim();
+                if (t === '') return '<br>';
+                if (t.startsWith('<')) return t;
                 return `<p style="margin-bottom: 1em;">${line}</p>`;
             }).join('');
             categoryBody.innerHTML = '<div style="line-height: 1.6; font-size: 14px;">' + formattedText + '</div>';
@@ -5561,6 +5605,14 @@ function runAppInit() {
             filterButtonsRaf = requestAnimationFrame(() => {
                 filterButtonsRaf = 0;
         positionFilterButtons();
+        if (isWeAreMode) {
+            const aboutTextEl = document.getElementById('aboutText');
+            const weAreBtn = document.getElementById('weAreButton');
+            if (aboutTextEl && weAreBtn) {
+                const rect = weAreBtn.getBoundingClientRect();
+                aboutTextEl.style.left = `${rect.left}px`;
+            }
+        }
             });
     });
     
@@ -5688,7 +5740,7 @@ function loadAndDisplayAboutText(folderPath) {
         return;
     }
     
-    const pathWithoutPrefix = folderPath.replace(/^Imgae test \//, '');
+    const pathWithoutPrefix = folderPath.replace(/^final images\//, '');
     const encodedPath = pathWithoutPrefix.split('/').map(segment => encodeURIComponent(segment)).join('/');
     const origin = (typeof window !== 'undefined' && window.location && window.location.origin) ? window.location.origin : '';
     const pathPrefix = (typeof window !== 'undefined' && window.__BASE_URL__) ? window.__BASE_URL__.replace(/\/$/, '') : '';
@@ -6252,7 +6304,7 @@ window.addEventListener('resize', () => {
             draw._isMobileCached = undefined;
         }
         // Regenerate points for new canvas size (debounced to avoid thrash while resizing)
-    const newPoints = generatePoints(Math.min(imagePaths.length, 280), 50);
+    const newPoints = generatePoints(Math.min(imagePaths.length, 500), 50);
     points.length = 0;
     points.push(...newPoints);
     // Update mouse position

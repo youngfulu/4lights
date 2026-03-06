@@ -21,8 +21,8 @@ build/
 # Vite
 *.local
 
-# Root assets folder only: never commit (raw/originals stay local). public/Imgae test / is tracked.
-/Imgae test /
+# Root assets folder only: never commit (raw/originals stay local). public/final images/ is tracked.
+/final images/
 
 # Non-web formats: never commit (push only web-ready: jpg, png, gif, webp, svg)
 *.MOV
@@ -52,7 +52,7 @@ build/
 *.arw
 *.ARW
 
-# public/Imgae test / is tracked; only web formats (above ignored) are excluded
+# public/final images/ is tracked; only web formats (above ignored) are excluded
 
 # Legacy root files (app uses public/script.js, public/about.js, src/App.css)
 /about.js
