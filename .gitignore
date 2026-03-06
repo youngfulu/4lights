@@ -54,6 +54,14 @@ build/
 
 # public/final images/ is tracked; only web formats (above ignored) are excluded
 
+# Obsolete (project uses final images + root thumb/)
+/public/Imgae test /
+public/Imgae test /
+
+# Generated thumbnails (run scripts/generate-thumbnails.js)
+/thumb/
+thumb/
+
 # Legacy root files (app uses public/script.js, public/about.js, src/App.css)
 /about.js
 /images.js
