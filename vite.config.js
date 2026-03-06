@@ -93,15 +93,13 @@ export default defineConfig(({ command }) => {
           try {
             const outDir = path.resolve(process.cwd(), 'dist');
             const imgDest = path.join(outDir, 'img');
-            // Encode # as %23 in names so URL path (with double-encoded #) matches filesystem
-            function safeName(name) {
-              return name.replace(/#/g, '%23');
-            }
+            // Keep original names (including #) so URL-encoded paths match: browser requests
+            // .../thumb/2gis%20%20%23spatial/... → server decodes to "2gis  #spatial" → matches folder
             function copyRecursive(src, dest) {
               fs.mkdirSync(dest, { recursive: true });
               for (const e of fs.readdirSync(src, { withFileTypes: true })) {
                 const s = path.join(src, e.name);
-                const d = path.join(dest, safeName(e.name));
+                const d = path.join(dest, e.name);
                 if (e.isDirectory()) copyRecursive(s, d);
                 else fs.copyFileSync(s, d);
               }
