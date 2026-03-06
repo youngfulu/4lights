@@ -1185,7 +1185,6 @@ const imagePaths = [
     'final images/Vaba Laba  #stage /737412h8081t27_1620_8.jpg',
     'final images/Vaba Laba  #stage /NP5_4058-1024x683 (1).jpg',
     'final images/Vaba Laba  #stage /d1f174b2-b030-4ee0-bf3d-b1cbd44474f09.png',
-    'final images/bipolar express #stage #tech/IMG_1970.png',
     'final images/bipolar express #stage #tech/IMG_2470.png',
     'final images/bipolar express #stage #tech/IMG_2695.png',
     'final images/bipolar express #stage #tech/IMG_2742.png',
@@ -1737,123 +1736,99 @@ function getBoundingBox() {
     };
 }
 
-// Generate points with minimum distance constraint
+// Generate points with minimum distance constraint. Places ALL images so every image appears in the grid.
 function generatePoints(count, minDistance) {
     const box = getBoundingBox();
     const points = [];
-    const maxAttempts = 5000;
-    
+    const maxAttempts = 20000;
+
     const shuffledImages = [...imagePaths];
-    // Fisher-Yates shuffle
     for (let i = shuffledImages.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [shuffledImages[i], shuffledImages[j]] = [shuffledImages[j], shuffledImages[i]];
     }
-    
-    let imageIndexCounter = 0; // Track which image we're using
-    const usedImages = new Set(); // Track which images have been successfully placed
-    
-    for (let i = 0; i < count; i++) {
+
+    let imageIndexCounter = 0;
+    const usedImages = new Set();
+
+    function pickNextUnusedImage() {
         let attempts = 0;
-        let validPoint = false;
-        let point;
-        let currentImagePath = null;
-        
-        while (!validPoint && attempts < maxAttempts) {
-            // Find next unused image (skip ones already used)
-            let imageIndex;
-            let attemptsToFindImage = 0;
-            do {
-                imageIndex = imageIndexCounter % shuffledImages.length;
-                currentImagePath = shuffledImages[imageIndex];
-                imageIndexCounter++;
-                attemptsToFindImage++;
-                // If we've checked all images and they're all used, reset and start over
-                if (attemptsToFindImage > shuffledImages.length) {
-                    usedImages.clear();
-                    attemptsToFindImage = 0;
-                    imageIndexCounter = 0;
-                    imageIndex = 0;
-                    currentImagePath = shuffledImages[0];
-                    imageIndexCounter++;
-                }
-            } while (usedImages.has(currentImagePath) && attemptsToFindImage <= shuffledImages.length);
-            
-            const imagePath = currentImagePath;
-            
-            // Get folder path for grouping (handle images in root folder)
-            let folderPath = imagePath.substring(0, imagePath.lastIndexOf('/'));
-            // If no '/' found, it's in root - use 'final images' as folder
-            if (folderPath === imagePath || folderPath === '') {
-                folderPath = 'final images';
-            }
-            point = {
-                x: Math.random() * box.width + box.x,
-                y: Math.random() * box.height + box.y,
-                baseX: 0, // Will be set after generation
-                baseY: 0, // Will be set after generation
-                originalBaseX: 0, // Store original position (never modified)
-                originalBaseY: 0, // Store original position (never modified)
-                layer: (i % 2 === 0) ? 'layer_1' : 'layer_2', // odd points (1st, 3rd, 5th...) = layer_1, even points (2nd, 4th, 6th...) = layer_2
-                imagePath: imagePath,
-                folderPath: folderPath, // Store folder path for grouping
-                emojiIndex: imageIndexCounter, // Unique index for each point
-                isAligned: false,
-                isFiltered: false,
-                filteredFolder: null,
-                targetX: 0, // Target X position when aligned (center X)
-                targetY: 0, // Target Y position when aligned (horizontal line)
-                currentAlignedX: 0, // Current interpolated X position
-                currentAlignedY: 0,  // Current interpolated Y position
-                targetSize: 0, // Target size for smooth size transition
-                currentSize: 0, // Current interpolated size
-                opacity: 1.0, // Current opacity (1.0 = fully visible, 0.1 = faded)
-                targetOpacity: 1.0, // Target opacity for smooth transition
-                alignmentStartTime: 0, // Start time for alignment animation
-                startX: 0, // Starting X position for animation
-                startY: 0, // Starting Y position for animation
-                startSize: 0, // Starting size for animation
-                hoverSize: 1.0, // Current hover size multiplier (animated)
-                isHovered: false, // Current hover state
-                hoverStartTime: 0 // Start time for hover zoom transition
-            };
-            
-            validPoint = true;
-            
-            // Check distance to all existing points
-            for (let j = 0; j < points.length; j++) {
-                const dx = point.x - points[j].x;
-                const dy = point.y - points[j].y;
-                const distance = Math.sqrt(dx * dx + dy * dy);
-                
-                if (distance < minDistance) {
-                    validPoint = false;
-                    break;
-                }
-            }
-            
+        while (attempts <= shuffledImages.length) {
+            const idx = imageIndexCounter % shuffledImages.length;
+            const path = shuffledImages[idx];
+            imageIndexCounter++;
             attempts++;
+            if (!usedImages.has(path)) return path;
         }
-        
-        if (validPoint && currentImagePath) {
-            // Mark this image as used to prevent duplicates
-            usedImages.add(currentImagePath);
-            // Store base position and original position (original never changes)
-            point.baseX = point.x;
-            point.baseY = point.y;
-            point.originalBaseX = point.x;
-            point.originalBaseY = point.y;
-            point.currentAlignedX = point.x;
-            point.currentAlignedY = point.y;
-            point.alignmentStartTime = 0; // Initialize animation start time
-            point.startX = point.x;
-            point.startY = point.y;
-            point.startSize = 0; // Will be set after initialization
-            // Initial size will be set after baseEmojiSize is defined
+        usedImages.clear();
+        imageIndexCounter = 0;
+        return shuffledImages[0];
+    }
+
+    function isValidPosition(x, y, currentMinDist) {
+        for (let j = 0; j < points.length; j++) {
+            const dx = x - points[j].x;
+            const dy = y - points[j].y;
+            if (Math.sqrt(dx * dx + dy * dy) < currentMinDist) return false;
+        }
+        return true;
+    }
+
+    let pointIndex = 0;
+    while (points.length < count) {
+        const currentImagePath = pickNextUnusedImage();
+        let folderPath = currentImagePath.includes('/') ? currentImagePath.substring(0, currentImagePath.lastIndexOf('/')) : 'final images';
+        if (folderPath === currentImagePath || folderPath === '') folderPath = 'final images';
+
+        let placed = false;
+        const distancesToTry = [1, 0.85, 0.7, 0.55].map(r => r * minDistance);
+
+        for (let d = 0; d < distancesToTry.length && !placed; d++) {
+            const currentMinDist = distancesToTry[d];
+            for (let attempt = 0; attempt < maxAttempts && !placed; attempt++) {
+                const x = Math.random() * box.width + box.x;
+                const y = Math.random() * box.height + box.y;
+                if (!isValidPosition(x, y, currentMinDist)) continue;
+
+                const point = {
+                    x: x, y: y,
+                    baseX: x, baseY: y, originalBaseX: x, originalBaseY: y,
+                    layer: (pointIndex % 2 === 0) ? 'layer_1' : 'layer_2',
+                    imagePath: currentImagePath,
+                    folderPath: folderPath,
+                    emojiIndex: pointIndex + 1,
+                    isAligned: false, isFiltered: false, filteredFolder: null,
+                    targetX: 0, targetY: 0, currentAlignedX: x, currentAlignedY: y,
+                    targetSize: 0, currentSize: 0, opacity: 1.0, targetOpacity: 1.0,
+                    alignmentStartTime: 0, startX: x, startY: y, startSize: 0,
+                    hoverSize: 1.0, isHovered: false, hoverStartTime: 0
+                };
+                points.push(point);
+                usedImages.add(currentImagePath);
+                pointIndex++;
+                placed = true;
+                break;
+            }
+        }
+        if (!placed) {
+            const x = Math.random() * box.width + box.x;
+            const y = Math.random() * box.height + box.y;
+            const point = {
+                x: x, y: y, baseX: x, baseY: y, originalBaseX: x, originalBaseY: y,
+                layer: (pointIndex % 2 === 0) ? 'layer_1' : 'layer_2',
+                imagePath: currentImagePath, folderPath: folderPath, emojiIndex: pointIndex + 1,
+                isAligned: false, isFiltered: false, filteredFolder: null,
+                targetX: 0, targetY: 0, currentAlignedX: x, currentAlignedY: y,
+                targetSize: 0, currentSize: 0, opacity: 1.0, targetOpacity: 1.0,
+                alignmentStartTime: 0, startX: x, startY: y, startSize: 0,
+                hoverSize: 1.0, isHovered: false, hoverStartTime: 0
+            };
             points.push(point);
+            usedImages.add(currentImagePath);
+            pointIndex++;
         }
     }
-    
+
     return points;
 }
 
