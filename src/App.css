@@ -309,11 +309,11 @@ body {
 /* Mobile: same font size as web, compact block that does not overlap images */
 @media (max-width: 767px), (pointer: coarse) {
     .project-about-text.visible {
-        padding: 12px 0 0 0;
+        padding: 0;
         align-items: flex-start;
         text-align: left;
-        max-height: 32vh;
-        overflow-y: auto;
+        max-height: none;
+        overflow: visible;
     }
     .project-about-text .project-name {
         font-size: 22px;
@@ -526,13 +526,17 @@ body {
     }
     .mobile-category-back {
         position: fixed;
-        left: 14px;
-        right: 14px;
+        width: calc((100vw - 28px) / 4) !important;
+        left: 50% !important;
+        right: auto !important;
+        transform: translateX(-50%);
         bottom: calc(16px + env(safe-area-inset-bottom, 0px));
         padding: 10px 16px;
-        background: transparent;
-        border: 1px solid rgba(255, 255, 255, 0.5);
-        border-radius: 4px;
+        background: rgba(255, 255, 255, 0.08) !important;
+        -webkit-backdrop-filter: blur(40px) saturate(180%);
+        backdrop-filter: blur(40px) saturate(180%);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 16px;
         color: #fff;
         font-size: 14px;
         font-weight: 400;
@@ -540,19 +544,19 @@ body {
         text-transform: lowercase;
         cursor: pointer;
         z-index: 20001;
-        pointer-events: auto; /* stay clickable when overlay has pointer-events: none for scroll-from-anywhere */
+        pointer-events: auto;
         transition: opacity 0.25s;
         -webkit-tap-highlight-color: transparent;
         display: flex;
         align-items: center;
         justify-content: center;
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
         text-align: center;
     }
     .mobile-category-back:hover,
     .mobile-category-back:active {
-        background: transparent;
-        border: 1px solid rgba(255, 255, 255, 0.5);
+        background: rgba(255, 255, 255, 0.12) !important;
+        border: 1px solid rgba(255, 255, 255, 0.2);
     }
 }
 

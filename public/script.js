@@ -837,6 +837,42 @@ function layoutAlignedEmojisMobileVertical(animate = true) {
         heights.push(heightWorld);
     });
 
+    // Measure about block (name + info) height for slot above first image
+    let aboutBlockHeightWorld = 0;
+    const aboutContainerEl = document.getElementById('projectAboutText');
+    const aboutNameEl = document.getElementById('projectName');
+    const aboutInfoEl = document.getElementById('projectInfo');
+    const hasAbout = aboutContainerEl && ((aboutNameEl && aboutNameEl.textContent.trim().length > 0) || (aboutInfoEl && aboutInfoEl.textContent.trim().length > 0));
+    mobileAboutBlockCenterYWorld = 0;
+    mobileAboutBlockHeightWorld = 0;
+    if (hasAbout) {
+        const prevC = { position: aboutContainerEl.style.position, left: aboutContainerEl.style.left, width: aboutContainerEl.style.width, visibility: aboutContainerEl.style.visibility, display: aboutContainerEl.style.display, top: aboutContainerEl.style.top, transform: aboutContainerEl.style.transform };
+        // Temporarily hide moreEl so it doesn't affect about block height measurement
+        const moreElTemp = document.getElementById('projectMore');
+        const prevMoreDisplay = moreElTemp ? moreElTemp.style.display : '';
+        if (moreElTemp) moreElTemp.style.display = 'none';
+        aboutContainerEl.style.position = 'fixed';
+        aboutContainerEl.style.left = '-9999px';
+        aboutContainerEl.style.width = targetWidthScreen + 'px';
+        aboutContainerEl.style.visibility = 'hidden';
+        aboutContainerEl.style.display = 'block';
+        aboutContainerEl.style.top = '0';
+        aboutContainerEl.style.transform = 'none';
+        const hAbout = aboutContainerEl.offsetHeight;
+        aboutContainerEl.style.position = prevC.position;
+        aboutContainerEl.style.left = prevC.left;
+        aboutContainerEl.style.width = prevC.width;
+        aboutContainerEl.style.visibility = prevC.visibility;
+        aboutContainerEl.style.display = prevC.display;
+        aboutContainerEl.style.top = prevC.top;
+        aboutContainerEl.style.transform = prevC.transform;
+        if (moreElTemp) moreElTemp.style.display = prevMoreDisplay;
+        aboutBlockHeightWorld = Math.max(30 / selectedZoom, hAbout / selectedZoom);
+        mobileAboutBlockMarginScreen = marginScreen;
+        mobileAboutBlockWidthScreen = targetWidthScreen;
+        mobileAboutBlockHeightWorld = aboutBlockHeightWorld;
+    }
+
     // Measure more/extra block height for slot after first image (same gap as between images)
     let moreBlockHeightWorld = 0;
     const moreEl = document.getElementById('projectMore');
@@ -864,6 +900,11 @@ function layoutAlignedEmojisMobileVertical(animate = true) {
     }
 
     let yTop = topPaddingWorld;
+    // Reserve space for about block above first image (gap = same as between images)
+    if (hasAbout) {
+        mobileAboutBlockCenterYWorld = yTop + aboutBlockHeightWorld / 2;
+        yTop += aboutBlockHeightWorld + gapWorld;
+    }
     alignedEmojis.forEach((point, idx) => {
         if (idx === 1 && hasMore) {
             mobileMoreBlockCenterYWorld = yTop + moreBlockHeightWorld / 2;
@@ -1023,6 +1064,10 @@ let mobileMoreBlockCenterYWorld = 0; // Center Y of more.txt block in world (0 =
 let mobileMoreBlockHeightWorld = 0;
 let mobileMoreBlockMarginScreen = 0;
 let mobileMoreBlockWidthScreen = 0;
+let mobileAboutBlockCenterYWorld = 0; // Center Y of about block in world (0 = no block)
+let mobileAboutBlockHeightWorld = 0;
+let mobileAboutBlockMarginScreen = 0;
+let mobileAboutBlockWidthScreen = 0;
 
 // Touch interaction state (iPhone/iPad)
 let lastTouchX = 0;
@@ -2741,6 +2786,8 @@ function unalignEmojis() {
     mobileAlignedBasePanX = 0;
     mobileMoreBlockCenterYWorld = 0;
     mobileMoreBlockHeightWorld = 0;
+    mobileAboutBlockCenterYWorld = 0;
+    mobileAboutBlockHeightWorld = 0;
     scrollIndicatorVisible = false;
     mobileLastTappedPoint = null; // Reset mobile tap tracking
     
@@ -5014,6 +5061,25 @@ function draw() {
             moreEl.style.lineHeight = '1.6';
         }
     }
+
+    // Mobile: position about block above first image (scrolls with content, same approach as more.txt)
+    if (isMobileDevice() && alignedEmojiIndex !== null && mobileAboutBlockCenterYWorld > 0) {
+        const aboutEl = document.getElementById('projectAboutText');
+        if (aboutEl && aboutEl.style.display !== 'none') {
+            const centerY = canvas.height / 2;
+            const screenY = (mobileAboutBlockCenterYWorld - centerY) * globalZoomLevel + centerY + cameraPanY;
+            const top = screenY - (mobileAboutBlockHeightWorld * globalZoomLevel) / 2;
+            aboutEl.style.position = 'fixed';
+            aboutEl.style.left = mobileAboutBlockMarginScreen + 'px';
+            aboutEl.style.width = mobileAboutBlockWidthScreen + 'px';
+            aboutEl.style.top = Math.round(top) + 'px';
+            aboutEl.style.transform = 'none';
+            aboutEl.style.bottom = 'auto';
+            aboutEl.style.right = 'auto';
+            aboutEl.style.visibility = 'visible';
+            aboutEl.style.display = 'block';
+        }
+    }
 }
 
 // Animation loop (pauses when tab hidden to save CPU/battery)
@@ -6052,8 +6118,7 @@ function displayProjectAboutText(name, aboutLines, moreContent) {
     infoEl.style.visibility = 'visible';
     
     if (isMobileDevice()) {
-        // Mobile only: about text fixed at top of viewport (must not scroll with canvas/content)
-        // Move to body so no parent transform/overflow can break position:fixed
+        // Mobile: position handled by draw() using world coords (same approach as more.txt)
         if (containerEl.parentNode && containerEl.parentNode !== document.body) {
             document.body.appendChild(containerEl);
         }
@@ -6065,70 +6130,57 @@ function displayProjectAboutText(name, aboutLines, moreContent) {
             categoryContent.style.opacity = '1';
             categoryContent.style.background = 'transparent';
         }
-        const marginPx = canvas ? Math.max(14, canvas.width * 0.04) : 14;
-        const safeTop = Math.max(marginPx, 14);
         containerEl.style.position = 'fixed';
-        containerEl.style.left = marginPx + 'px';
-        containerEl.style.right = marginPx + 'px';
-        containerEl.style.top = safeTop + 'px';
-        containerEl.style.bottom = 'auto';
-        containerEl.style.transform = 'translateZ(0)';
-        containerEl.style.zIndex = '10002';
-        containerEl.style.width = 'auto';
-        containerEl.style.maxWidth = 'none';
         containerEl.style.display = 'flex';
         containerEl.style.flexDirection = 'column';
         containerEl.style.alignItems = 'stretch';
         containerEl.style.gap = '8px';
         containerEl.style.overflow = 'visible';
+        containerEl.style.zIndex = '10002';
+        containerEl.style.transform = 'none';
         nameEl.style.position = 'static';
-        nameEl.style.left = '';
-        nameEl.style.right = '';
-        nameEl.style.top = '';
+        nameEl.style.textAlign = 'left';
         infoEl.style.position = 'static';
-        infoEl.style.left = '';
-        infoEl.style.right = '';
-        infoEl.style.top = '';
+        infoEl.style.textAlign = 'left';
         if (moreEl && moreEl.textContent.trim()) moreEl.style.visibility = 'hidden';
         void containerEl.offsetHeight;
         setTimeout(() => { nameEl.style.opacity = '1'; }, 0);
-        return;
+        // Trigger relayout so about block space is reserved in the gallery
+        scheduleAlignedMobileRelayoutIfNeeded();
     }
     
     // Desktop: default position; updateProjectAboutTextPosition will set exact positions
-    containerEl.style.left = '40px';
-    containerEl.style.right = 'auto';
-    containerEl.style.top = 'auto';
-    containerEl.style.bottom = '20px';
+    if (!isMobileDevice()) {
+        containerEl.style.left = '40px';
+        containerEl.style.right = 'auto';
+        containerEl.style.top = 'auto';
+        containerEl.style.bottom = '20px';
+    }
     void containerEl.offsetHeight;
     
-    // Update position continuously during animation
+    // Update position every frame (desktop only; mobile positioning is in draw())
     if (window.updateProjectAboutTextPos) {
         cancelAnimationFrame(window.updateProjectAboutTextPos);
     }
     
-    const updatePosition = () => {
-        if (alignedEmojis && alignedEmojis.length > 0) {
-            updateProjectAboutTextPosition(containerEl, nameEl, infoEl);
-            window.updateProjectAboutTextPos = requestAnimationFrame(updatePosition);
-        } else {
-            // Stop updating if no aligned emojis
-            if (window.updateProjectAboutTextPos) {
-                cancelAnimationFrame(window.updateProjectAboutTextPos);
-                window.updateProjectAboutTextPos = null;
+    if (!isMobileDevice()) {
+        const updatePosition = () => {
+            if (alignedEmojis && alignedEmojis.length > 0) {
+                updateProjectAboutTextPosition(containerEl, nameEl, infoEl);
+                window.updateProjectAboutTextPos = requestAnimationFrame(updatePosition);
+            } else {
+                if (window.updateProjectAboutTextPos) {
+                    cancelAnimationFrame(window.updateProjectAboutTextPos);
+                    window.updateProjectAboutTextPos = null;
+                }
             }
-        }
-    };
-    updatePosition();
+        };
+        updatePosition();
+    }
 }
 
-// Update project about text position based on aligned images (desktop only)
+// Update project about text position based on aligned images (desktop + mobile)
 function updateProjectAboutTextPosition(containerEl, nameEl, infoEl) {
-    // Skip on mobile - mobile uses different about text display
-    if (isMobileDevice()) {
-        return;
-    }
-    
     if (!alignedEmojis || alignedEmojis.length === 0) {
         return;
     }
@@ -6140,7 +6192,9 @@ function updateProjectAboutTextPosition(containerEl, nameEl, infoEl) {
         return;
     }
     
-    const isMobile = isMobileDevice();
+    // Mobile: positioning handled by draw() using world coords
+    if (isMobileDevice()) return;
+
     const zoom = globalZoomLevel;
     const centerX = canvas.width / 2;
     const centerY = canvas.height / 2;
@@ -6151,7 +6205,7 @@ function updateProjectAboutTextPosition(containerEl, nameEl, infoEl) {
     const firstImageAspectRatio = (firstImageData && firstImageData.aspectRatio) ? firstImageData.aspectRatio : 1;
     const firstImageWidth = firstImageHeight * firstImageAspectRatio;
     
-    // Calculate screen positions
+    // Calculate screen positions (depend on cameraPan → scrolls with content)
     const firstImageCenterX = firstImage.currentAlignedX || firstImage.targetX || 0;
     const firstImageCenterY = firstImage.currentAlignedY || firstImage.targetY || 0;
     const firstImageTopY = firstImageCenterY - (firstImageHeight / 2);
@@ -6167,7 +6221,7 @@ function updateProjectAboutTextPosition(containerEl, nameEl, infoEl) {
     firstImageRightScreenX = Math.max(firstImageLeftScreenX + 50, Math.min((window.innerWidth || 800) - margin, firstImageRightScreenX));
     firstImageTopScreenY = Math.max(margin, Math.min((window.innerHeight || 600) - margin, firstImageTopScreenY));
     
-    // Get image dimensions for last image
+    // Get image dimensions for last image (desktop)
     const lastImageData = imageCache[lastImage.imagePath];
     const lastImageHeight = lastImage.currentSize || lastImage.targetSize || baseEmojiSize;
     const lastImageAspectRatio = (lastImageData && lastImageData.aspectRatio) ? lastImageData.aspectRatio : 1;
@@ -6178,60 +6232,7 @@ function updateProjectAboutTextPosition(containerEl, nameEl, infoEl) {
     let lastImageBottomScreenY = ((lastImageBottomY - centerY) * zoom) + centerY + cameraPanY;
     lastImageBottomScreenY = Math.max(firstImageTopScreenY + 40, Math.min((window.innerHeight || 600) - margin, lastImageBottomScreenY));
     
-    if (isMobile) {
-        // Mobile: Position text to the right of vertical layout, aligned to top and right edge of first image
-        const textOffsetX = 20; // 20px gap from right edge of image
-        const screenWidth = window.innerWidth;
-        
-        // Calculate right position: distance from right edge of screen to right edge of image, minus offset
-        const rightPosition = screenWidth - firstImageRightScreenX - textOffsetX;
-        
-        // Ensure elements are visible
-        nameEl.style.opacity = '1';
-        infoEl.style.opacity = '1';
-        containerEl.style.opacity = '1';
-        containerEl.style.zIndex = '10001'; // Above canvas (z-index: 1)
-        containerEl.style.pointerEvents = 'none'; // Don't block interactions
-        containerEl.style.display = 'block'; // Ensure display
-        containerEl.style.visibility = 'visible'; // Ensure visibility
-        
-        // Position name: 25px above top edge of first image, aligned to right edge of first image
-        nameEl.style.position = 'fixed';
-        nameEl.style.left = 'auto';
-        nameEl.style.right = `${Math.max(10, rightPosition)}px`; // Ensure it's not off-screen
-        nameEl.style.top = `${Math.max(10, firstImageTopScreenY - 25)}px`;
-        nameEl.style.textAlign = 'right';
-        nameEl.style.display = 'block';
-        nameEl.style.visibility = 'visible';
-        
-        // Position info: 15px below bottom edge of last image, aligned to right edge of first image
-        infoEl.style.position = 'fixed';
-        infoEl.style.left = 'auto';
-        infoEl.style.right = `${Math.max(10, rightPosition)}px`; // Ensure it's not off-screen
-        infoEl.style.top = `${lastImageBottomScreenY + 15}px`;
-        infoEl.style.textAlign = 'right';
-        infoEl.style.display = 'block';
-        infoEl.style.visibility = 'visible';
-        
-        const moreElM = document.getElementById('projectMore');
-        if (moreElM && moreElM.style.display === 'block' && moreElM.textContent.trim()) {
-            const gap = 24;
-            const infoW = infoEl.offsetWidth || 0;
-            moreElM.style.position = 'fixed';
-            moreElM.style.left = 'auto';
-            moreElM.style.right = `${Math.max(10, rightPosition + infoW + gap)}px`;
-            moreElM.style.top = `${lastImageBottomScreenY + 15}px`;
-            moreElM.style.width = 'min(280px, ' + (window.innerWidth - (infoW + gap + 28)) + 'px)';
-            moreElM.style.fontSize = '36px';
-            moreElM.style.textAlign = 'right';
-        }
-        
-        containerEl.style.position = 'fixed';
-        containerEl.style.left = 'auto';
-        containerEl.style.right = `${Math.max(10, rightPosition)}px`;
-        containerEl.style.display = 'block';
-        containerEl.style.visibility = 'visible';
-    } else {
+    {
         // Desktop: align about block to left edge of first image; smooth Y during phase 2/0 to avoid jitter
         const textGap = 15;
         const firstImageBottomScreenY = firstImageTopScreenY + (firstImageHeight * zoom);
@@ -6243,7 +6244,7 @@ function updateProjectAboutTextPosition(containerEl, nameEl, infoEl) {
         let aboutLeftPx;
         if (animationComplete && selectionAboutFixedLeftPx != null) {
             aboutLeftPx = selectionAboutFixedLeftPx;
-        } else {
+    } else {
             aboutLeftPx = Math.round(firstImageLeftScreenX);
             if (animationComplete) selectionAboutFixedLeftPx = aboutLeftPx;
         }
