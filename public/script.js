@@ -3054,7 +3054,7 @@ function handleEmojiClick(clickedPoint) {
     
     alignedFolderPath = clickedFolderPath;
     selectionFocusPointForPhase2 = clickedPoint; // Phase 2: pan to clicked image
-
+    
     // Check if mobile (screen width < 768px or touch device)
     const isMobile = isMobileDevice();
     
@@ -4217,15 +4217,15 @@ function draw() {
         const phaseElapsed = now - selectionPhaseStartTime;
         
         if (selectionAnimationPhase === 1) {
-            // Phase 1: Zoom out + images move to grid + others fade out (1.2 seconds)
+            // Phase 1: Zoom in on line image grid + pan to center (1.2 seconds)
             const rawProgress = Math.min(phaseElapsed / SELECTION_PHASE1_DURATION, 1.0);
-            const easeProgress = easeOutExpoInertia(rawProgress); // Exponential with tiny inertia
+            const easeProgress = easeOutExpoInertia(rawProgress);
             
-            // Animate zoom out
-            globalZoomLevel = selectionStartZoom + (selectionTargetZoomOut - selectionStartZoom) * easeProgress;
+            // Animate zoom in directly on the row
+            globalZoomLevel = selectionStartZoom + (selectionTargetZoomIn - selectionStartZoom) * easeProgress;
             targetZoomLevel = globalZoomLevel;
             
-            // Animate pan to center
+            // Animate pan to center (row centered)
             cameraPanX = selectionStartPanX + (selectionZoomOutPanX - selectionStartPanX) * easeProgress;
             cameraPanY = selectionStartPanY + (0 - selectionStartPanY) * easeProgress;
             targetCameraPanX = cameraPanX;
@@ -4236,14 +4236,13 @@ function draw() {
                 // Move to delay phase
                 selectionAnimationPhase = 1.5;
                 selectionPhaseStartTime = now;
-                // Lock camera at phase 1 end position
-                globalZoomLevel = selectionTargetZoomOut;
+                globalZoomLevel = selectionTargetZoomIn;
                 cameraPanX = selectionZoomOutPanX;
                 cameraPanY = 0;
             }
         } else if (selectionAnimationPhase === 1.5) {
-            // Delay phase: 0.25 seconds pause before phase 2
-            globalZoomLevel = selectionTargetZoomOut;
+            // Delay phase: 0.25 seconds before smooth scroll to clicked image
+            globalZoomLevel = selectionTargetZoomIn;
             cameraPanX = selectionZoomOutPanX;
             cameraPanY = 0;
             targetZoomLevel = globalZoomLevel;
@@ -4254,20 +4253,19 @@ function draw() {
             if (phaseElapsed >= SELECTION_PHASE_DELAY) {
                 selectionAnimationPhase = 2;
                 selectionPhaseStartTime = now;
-                selectionStartZoom = selectionTargetZoomOut;
+                selectionStartZoom = selectionTargetZoomIn;
                 selectionStartPanX = selectionZoomOutPanX;
             }
         } else if (selectionAnimationPhase === 2) {
-            // Phase 2: Zoom in to leftmost image (1.2 seconds)
+            // Phase 2: Smooth scroll/pan to clicked image (1.2 seconds)
             const rawProgress = Math.min(phaseElapsed / SELECTION_PHASE2_DURATION, 1.0);
-            const easeProgress = easeOutExpoInertia(rawProgress);
-            const easePan = easeOutCubic(rawProgress); // 10% smoother pan to final carousel position
+            const easePan = easeOutCubic(rawProgress); // smooth pan to clicked image
             
-            // Animate zoom in
-            globalZoomLevel = selectionStartZoom + (selectionTargetZoomIn - selectionStartZoom) * easeProgress;
+            // Zoom stays at selectionTargetZoomIn (already there from phase 1)
+            globalZoomLevel = selectionTargetZoomIn;
             targetZoomLevel = globalZoomLevel;
             
-            // Animate pan to left-align (smoother curve)
+            // Animate pan from center to clicked image
             cameraPanX = selectionStartPanX + (selectionFinalPanX - selectionStartPanX) * easePan;
             targetCameraPanX = cameraPanX;
             
@@ -6054,8 +6052,7 @@ function displayProjectAboutText(name, aboutLines, moreContent) {
     infoEl.style.visibility = 'visible';
     
     if (isMobileDevice()) {
-        // Mobile only: about text fixed at top of viewport (must not scroll with canvas/content)
-        // Move to body so no parent transform/overflow can break position:fixed
+        // Mobile: about text scrolls with content (same behavior as images/more.txt)
         if (containerEl.parentNode && containerEl.parentNode !== document.body) {
             document.body.appendChild(containerEl);
         }
@@ -6067,41 +6064,23 @@ function displayProjectAboutText(name, aboutLines, moreContent) {
             categoryContent.style.opacity = '1';
             categoryContent.style.background = 'transparent';
         }
-        const marginPx = canvas ? Math.max(14, canvas.width * 0.04) : 14;
-        const safeTop = Math.max(marginPx, 14);
-        containerEl.style.position = 'fixed';
-        containerEl.style.left = marginPx + 'px';
-        containerEl.style.right = marginPx + 'px';
-        containerEl.style.top = safeTop + 'px';
-        containerEl.style.bottom = 'auto';
-        containerEl.style.transform = 'translateZ(0)';
         containerEl.style.zIndex = '10002';
-        containerEl.style.width = 'auto';
-        containerEl.style.maxWidth = 'none';
         containerEl.style.display = 'flex';
         containerEl.style.flexDirection = 'column';
         containerEl.style.alignItems = 'stretch';
         containerEl.style.gap = '8px';
         containerEl.style.overflow = 'visible';
-        nameEl.style.position = 'static';
-        nameEl.style.left = '';
-        nameEl.style.right = '';
-        nameEl.style.top = '';
-        infoEl.style.position = 'static';
-        infoEl.style.left = '';
-        infoEl.style.right = '';
-        infoEl.style.top = '';
         if (moreEl && moreEl.textContent.trim()) moreEl.style.visibility = 'hidden';
         void containerEl.offsetHeight;
         setTimeout(() => { nameEl.style.opacity = '1'; }, 0);
-        return;
+        // Fall through to start update loop — updateProjectAboutTextPosition positions based on scroll
+    } else {
+        // Desktop: default position; updateProjectAboutTextPosition will set exact positions
+        containerEl.style.left = '40px';
+        containerEl.style.right = 'auto';
+        containerEl.style.top = 'auto';
+        containerEl.style.bottom = '20px';
     }
-    
-    // Desktop: default position; updateProjectAboutTextPosition will set exact positions
-    containerEl.style.left = '40px';
-    containerEl.style.right = 'auto';
-    containerEl.style.top = 'auto';
-    containerEl.style.bottom = '20px';
     void containerEl.offsetHeight;
     
     // Update position continuously during animation
@@ -6124,13 +6103,8 @@ function displayProjectAboutText(name, aboutLines, moreContent) {
     updatePosition();
 }
 
-// Update project about text position based on aligned images (desktop only)
+// Update project about text position based on aligned images (desktop + mobile: mobile scrolls with content)
 function updateProjectAboutTextPosition(containerEl, nameEl, infoEl) {
-    // Skip on mobile - mobile uses different about text display
-    if (isMobileDevice()) {
-        return;
-    }
-    
     if (!alignedEmojis || alignedEmojis.length === 0) {
         return;
     }

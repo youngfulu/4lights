@@ -28,10 +28,10 @@
 - Состояние покоя: `selectionAnimationPhase = 0`.
 - При первом входе в selection после клика по папке считается «новое выравнивание» (`isNewAlignment`).
 
-### Фаза 1 — Zoom out + движение к ряду + затухание остальных (1.2 s)
+### Фаза 1 — Zoom in на ряд + pan к центру (1.2 s)
 - **Устанавливается:** `selectionAnimationPhase = 1`, `selectionPhaseStartTime = now`.
 - **Камера:**
-  - Zoom: от текущего `selectionStartZoom` к `selectionTargetZoomOut` (уровень, при котором весь ряд с боковыми отступами помещается на экран).
+  - Zoom: от `selectionStartZoom` к `selectionTargetZoomIn` (zoom in на line image grid).
   - Pan: к центру (`cameraPanX` → `selectionZoomOutPanX`, `cameraPanY` → 0).
 - **Картинки:** выбранные начинают двигаться и масштабироваться из текущих позиций сетки к целевым позициям в горизонтальном ряду (интерполяция за `alignmentAnimationDuration` = 1.2 s).
 - **Невыбранные картинки:** `targetOpacity = 0`; затухание за **250 ms** (`FADE_OUT_SPEED`).
@@ -39,15 +39,15 @@
 
 ### Фаза 1.5 — Пауза (250 ms)
 - **Устанавливается:** `selectionAnimationPhase = 1.5`, время фазы сбрасывается.
-- Камера зафиксирована: zoom = `selectionTargetZoomOut`, pan по центру.
+- Камера зафиксирована: zoom = `selectionTargetZoomIn`, pan по центру.
 - Картинки продолжают дотягивать позицию/размер до целевых (если 1.2 s не хватило).
 - Через **250 ms** переход в фазу 2.
 
-### Фаза 2 — Zoom in к выбранному изображению (1.2 s)
-- **Устанавливается:** `selectionAnimationPhase = 2`, `selectionPhaseStartTime` и стартовые значения pan/zoom обновляются.
+### Фаза 2 — Плавный scroll/pan к выбранному изображению (1.2 s)
+- **Устанавливается:** `selectionAnimationPhase = 2`, `selectionPhaseStartTime` и стартовые значения pan обновляются.
 - **Камера:**
-  - Zoom: от `selectionTargetZoomOut` к `selectionTargetZoomIn` (масштаб, при котором ряд занимает левые 2/3 экрана с боковыми отступами). Easing: `easeOutExpoInertia`.
-  - Pan: к **изображению, на которое кликнул пользователь** в random image grid. Если вход сделан из меню (категории), выбирается изображение с кратчайшим путём к центру экрана, фокус идёт на него.
+  - Zoom: остаётся `selectionTargetZoomIn` (ряд уже в нужном масштабе с фазы 1).
+  - Pan: плавный scroll от центра к **изображению, на которое кликнул пользователь** (или center-closest при входе из меню). Easing: `easeOutCubic`.
 - По истечении 1.2 s: `selectionAnimationPhase = 0`, камера остаётся в финальном состоянии. Анимация входа завершена.
 
 ### Параллельно при входе в selection (desktop и mobile)
@@ -97,11 +97,11 @@
 
 ```
 Вход:
-  [Фаза 1]  1.2 s   zoom out + pan to center + fade out остальных
+  [Фаза 1]  1.2 s   zoom in на ряд + pan to center + fade out остальных
       ↓
   [Фаза 1.5] 0.25 s пауза
       ↓
-  [Фаза 2]  1.2 s   zoom in + pan к первому кадру
+  [Фаза 2]  1.2 s   плавный scroll/pan к кликнутой картинке
       ↓
   Фаза 0 (selection активен)
 

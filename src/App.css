@@ -439,9 +439,10 @@ body {
         line-height: 1.4;
         padding: 8px;
     }
+    /* Mobile only: swapped spatial (top-right) and stage (top-left) */
     .mobile-nav-label[data-category="stage"] {
         top: calc(16px + env(safe-area-inset-top, 0px));
-        right: calc(16px + env(safe-area-inset-right, 0px));
+        left: calc(16px + env(safe-area-inset-left, 0px));
     }
     .mobile-nav-label[data-category="install"] {
         bottom: calc(16px + env(safe-area-inset-bottom, 0px));
@@ -453,7 +454,7 @@ body {
     }
     .mobile-nav-label[data-category="spatial"] {
         top: calc(16px + env(safe-area-inset-top, 0px));
-        left: calc(16px + env(safe-area-inset-left, 0px));
+        right: calc(16px + env(safe-area-inset-right, 0px));
     }
     .mobile-nav-label[data-category="we-are"] {
         overflow: visible;

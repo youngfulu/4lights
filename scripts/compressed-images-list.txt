@@ -1,0 +1,5 @@
+# List of image paths (one per line) that were compressed and can be removed
+# if you are replacing grid with thumbnails. Paths relative to "Imgae test " or public/Imgae test .
+# Example:
+# 2gis  #spatial/14.png
+# Leave empty or comment with # to not delete anything.
