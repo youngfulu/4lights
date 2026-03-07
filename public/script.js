@@ -4453,13 +4453,6 @@ function draw() {
         targetCameraPanY = mobileAlignedBasePanY - scrollOffsetScreen;
         cameraPanY += (targetCameraPanY - cameraPanY) * panSmoothness;
         
-        // Mobile: about text scrolls with content (same as images); top = base + cameraPanY
-        const aboutEl = document.getElementById('projectAboutText');
-        if (aboutEl && aboutEl.style.display !== 'none' && aboutEl.classList.contains('visible')) {
-            const baseTop = Math.max(14, (canvas ? canvas.width : 400) * 0.04);
-            aboutEl.style.top = (baseTop + cameraPanY) + 'px';
-        }
-        
         // Update scroll indicator visibility
         if (performance.now() > scrollIndicatorFadeTime && !isMobileScrolling) {
             scrollIndicatorVisible = false;
