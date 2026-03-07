@@ -818,7 +818,7 @@ function layoutAlignedEmojisMobileVertical(animate = true) {
     const paddingScreen = marginScreen;
     const targetWidthScreen = canvas.width - 2 * marginScreen;
     const gapScreen = MOBILE_SELECTION_VERTICAL_GAP;
-    const topPaddingScreen = MOBILE_SELECTION_TOP_PADDING;
+    const topPaddingScreen = marginScreen;
 
     const targetWidthWorld = targetWidthScreen / selectedZoom;
     const gapWorld = gapScreen / selectedZoom;
@@ -2642,7 +2642,7 @@ function getGridPattern() {
     tile.height = gridSize;
     const tctx = tile.getContext('2d');
     if (!tctx) return null;
-    const gridOpacity = isMobile ? 0.24 * 0.8 : 0.24; // mobile: 20% less opacity
+    const gridOpacity = isMobile ? 0.24 * 0.8 * 0.8 : 0.24 * 0.8;
     tctx.strokeStyle = `rgba(255, 255, 255, ${gridOpacity})`;
     tctx.lineWidth = 1;
     tctx.beginPath();
