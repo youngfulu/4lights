@@ -4453,6 +4453,13 @@ function draw() {
         targetCameraPanY = mobileAlignedBasePanY - scrollOffsetScreen;
         cameraPanY += (targetCameraPanY - cameraPanY) * panSmoothness;
         
+        // Mobile: about text scrolls with content (same as images); top = base + cameraPanY
+        const aboutEl = document.getElementById('projectAboutText');
+        if (aboutEl && aboutEl.style.display !== 'none' && aboutEl.classList.contains('visible')) {
+            const baseTop = Math.max(14, (canvas ? canvas.width : 400) * 0.04);
+            aboutEl.style.top = (baseTop + cameraPanY) + 'px';
+        }
+        
         // Update scroll indicator visibility
         if (performance.now() > scrollIndicatorFadeTime && !isMobileScrolling) {
             scrollIndicatorVisible = false;
@@ -6052,7 +6059,8 @@ function displayProjectAboutText(name, aboutLines, moreContent) {
     infoEl.style.visibility = 'visible';
     
     if (isMobileDevice()) {
-        // Mobile: about text scrolls with content (same behavior as images/more.txt)
+        // Mobile only: about text fixed at top of viewport (must not scroll with canvas/content)
+        // Move to body so no parent transform/overflow can break position:fixed
         if (containerEl.parentNode && containerEl.parentNode !== document.body) {
             document.body.appendChild(containerEl);
         }
@@ -6064,23 +6072,41 @@ function displayProjectAboutText(name, aboutLines, moreContent) {
             categoryContent.style.opacity = '1';
             categoryContent.style.background = 'transparent';
         }
+        const marginPx = canvas ? Math.max(14, canvas.width * 0.04) : 14;
+        const safeTop = Math.max(marginPx, 14);
+        containerEl.style.position = 'fixed';
+        containerEl.style.left = marginPx + 'px';
+        containerEl.style.right = marginPx + 'px';
+        containerEl.style.top = safeTop + 'px';
+        containerEl.style.bottom = 'auto';
+        containerEl.style.transform = 'translateZ(0)';
         containerEl.style.zIndex = '10002';
+        containerEl.style.width = 'auto';
+        containerEl.style.maxWidth = 'none';
         containerEl.style.display = 'flex';
         containerEl.style.flexDirection = 'column';
         containerEl.style.alignItems = 'stretch';
         containerEl.style.gap = '8px';
         containerEl.style.overflow = 'visible';
+        nameEl.style.position = 'static';
+        nameEl.style.left = '';
+        nameEl.style.right = '';
+        nameEl.style.top = '';
+        infoEl.style.position = 'static';
+        infoEl.style.left = '';
+        infoEl.style.right = '';
+        infoEl.style.top = '';
         if (moreEl && moreEl.textContent.trim()) moreEl.style.visibility = 'hidden';
         void containerEl.offsetHeight;
         setTimeout(() => { nameEl.style.opacity = '1'; }, 0);
-        // Fall through to start update loop — updateProjectAboutTextPosition positions based on scroll
-    } else {
-        // Desktop: default position; updateProjectAboutTextPosition will set exact positions
-        containerEl.style.left = '40px';
-        containerEl.style.right = 'auto';
-        containerEl.style.top = 'auto';
-        containerEl.style.bottom = '20px';
+        return;
     }
+    
+    // Desktop: default position; updateProjectAboutTextPosition will set exact positions
+    containerEl.style.left = '40px';
+    containerEl.style.right = 'auto';
+    containerEl.style.top = 'auto';
+    containerEl.style.bottom = '20px';
     void containerEl.offsetHeight;
     
     // Update position continuously during animation
@@ -6103,8 +6129,13 @@ function displayProjectAboutText(name, aboutLines, moreContent) {
     updatePosition();
 }
 
-// Update project about text position based on aligned images (desktop + mobile: mobile scrolls with content)
+// Update project about text position based on aligned images (desktop only)
 function updateProjectAboutTextPosition(containerEl, nameEl, infoEl) {
+    // Skip on mobile - mobile uses different about text display
+    if (isMobileDevice()) {
+        return;
+    }
+    
     if (!alignedEmojis || alignedEmojis.length === 0) {
         return;
     }
