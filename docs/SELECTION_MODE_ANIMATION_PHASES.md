@@ -43,15 +43,15 @@
 - Картинки продолжают дотягивать позицию/размер до целевых (если 1.2 s не хватило).
 - Через **250 ms** переход в фазу 2.
 
-### Фаза 2 — Zoom in к первому кадру (1.2 s)
+### Фаза 2 — Zoom in к выбранному изображению (1.2 s)
 - **Устанавливается:** `selectionAnimationPhase = 2`, `selectionPhaseStartTime` и стартовые значения pan/zoom обновляются.
 - **Камера:**
   - Zoom: от `selectionTargetZoomOut` к `selectionTargetZoomIn` (масштаб, при котором ряд занимает левые 2/3 экрана с боковыми отступами). Easing: `easeOutExpoInertia`.
-  - Pan: к финальной позиции карусели (`selectionFinalPanX`) с **более плавным** easing — `easeOutCubic` (на ~10% мягче, чем zoom).
+  - Pan: к **изображению, на которое кликнул пользователь** в random image grid. Если вход сделан из меню (категории), выбирается изображение с кратчайшим путём к центру экрана, фокус идёт на него.
 - По истечении 1.2 s: `selectionAnimationPhase = 0`, камера остаётся в финальном состоянии. Анимация входа завершена.
 
 ### Параллельно при входе в selection (desktop и mobile)
-- **Текст about/more:** блок `#projectAboutText` показывается сразу; название, строки about и блок more изначально с `opacity: 0`, через **300 ms** включается `opacity: 1` с переходом **0.5s ease-out** (название и more — в один момент с первой строкой about, строки about — каждая следующая +250 ms).
+- **Текст about/more:** блок `#projectAboutText` показывается с **fade-in строчка за строчкой**: сначала название (0 ms), затем каждая строка about (180 ms между строками), в конце блок more.
 - **Кнопки Prev/Next (только desktop):** показ через `showSelectionNavButtons()`: сначала `opacity: 0`, затем в следующем кадре (`requestAnimationFrame`) `opacity: 1`, transition **0.45s cubic-bezier(0.4, 0, 0.2, 1)**.
 - **Кнопка Back:** показывается при `alignedEmojiIndex !== null` через `updateBackButtonVisibility()`.
 

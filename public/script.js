@@ -1,3 +1,23 @@
+// Set __IMAGE_BASE__ from pathname so deployed (e.g. GitHub Pages) gets correct /repo/img; run before any image load
+function ensureImageBase() {
+    if (typeof window === 'undefined') return;
+    if (window.__IMAGE_BASE__ !== undefined && window.__IMAGE_BASE__ !== '') return;
+    var pathname = (window.location && window.location.pathname) || '';
+    if (!pathname.startsWith('/') || pathname.startsWith('//') || pathname.indexOf(':') !== -1) {
+        window.__IMAGE_BASE__ = '/img';
+        return;
+    }
+    if (pathname === '/' || pathname === '') {
+        window.__IMAGE_BASE__ = '/img';
+        return;
+    }
+    var match = pathname.match(/^(.+\/)\.?/);
+    var base = match ? match[1] : '/';
+    var baseNoTrailing = base.replace(/\/$/, '') || '';
+    window.__IMAGE_BASE__ = baseNoTrailing + '/img';
+}
+ensureImageBase();
+
 // Helper: return mobile UI to main/home state
 function mobileReturnHome() {
     // Close category overlay if open
@@ -91,7 +111,7 @@ function resizeCanvas() {
 }
 // Only resize if canvas is available (single initial run; resize handler is in runAppInit with rAF debounce)
 if (canvas) {
-    resizeCanvas();
+resizeCanvas();
 }
 
 // Emoji size settings - MUST be declared before use
@@ -217,6 +237,9 @@ let selectionStartPanY = 0;
 let selectionZoomOutPanX = 0;
 let selectionFinalPanX = 0;
 let selectionZoomOutExit = 1.0; // Zoom level for exit phase -1 (20% closer than selectionTargetZoomOut)
+// Point to focus on in phase 2: if set (from grid click), pan to it; if null (from menu), pick center-closest
+let selectionFocusPointForPhase2 = null;
+let selectionFocusIndexStored = null; // preserved for relayout so pan does not jump
 
 // Smoothed Y positions for desktop about block (avoids jitter during phase 2 / phase 0 transition)
 let aboutSmoothedNameBottomPx = null;
@@ -689,9 +712,29 @@ function layoutAlignedEmojisDesktop(animate = true) {
     // Pan for zoom out (centered)
     const zoomOutPanX = 0;
     
-    // Pan for zoom in: first image left edge at regionLeft + horizontalGap so side gap is visible
-    const screenLeftAtPan0 = (worldLeftEdge - centerX) * finalZoom + centerX;
-    const finalPanX = (regionLeft + horizontalGap) - screenLeftAtPan0;
+    // Pan for zoom in: focus on clicked image (from grid) or center-closest (from menu)
+    let focusIndex;
+    if (isNewAlignment) {
+        if (selectionFocusPointForPhase2 && alignedEmojis.some(p => p === selectionFocusPointForPhase2 || (p.imagePath === selectionFocusPointForPhase2.imagePath && p.emojiIndex === selectionFocusPointForPhase2.emojiIndex))) {
+            focusIndex = alignedEmojis.findIndex(p => p === selectionFocusPointForPhase2 || (p.imagePath === selectionFocusPointForPhase2.imagePath && p.emojiIndex === selectionFocusPointForPhase2.emojiIndex));
+        } else {
+            // From menu: pick image whose center is closest to screen center
+            focusIndex = 0;
+            let minDist = Infinity;
+            alignedEmojis.forEach((p, idx) => {
+                const d = Math.abs((p.targetX || 0) - centerX);
+                if (d < minDist) { minDist = d; focusIndex = idx; }
+            });
+        }
+        selectionFocusPointForPhase2 = null;
+        selectionFocusIndexStored = focusIndex;
+    } else {
+        focusIndex = (selectionFocusIndexStored != null && selectionFocusIndexStored < alignedEmojis.length) ? selectionFocusIndexStored : 0;
+    }
+    const regionCenter = (regionLeft + regionRight) / 2;
+    const focusTargetX = alignedEmojis[focusIndex] && (alignedEmojis[focusIndex].targetX != null) ? alignedEmojis[focusIndex].targetX : (worldLeftEdge + horizontalGap);
+    const screenXAtPan0 = (focusTargetX - centerX) * finalZoom + centerX;
+    const finalPanX = regionCenter - screenXAtPan0;
 
     if (isNewAlignment && animate) {
         // Start phased selection animation (reset fixed X so we capture it when phase 0)
@@ -1603,7 +1646,10 @@ function loadHighresForPaths(paths) {
 }
 
 function getImageUrl(path, useThumb) {
-    if (typeof window !== 'undefined' && window.__IMAGE_BASE__ === undefined) window.__IMAGE_BASE__ = '/img';
+    if (typeof window !== 'undefined' && (window.__IMAGE_BASE__ === undefined || window.__IMAGE_BASE__ === '')) {
+        ensureImageBase();
+        if (window.__IMAGE_BASE__ === undefined || window.__IMAGE_BASE__ === '') window.__IMAGE_BASE__ = '/img';
+    }
     const subPath = (typeof window !== 'undefined' && window.__IMAGE_BASE__)
       ? path.replace(/^final images\/+/, '')
       : path;
@@ -1636,7 +1682,7 @@ function loadImageOnce(path, useThumb, skipProgress) {
 
         img.onload = async () => {
             try {
-                if (typeof img.decode === 'function') {
+            if (typeof img.decode === 'function') {
                     try { await img.decode(); } catch {}
                 }
                 var drawable = img;
@@ -1670,13 +1716,13 @@ function loadImageOnce(path, useThumb, skipProgress) {
                 entry.error = false;
 
                 if (!skipProgress) {
-                    imagesLoaded++;
-                    imagesLoadedSuccessfully++;
+            imagesLoaded++;
+            imagesLoadedSuccessfully++;
                     updateLoadingProgressBar();
                     debugLog('Loaded ' + (useThumb ? 'thumb' : 'full') + ' ' + path);
                 }
-                scheduleAlignedDesktopRelayoutIfNeeded(path);
-                scheduleAlignedMobileRelayoutIfNeeded(path);
+            scheduleAlignedDesktopRelayoutIfNeeded(path);
+            scheduleAlignedMobileRelayoutIfNeeded(path);
                 resolve(entry);
             } catch (err) {
                 console.warn('Image onload error:', path, err);
@@ -1706,7 +1752,7 @@ function runLoadImagesWhenReady() {
     var loadingText = document.getElementById('loadingText');
     var canvasEl = document.getElementById('canvas');
     if (loadingText && canvasEl) {
-        loadImages();
+loadImages();
         return;
     }
     setTimeout(runLoadImagesWhenReady, 50);
@@ -1747,27 +1793,27 @@ function generatePoints(count, minDistance) {
     const box = getBoundingBox();
     const points = [];
     const maxAttempts = 20000;
-
+    
     const shuffledImages = [...imagePaths];
     for (let i = shuffledImages.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [shuffledImages[i], shuffledImages[j]] = [shuffledImages[j], shuffledImages[i]];
     }
-
+    
     let imageIndexCounter = 0;
     const usedImages = new Set();
-
+    
     function pickNextUnusedImage() {
         let attempts = 0;
         while (attempts <= shuffledImages.length) {
             const idx = imageIndexCounter % shuffledImages.length;
             const path = shuffledImages[idx];
-            imageIndexCounter++;
+                imageIndexCounter++;
             attempts++;
             if (!usedImages.has(path)) return path;
         }
-        usedImages.clear();
-        imageIndexCounter = 0;
+                    usedImages.clear();
+                    imageIndexCounter = 0;
         return shuffledImages[0];
     }
 
@@ -1813,9 +1859,9 @@ function generatePoints(count, minDistance) {
                 usedImages.add(currentImagePath);
                 pointIndex++;
                 placed = true;
-                break;
+                    break;
+                }
             }
-        }
         if (!placed) {
             const x = Math.random() * box.width + box.x;
             const y = Math.random() * box.height + box.y;
@@ -1834,7 +1880,7 @@ function generatePoints(count, minDistance) {
             pointIndex++;
         }
     }
-
+    
     return points;
 }
 
@@ -2516,17 +2562,17 @@ document.addEventListener('mousemove', (e) => {
         var now = performance.now();
         if (now - lastDocumentMouseOut < 100) return;
         lastDocumentMouseOut = now;
-        mouseOverCanvas = false;
-        if (hoveredPoint !== null) {
-            const prevHoveredPoint = hoveredPoint;
-            hoveredPoint = null;
-            hoverStartTime = 0;
-            if (prevHoveredPoint) {
-                prevHoveredPoint.isHovered = false;
-                prevHoveredPoint.hoverSize = 1.0;
-            }
-            if (isConnectionMode && !isConnectionModeClicked) {
-                exitConnectionMode();
+            mouseOverCanvas = false;
+            if (hoveredPoint !== null) {
+                const prevHoveredPoint = hoveredPoint;
+                hoveredPoint = null;
+                hoverStartTime = 0;
+                if (prevHoveredPoint) {
+                    prevHoveredPoint.isHovered = false;
+                    prevHoveredPoint.hoverSize = 1.0;
+                }
+                if (isConnectionMode && !isConnectionModeClicked) {
+                    exitConnectionMode();
             }
         }
     }
@@ -2683,6 +2729,7 @@ function unalignEmojis() {
     alignedEmojiIndex = null;
     alignedFolderPath = null;
     alignedRowTotalWidthWorld = 0;
+    selectionFocusIndexStored = null;
     selectionBasePanX = 0;
     
     // Reset mobile scroll state
@@ -2868,7 +2915,7 @@ function enterConnectionMode(clickedPoint, isClicked = false, allowMobileAuto = 
     connectedFolderPath = clickedFolderPath;
     connectionModeLabelsFadeStartTime = performance.now();
     connectionModeLabelsFadeIn = true;
-
+    
     // Keep images from same folder visible, others fade out
     points.forEach(p => {
         let pFolder = p.folderPath;
@@ -2916,7 +2963,7 @@ function exitConnectionMode() {
     connectedFolderPath = null;
     mobileLastTappedPoint = null; // Reset mobile tap tracking
     autoHoverTriggerPoint = null; // Clear auto-hover trigger point
-
+    
     // Restore opacity for all images and reset inactive flag
     points.forEach(p => {
         p.targetOpacity = 1.0;
@@ -3006,7 +3053,8 @@ function handleEmojiClick(clickedPoint) {
     });
     
     alignedFolderPath = clickedFolderPath;
-    
+    selectionFocusPointForPhase2 = clickedPoint; // Phase 2: pan to clicked image
+
     // Check if mobile (screen width < 768px or touch device)
     const isMobile = isMobileDevice();
     
@@ -3619,6 +3667,7 @@ function enterSelectionModeForFolder(folderPath, folderImages, animateLayout = t
                 p.isInactive = true;
             }
         });
+        selectionFocusPointForPhase2 = null; // From menu: phase 2 will pick center-closest
         layoutAlignedEmojisDesktop(true);
     }
     
@@ -3816,6 +3865,7 @@ function handleFilteredImageClick(clickedPoint) {
     clearFilter();
     
     // Align folder images (desktop horizontal layout; relayouts as images load)
+    selectionFocusPointForPhase2 = clickedPoint; // Phase 2: pan to clicked image
     alignedEmojiIndex = clickedPoint.imageIndex;
     alignedEmojis = folderImages;
     alignedFolderPath = folderPath;
@@ -4971,7 +5021,7 @@ function draw() {
 // Animation loop (pauses when tab hidden to save CPU/battery)
 function animate() {
     if (!document.hidden) {
-        draw();
+    draw();
     }
     requestAnimationFrame(animate);
 }
@@ -5953,18 +6003,18 @@ function parseAndDisplayAboutText(text, moreText) {
 }
 
 // Display project about text (desktop and mobile); more.txt in red zone (right of info, same font/size)
+// Fade-in: line by line (name -> info lines -> more)
 function displayProjectAboutText(name, aboutLines, moreContent) {
     const { containerEl, nameEl, infoEl, moreEl } = createProjectAboutElements();
     
-    const aboutFirstDelay = 300;
-    const aboutLineStep = 250;
-    const aboutTransition = 'opacity 0.5s ease-out';
+    const aboutLineStep = 180; // ms between each line fade-in
+    const aboutTransition = 'opacity 0.4s ease-out';
 
     nameEl.textContent = name || '~';
     nameEl.style.opacity = '0';
     nameEl.style.transition = aboutTransition;
-    setTimeout(() => { nameEl.style.opacity = '1'; }, aboutFirstDelay);
-
+    setTimeout(() => { nameEl.style.opacity = '1'; }, 0);
+    
     infoEl.innerHTML = '';
     aboutLines.forEach((line, index) => {
         const lineEl = document.createElement('div');
@@ -5975,9 +6025,10 @@ function displayProjectAboutText(name, aboutLines, moreContent) {
         infoEl.appendChild(lineEl);
         setTimeout(() => {
             lineEl.style.opacity = '1';
-        }, aboutFirstDelay + (index * aboutLineStep));
+        }, aboutLineStep * (index + 1));
     });
 
+    const moreDelay = aboutLineStep * (aboutLines.length + 1);
     if (moreEl) {
         if (moreContent && moreContent.trim()) {
             moreEl.textContent = moreContent.trim();
@@ -5985,7 +6036,7 @@ function displayProjectAboutText(name, aboutLines, moreContent) {
             moreEl.style.visibility = 'visible';
             moreEl.style.opacity = '0';
             moreEl.style.transition = aboutTransition;
-            setTimeout(() => { moreEl.style.opacity = '1'; }, aboutFirstDelay);
+            setTimeout(() => { moreEl.style.opacity = '1'; }, moreDelay);
         } else {
             moreEl.textContent = '';
             moreEl.style.display = 'none';
@@ -6042,7 +6093,7 @@ function displayProjectAboutText(name, aboutLines, moreContent) {
         infoEl.style.top = '';
         if (moreEl && moreEl.textContent.trim()) moreEl.style.visibility = 'hidden';
         void containerEl.offsetHeight;
-        setTimeout(() => { nameEl.style.opacity = '1'; }, aboutFirstDelay);
+        setTimeout(() => { nameEl.style.opacity = '1'; }, 0);
         return;
     }
     
