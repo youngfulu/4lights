@@ -1,0 +1,10 @@
+name: (Gula Merah)
+#
+Project type: (Stage Design)
+year: (2022)
+Location: Bali, Indonesia.
+Client: (Gula Merah)
+Agency:(In-House)
+Status: (Finished)
+Contributor: (Ilya Duganov, Made with Hate, Polina OKean)
+

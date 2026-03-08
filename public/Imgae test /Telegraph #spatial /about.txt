@@ -1,0 +1,10 @@
+name: (Telgraph)
+#
+Project type: (Light Design, Spatial Design)
+year: (2022)
+Location: Moscow, Russia.
+Client: (NDA)
+Agency:(Working Knowledge)
+Status: (Concept)
+Contributor: (Ilya Duganov)
+

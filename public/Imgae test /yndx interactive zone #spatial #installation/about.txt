@@ -1,0 +1,10 @@
+name: (Reflection)
+#
+Project type: (Interactive Installation)
+year: (2021)
+Location: Moscow, Russia.
+Client: (Yandex)
+Agency:(Working Knowledge)
+Status: (Finished)
+Contributor: (Ilya Duganov, Alexandr Chistov)
+

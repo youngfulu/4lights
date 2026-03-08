@@ -1,0 +1,10 @@
+name: (Extrema Festival)
+#
+Project type: (Generative Video Engine, Kinetic Video wall, Laser programming)
+year: (2024)
+Location: Houthalen-Helchteren, Belgium
+Client: (Extrema Festival)
+Agency:(Setup)
+Status: (Finished)
+Contributor: (Alina Tikhonova)
+

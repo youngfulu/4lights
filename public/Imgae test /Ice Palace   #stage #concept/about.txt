@@ -1,0 +1,10 @@
+name: (Ice Palace)
+#
+Project type: (Stage Design)
+year: (2024)
+Location: USA, Las Vegas.
+Client: (Hard Events)
+Agency:(Working Knowledge)
+Status: (Concept)
+Contributor: (Ilya Duganov)
+

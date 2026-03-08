@@ -1,0 +1,10 @@
+name: (Nina Kravitz Show)
+#
+Project type: (Stage Design)
+year: (2022)
+Location: Bali, Indonesia.
+Client: (Ku De Ta club)
+Agency:(Inhouse)
+Status: (Finished)
+Contributor: (Ilya Duganov)
+

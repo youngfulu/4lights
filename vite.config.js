@@ -33,7 +33,7 @@ const THUMB_SOURCE = path.resolve(process.cwd(), 'thumb');
 
 export default defineConfig(({ command }) => {
   const isProd = command === 'build';
-  const base = isProd ? './' : '/';
+  const base = isProd ? '/' : '/';
   return {
   base,
   plugins: [
@@ -95,13 +95,15 @@ export default defineConfig(({ command }) => {
             const imgDest = path.join(outDir, 'img');
             // Keep original names (including #) so URL-encoded paths match: browser requests
             // .../thumb/2gis%20%20%23spatial/... → server decodes to "2gis  #spatial" → matches folder
+            const SKIP_EXT = new Set(['.tiff', '.psd', '.mov', '.mp4', '.avi', '.heic', '.heif', '.raw', '.cr2', '.nef', '.arw', '.bmp', '.pdf']);
             function copyRecursive(src, dest) {
               fs.mkdirSync(dest, { recursive: true });
               for (const e of fs.readdirSync(src, { withFileTypes: true })) {
+                if (e.name === '.DS_Store') continue;
                 const s = path.join(src, e.name);
                 const d = path.join(dest, e.name);
                 if (e.isDirectory()) copyRecursive(s, d);
-                else fs.copyFileSync(s, d);
+                else if (!SKIP_EXT.has(path.extname(e.name).toLowerCase())) fs.copyFileSync(s, d);
               }
             }
             if (fs.existsSync(IMG_SOURCE)) copyRecursive(IMG_SOURCE, imgDest);

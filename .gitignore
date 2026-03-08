@@ -15,16 +15,21 @@ build/
 *.log
 .idea/
 .vscode/
+.cursor/
 *.swp
 *.swo
 
-# Vite
+# Vite temp files
 *.local
+*.timestamp-*
 
-# Root assets: final images and thumb are tracked in repo
-# /final images/  — now tracked
-
-# Non-web formats: never commit (push only web-ready: jpg, png, gif, webp, svg)
+# Non-web image/video formats
+*.tiff
+*.TIFF
+*.psd
+*.PSD
+*.ai
+*.AI
 *.MOV
 *.mov
 *.mp4
@@ -51,21 +56,29 @@ build/
 *.NEF
 *.arw
 *.ARW
+*.bmp
+*.BMP
 
-# public/final images/ is tracked; only web formats (above ignored) are excluded
+# Backup / originals (not needed for site)
+4lights-originals-restore/
 
-# Obsolete (project uses final images + root thumb/)
-/public/Imgae test /
-public/Imgae test /
+# Dev-only docs (keep README.md)
+DEPLOY.md
+PERFORMANCE.md
+INDEX_DEPENDENCIES.md
+REFACTOR_PLAN.md
+docs/
 
-# Thumb folder is tracked in repo
-# /thumb/ — now tracked
+# GitHub Pages workflow (using Vercel instead)
+.github/
 
 # Legacy root files (app uses public/script.js, public/about.js, src/App.css)
 /about.js
 /images.js
 /script.js
 /style.css
-PERFORMANCE.md
-INDEX_DEPENDENCIES.md
-REFACTOR_PLAN.md
+
+# Dev-only scripts output
+scripts/*.txt
+scripts/*.sh
+scripts/*-list.json

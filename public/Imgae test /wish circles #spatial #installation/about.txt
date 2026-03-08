@@ -1,0 +1,10 @@
+name: (Wish Circles)
+#
+Project type: (Interactive Installation)
+year: (2025)
+Location: Bali, Indonesia.
+Client: (Nuanu)
+Agency:(Delivered)
+Status: (Finished)
+Contributor: (Ilya Duganov, Maksim Harin)
+
