@@ -69,8 +69,8 @@ INDEX_DEPENDENCIES.md
 REFACTOR_PLAN.md
 docs/
 
-# GitHub Pages workflow (using Vercel instead)
-.github/
+# GitHub Pages workflow is in .github/workflows/ (committed)
+# .github/
 
 # Legacy root files (app uses public/script.js, public/about.js, src/App.css)
 /about.js
