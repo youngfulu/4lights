@@ -33,7 +33,8 @@ const THUMB_SOURCE = path.resolve(process.cwd(), 'thumb');
 
 export default defineConfig(({ command }) => {
   const isProd = command === 'build';
-  const base = isProd ? '/' : '/';
+  // GitHub Pages: site is at /4lights/ so assets must be under that path
+  const base = isProd ? '/4lights/' : '/';
   return {
   base,
   plugins: [
