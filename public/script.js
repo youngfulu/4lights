@@ -262,6 +262,8 @@ let aboutSmoothedMoreTopPx = null;
 // After selection animation completes: fix about/more block X; only Y follows images
 let selectionAboutFixedLeftPx = null;
 let selectionMoreFixedLeftPx = null;
+// True once we've started phase 1 for this alignment; prevents relayout-after-load from restarting animation
+let selectionAnimationHasRunForCurrentAlignment = false;
 
 // Exponential easing with tiny inertia at the end for natural, smooth feel
 // Overshoots slightly then settles back
@@ -661,8 +663,8 @@ function layoutAlignedEmojisDesktop(animate = true) {
     let startX = firstImageLeftEdge;
     const worldLeftEdge = firstImageLeftEdge;
 
-    // Check if this is a NEW alignment or a relayout
-    const isNewAlignment = selectionAnimationPhase === 0;
+    // Check if this is a NEW alignment or a relayout (relayout after images load must not restart animation)
+    const isNewAlignment = selectionAnimationPhase === 0 && !selectionAnimationHasRunForCurrentAlignment;
 
     alignedEmojis.forEach((point, index) => {
         const imageWidth = imageWidths[index];
@@ -754,6 +756,7 @@ function layoutAlignedEmojisDesktop(animate = true) {
         // Start phased selection animation (reset fixed X so we capture it when phase 0)
         selectionAboutFixedLeftPx = null;
         selectionMoreFixedLeftPx = null;
+        selectionAnimationHasRunForCurrentAlignment = true;
         selectionAnimationPhase = 1;
         selectionPhaseStartTime = now;
         selectionBasePanX = finalPanX; // For infinite carousel wrap
@@ -2812,6 +2815,7 @@ function unalignEmojis() {
     alignedRowTotalWidthWorld = 0;
     selectionFocusIndexStored = null;
     selectionBasePanX = 0;
+    selectionAnimationHasRunForCurrentAlignment = false;
     
     // Reset mobile scroll state
     mobileScrollPosition = 0;
