@@ -125,6 +125,18 @@ body {
     visibility: visible !important;
 }
 
+/* Desktop (web): Back fixed top-left, aligned with index-folder-list (50px) */
+@media (min-width: 768px) and (pointer: fine) {
+    .back-button {
+        position: fixed !important;
+        top: 20px !important;
+        left: 50px !important;
+        bottom: auto !important;
+        right: auto !important;
+        margin: 0 !important;
+    }
+}
+
 .back-button {
     margin-left: auto;
     margin-right: 20px;
@@ -145,6 +157,7 @@ body {
     pointer-events: auto;
 }
 
+/* Mobile: Back fixed bottom-right */
 @media (max-width: 767px), (pointer: coarse) {
     .back-button {
         position: fixed !important;
@@ -154,6 +167,20 @@ body {
         left: auto !important;
         margin-left: 0 !important;
         margin-right: 0 !important;
+    }
+}
+
+/* EN/FR buttons (web only): same style as menu, right side */
+.lang-buttons {
+    margin-left: auto;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+@media (max-width: 767px), (pointer: coarse) {
+    .lang-buttons {
+        display: none;
     }
 }
 
