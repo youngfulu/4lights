@@ -18,6 +18,15 @@ function ensureImageBase() {
 }
 ensureImageBase();
 
+// Locale for about text (EN/FR) - about.js defines ABOUT_TEXT and ABOUT_TEXT_FR
+if (typeof window !== 'undefined') {
+    window.__LOCALE__ = window.__LOCALE__ || 'en';
+}
+function getAboutText() {
+    return (typeof window !== 'undefined' && window.__LOCALE__ === 'fr' && typeof ABOUT_TEXT_FR !== 'undefined')
+        ? ABOUT_TEXT_FR : (typeof ABOUT_TEXT !== 'undefined' ? ABOUT_TEXT : '');
+}
+
 // Helper: return mobile UI to main/home state
 function mobileReturnHome() {
     // Close category overlay if open
@@ -181,6 +190,11 @@ let alignedFolderPath = null; // Folder currently aligned (used for relayout as 
 let alignedRowTotalWidthWorld = 0; // Total width of horizontal row (world units) for infinite carousel
 let selectionBasePanX = 0; // Base pan X when entering selection (for carousel wrap)
 let alignedRelayoutRaf = 0;
+
+// Selection mode carousel: auto-scroll left-to-right 60px/sec (web only); pause on mousedown, resume on mouseup
+const CAROUSEL_AUTO_SCROLL_SPEED = 60; // px/sec
+let carouselAutoScrollPaused = false;
+let lastDrawTimeForCarousel = 0;
 
 // Mobile nav visibility helper (buttons/lines)
 function setMobileNavVisibility(visible) {
@@ -2390,6 +2404,7 @@ function handleMouseDown(e) {
         }
         // If clicking on an aligned image or empty space, allow drag navigation
         if ((clickedPoint && clickedPoint.isAligned) || !clickedPoint) {
+            carouselAutoScrollPaused = true; // Pause carousel on click
             isDragging = true;
             lastDragX = mouseX;
             lastDragY = mouseY;
@@ -2456,6 +2471,9 @@ function handleMouseDown(e) {
 
 // Mouse up handler (end drag)
 function handleMouseUp() {
+    if (isDragging) {
+        carouselAutoScrollPaused = false; // Resume carousel when user releases
+    }
     isDragging = false;
     canvas.style.cursor = 'default';
     // Velocity will continue to apply inertia after drag ends
@@ -2485,6 +2503,16 @@ function handleWheel(e) {
     if (alignedEmojiIndex !== null || isFilterMode || isConnectionMode) {
         const centerX = canvas.width / 2;
         const centerY = canvas.height / 2;
+
+        // Selection mode: horizontal wheel/scroll = carousel pan (left-right)
+        if (alignedEmojiIndex !== null && !isMobileDevice() && Math.abs(e.deltaX) > 0) {
+            const panSensitivity = 1.0;
+            targetCameraPanX -= e.deltaX * panSensitivity;
+            panVelocityX = -e.deltaX * 0.15;
+            panVelocityY = 0;
+            e.preventDefault();
+            return;
+        }
         
         // Mac OS native-style zoom: calculate world position under mouse cursor using CURRENT state
         // Use current interpolated zoom and pan for accurate world position calculation
@@ -2592,6 +2620,14 @@ canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
 canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
 canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
 canvas.addEventListener('mouseleave', handleMouseLeave);
+
+// Carousel: pause on mousedown anywhere, resume on mouseup (selection mode, web only)
+document.addEventListener('mousedown', function carouselPauseOnDown() {
+    if (alignedEmojiIndex !== null && !isMobileDevice()) carouselAutoScrollPaused = true;
+});
+document.addEventListener('mouseup', function carouselResumeOnUp() {
+    if (alignedEmojiIndex !== null && !isMobileDevice()) carouselAutoScrollPaused = false;
+});
 
 // Also add mouseenter to explicitly set mouseOverCanvas = true
 canvas.addEventListener('mouseenter', () => {
@@ -4101,9 +4137,10 @@ function showWeAreAbout() {
     
     // Display about text from embedded constant
     const aboutTextEl = document.getElementById('aboutText');
-    if (aboutTextEl && typeof ABOUT_TEXT !== 'undefined') {
+    const aboutContent = getAboutText();
+    if (aboutTextEl && aboutContent) {
         // Format text: preserve line breaks
-        aboutTextEl.innerHTML = ABOUT_TEXT.split('\n').map(line => {
+        aboutTextEl.innerHTML = aboutContent.split('\n').map(line => {
             const t = line.trim();
             if (t === '') return '<br>';
             if (t.startsWith('<')) return t;
@@ -4319,6 +4356,7 @@ function draw() {
             // Check if phase 2 is complete
             if (rawProgress >= 1.0) {
                 selectionAnimationPhase = 0;
+                carouselAutoScrollPaused = false; // Carousel starts when animation completes
                 globalZoomLevel = selectionTargetZoomIn;
                 cameraPanX = selectionFinalPanX;
                 targetZoomLevel = globalZoomLevel;
@@ -4365,6 +4403,7 @@ function draw() {
             // Check if reverse animation is complete
             if (rawProgress >= 1.0) {
                 selectionAnimationPhase = 0;
+                carouselAutoScrollPaused = false; // Reset for next entry
                 globalZoomLevel = 1.0;
                 cameraPanX = 0;
                 cameraPanY = 0;
@@ -4514,6 +4553,17 @@ function draw() {
             const inSelectionMode = (alignedEmojiIndex !== null || isConnectionMode) && !isMobileDevice();
             const smooth = inSelectionMode ? SELECTION_PAN_SMOOTHNESS : panSmoothness;
             const decay = inSelectionMode ? SELECTION_PAN_INERTIA_DECAY : 0.94;
+
+            // Selection mode carousel: auto-scroll left-to-right 60px/sec (web only)
+            if (alignedEmojiIndex !== null && selectionAnimationPhase === 0 && !isMobileDevice() && !carouselAutoScrollPaused) {
+                const now = performance.now();
+                const dt = lastDrawTimeForCarousel > 0 ? (now - lastDrawTimeForCarousel) / 1000 : 1/60;
+                lastDrawTimeForCarousel = now;
+                targetCameraPanX -= CAROUSEL_AUTO_SCROLL_SPEED * dt;
+            } else if (selectionAnimationPhase !== 0 || alignedEmojiIndex === null || isMobileDevice()) {
+                lastDrawTimeForCarousel = 0;
+            }
+
             // Apply light velocity-based inertia when not dragging (only if there's significant velocity)
             if (Math.abs(panVelocityX) > 0.1 || Math.abs(panVelocityY) > 0.1) {
                 const inertiaStrength = inSelectionMode ? 1.2 : 2; // Gentler inertia in selection mode
@@ -5467,10 +5517,11 @@ function showMobileCategoryContent(category) {
     
     // Set category body content
     if (category === 'we-are') {
-        // Show "we are" about text from ABOUT_TEXT constant (defined in about.js)
-        if (typeof ABOUT_TEXT !== 'undefined' && ABOUT_TEXT) {
+        // Show "we are" about text from ABOUT_TEXT/ABOUT_TEXT_FR (defined in about.js)
+        const aboutContent = getAboutText();
+        if (aboutContent) {
             // Format text: preserve line breaks and paragraphs
-            const formattedText = ABOUT_TEXT.split('\n').map(line => {
+            const formattedText = aboutContent.split('\n').map(line => {
                 const t = line.trim();
                 if (t === '') return '<br>';
                 if (t.startsWith('<')) return t;
@@ -5723,6 +5774,36 @@ function runAppInit() {
             });
     });
     
+    // EN/FR lang switch
+    const langEn = document.getElementById('langEn');
+    const langFr = document.getElementById('langFr');
+    function updateLangActive() {
+        var locale = typeof window !== 'undefined' ? window.__LOCALE__ : 'en';
+        if (langEn) langEn.style.opacity = locale === 'en' ? '1' : '0.5';
+        if (langFr) langFr.style.opacity = locale === 'fr' ? '1' : '0.5';
+    }
+    if (langEn) {
+        langEn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            if (window.__LOCALE__ === 'en') return;
+            window.__LOCALE__ = 'en';
+            updateLangActive();
+            if (isWeAreMode) showWeAreAbout();
+            else if (currentMobileCategory === 'we-are') showMobileCategoryContent('we-are');
+        });
+    }
+    if (langFr) {
+        langFr.addEventListener('click', function (e) {
+            e.stopPropagation();
+            if (window.__LOCALE__ === 'fr') return;
+            window.__LOCALE__ = 'fr';
+            updateLangActive();
+            if (isWeAreMode) showWeAreAbout();
+            else if (currentMobileCategory === 'we-are') showMobileCategoryContent('we-are');
+        });
+    }
+    updateLangActive();
+
     const filterButtons = document.querySelectorAll('.filter-button');
     filterButtons.forEach(btn => {
         // Prevent mousedown from bubbling to canvas AND clear hover state immediately
@@ -5746,6 +5827,8 @@ function runAppInit() {
                 e.stopPropagation();
                 showWeAreAbout();
             });
+        } else if (btn.id === 'langEn' || btn.id === 'langFr') {
+            // Lang buttons handled above
         } else {
             const tag = btn.getAttribute('data-tag');
             btn.addEventListener('click', (e) => {
@@ -6095,12 +6178,20 @@ function displayProjectAboutText(name, aboutLines, moreContent) {
     const moreDelay = aboutLineStep * (aboutLines.length + 1);
     if (moreEl) {
         if (moreContent && moreContent.trim()) {
-            moreEl.textContent = moreContent.trim();
+            moreEl.innerHTML = '';
             moreEl.style.display = 'block';
             moreEl.style.visibility = 'visible';
-            moreEl.style.opacity = '0';
-            moreEl.style.transition = aboutTransition;
-            setTimeout(() => { moreEl.style.opacity = '1'; }, moreDelay);
+            // more.txt: line-by-line fade-in (same as about.txt)
+            const moreLines = moreContent.trim().split(/\r?\n/).filter(l => l.trim());
+            moreLines.forEach((line, idx) => {
+                const lineEl = document.createElement('div');
+                lineEl.className = 'more-line';
+                lineEl.textContent = line.trim();
+                lineEl.style.opacity = '0';
+                lineEl.style.transition = aboutTransition;
+                moreEl.appendChild(lineEl);
+                setTimeout(() => { lineEl.style.opacity = '1'; }, moreDelay + aboutLineStep * (idx + 1));
+            });
         } else {
             moreEl.textContent = '';
             moreEl.style.display = 'none';

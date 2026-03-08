@@ -89,8 +89,12 @@ function App() {
         <span className="filter-button" data-tag="spatial">spatial design</span>
         <span className="filter-button" id="weAreButton">we are</span>
         <button id="backButton" className="back-button" type="button" style={{ display: 'none' }}>
-          back
+          ← back
         </button>
+        <div className="lang-buttons">
+          <span className="filter-button" id="langEn" data-lang="en">EN</span>
+          <span className="filter-button" id="langFr" data-lang="fr">FR</span>
+        </div>
       </div>
 
       <div id="indexFolderList" className="index-folder-list"></div>
