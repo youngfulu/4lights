@@ -4718,7 +4718,7 @@ function draw() {
         }
         // Skip drawing if opacity effectively 0 (for random grid fade out)
         if (point.opacity < 0.01 && !point.isAligned && !point.isFiltered) {
-            if (isMobileVersion && alignedEmojiIndex === null && !isFilterMode && !isConnectionMode && currentMobileCategory === null) {
+            if (isMobileVersion && alignedEmojiIndex === null && !isFilterMode && !isConnectionMode && currentMobileCategory === null && !isWeAreMode) {
                 point.opacity = 1.0;
                 point.targetOpacity = 1.0;
             } else {
@@ -5388,7 +5388,7 @@ function drawMobileNavLines(svg, labels) {
         line.setAttribute('y2', labelY);
         line.setAttribute('stroke', '#fff');
         line.setAttribute('stroke-width', '0.5');
-        line.setAttribute('opacity', '0.6');
+        line.setAttribute('opacity', '0.75'); // +25% vs 0.6 (mobile home only)
         
         svg.appendChild(line);
     });
