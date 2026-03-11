@@ -5,7 +5,7 @@ const ABOUT_TEXT = `<strong>We are</strong> — a Paris-based creative studio ru
 <strong>We are</strong> the world shapers: we treat the space around us as an open sandbox of ideas and morph it into creations.
 
 
-<strong>We are</strong>: Ilyazd Duganov, Ali Tihonava, Lada LD, Skander Jabi, Alnx
+<strong>We are</strong>: Ilyazd Duganov, Ali Tihonava, Lada LD, Skander Jabi.
 
 
 <div class="about-contact-row"><strong class="about-contact-label">contact</strong><span class="about-contact-line"></span><a href="mailto:hello@weare.io" class="about-contact-link">hello@weare.io</a></div>`;
@@ -16,7 +16,7 @@ const ABOUT_TEXT_FR = `<strong>We are</strong> — un studio créatif parisien a
 <strong>We are</strong> les faiseurs de mondes : nous traitons l'espace autour de nous comme un bac à sable ouvert d'idées et le métamorphosons en créations.
 
 
-<strong>We are</strong>: Ilyazd Duganov, Ali Tihonava, Lada LD, Skander Jabi, Alnx
+<strong>We are</strong>: Ilyazd Duganov, Ali Tihonava, Lada LD, Skander Jabi.
 
 
 <div class="about-contact-row"><strong class="about-contact-label">contact</strong><span class="about-contact-line"></span><a href="mailto:hello@weare.io" class="about-contact-link">hello@weare.io</a></div>`;
