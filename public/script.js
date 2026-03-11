@@ -317,7 +317,8 @@ let mobileFirstClickTime = 0; // Time when first click (connection mode) was reg
 // Hover timeout state (for fade out unrelated images after 2 seconds)
 let hoveredPoint = null; // Currently hovered point
 let hoverStartTime = 0; // When hover started
-const HOVER_FADE_TIMEOUT = 1000; // 1 second in milliseconds (2x faster)
+const HOVER_FADE_TIMEOUT = 1000; // 1 second in milliseconds (mobile)
+const HOVER_FADE_TIMEOUT_WEB = 175; // 0.175s for dotted line to appear (web only)
 let hoveredConnectedPoints = []; // Points connected by arrows on hover
 let hoveredLinesOpacity = 0.0; // Opacity of connection lines on hover
 const HOVER_FADE_IN_SPEED = 0.08; // Linear fade in/out: ~1 second at 60fps (2x slower than before) - mobile
@@ -884,7 +885,7 @@ function layoutAlignedEmojisMobileVertical(animate = true) {
         aboutContainerEl.style.top = prevC.top;
         aboutContainerEl.style.transform = prevC.transform;
         if (moreElTemp) moreElTemp.style.display = prevMoreDisplay;
-        aboutBlockHeightWorld = Math.max(30 / selectedZoom, hAbout / selectedZoom);
+        aboutBlockHeightWorld = Math.max(48 / selectedZoom, (hAbout + 24) / selectedZoom); // +air so images don't overlap
         mobileAboutBlockMarginScreen = marginScreen;
         mobileAboutBlockWidthScreen = targetWidthScreen;
         mobileAboutBlockHeightWorld = aboutBlockHeightWorld;
@@ -917,10 +918,11 @@ function layoutAlignedEmojisMobileVertical(animate = true) {
     }
 
     let yTop = topPaddingWorld;
-    // Reserve space for about block above first image (gap = same as between images)
+    // Reserve space for about block above first image; extra gap after about so images don't overlap text
+    const aboutToImageGap = gapWorld * 1.8;
     if (hasAbout) {
         mobileAboutBlockCenterYWorld = yTop + aboutBlockHeightWorld / 2;
-        yTop += aboutBlockHeightWorld + gapWorld;
+        yTop += aboutBlockHeightWorld + aboutToImageGap;
     }
     alignedEmojis.forEach((point, idx) => {
         if (idx === 1 && hasMore) {
@@ -1492,18 +1494,22 @@ function checkIfReadyToShowImages() {
     }
 }
 
+// Normalize folder key for connection trajectories (same key in precompute and hover)
+function getPointFolder(point) {
+    let folder = point.folderPath || point.imagePath.substring(0, point.imagePath.lastIndexOf('/'));
+    if (folder === point.imagePath || folder === '') {
+        folder = 'final images';
+    }
+    return folder;
+}
+
 // Pre-compute connection trajectories for all folders
 function precomputeConnectionTrajectories() {
     precomputedConnectionTrajectories.clear();
     
-    // Group points by folder
     const folderGroups = new Map();
     points.forEach(point => {
-        const folder = point.folderPath || point.imagePath.substring(0, point.imagePath.lastIndexOf('/'));
-        if (folder === point.imagePath || folder === '') {
-            folder = 'final images';
-        }
-        
+        const folder = getPointFolder(point);
         if (!folderGroups.has(folder)) {
             folderGroups.set(folder, []);
         }
@@ -1833,9 +1839,10 @@ function getBoundingBox() {
     const margin = screenHeight / 5;
     
     let width = canvas.width;
-    // On mobile, make grid wider (3x screen width) to allow navigation/exploration
+    // On mobile, make grid wider to allow navigation; landscape (tablet): 1.5x so grid is 2x narrower
     if (isMobile) {
-        width = canvas.width * 3;
+        const isLandscape = canvas.width > canvas.height;
+        width = isLandscape ? canvas.width * 1.5 : canvas.width * 3;
     }
     
     // Center the random grid around the viewport so its midpoint aligns with the mobile
@@ -2239,9 +2246,8 @@ function handleTouchMove(e) {
                 // Convert touch delta to scroll position (0 to 1) - more sensitive
                 const scrollDelta = -deltaY / (screenHeight * 1.5); // More sensitive scrolling
                 const nextPos = Math.max(0, Math.min(1, touchStartScrollPosition + scrollDelta));
-                const dt = Math.max(16, now - lastTouchTime);
-                mobileScrollVelocity = (nextPos - targetMobileScrollPosition) / dt;
                 targetMobileScrollPosition = nextPos;
+                mobileScrollVelocity = 0; // Mobile: no inertia, scroll stops when finger lifts
                 scrollIndicatorVisible = true;
                 scrollIndicatorFadeTime = performance.now() + 3000;
             } else {
@@ -2438,7 +2444,8 @@ function handleMouseDown(e) {
         
         // Check if clicking on an already hovered image (connection mode - old behavior, keep for compatibility)
         const currentTime = performance.now();
-        if (hoveredPoint === clickedPoint && hoverStartTime > 0 && (currentTime - hoverStartTime) >= HOVER_FADE_TIMEOUT && hoveredLinesOpacity < 0.5) {
+        const clickHoverTimeout = (typeof isMobileDevice === 'function' && isMobileDevice()) ? HOVER_FADE_TIMEOUT : HOVER_FADE_TIMEOUT_WEB;
+        if (hoveredPoint === clickedPoint && hoverStartTime > 0 && (currentTime - hoverStartTime) >= clickHoverTimeout && hoveredLinesOpacity < 0.5) {
             // Enter connection mode - draw dotted lines connecting images from same folder
             enterConnectionMode(clickedPoint, true); // true = clicked
             e.preventDefault();
@@ -4515,22 +4522,10 @@ function draw() {
         targetZoomLevel = globalZoomLevel;
     }
     
-    // Mobile vertical scroll interpolation (mobile only)
-    // (isMobile defined at start of function)
+    // Mobile vertical scroll (mobile only, zero inertia - position follows finger exactly)
     if (isMobile && alignedEmojiIndex !== null) {
-        // Apply inertial scrolling when user lifts finger
-        if (!isMobileScrolling && Math.abs(mobileScrollVelocity) > 0.00001) {
-            targetMobileScrollPosition = Math.max(
-                0,
-                Math.min(1, targetMobileScrollPosition + mobileScrollVelocity * 16)
-            );
-            mobileScrollVelocity *= 0.96; // 2x slower decay for smoother mobile scroll inertia
-            if (targetMobileScrollPosition === 0 || targetMobileScrollPosition === 1) {
-                mobileScrollVelocity = 0;
-            }
-        }
-
-        mobileScrollPosition += (targetMobileScrollPosition - mobileScrollPosition) * 0.075; // 2x slower smooth scroll
+        mobileScrollVelocity = 0;
+        mobileScrollPosition = targetMobileScrollPosition;
         
         // Calculate scroll offset and apply to camera pan Y
         // Use layout-derived content height; compute max scroll in world units, then convert to screen px.
@@ -4539,9 +4534,9 @@ function draw() {
         const scrollOffsetWorld = mobileScrollPosition * maxScrollWorld;
         const scrollOffsetScreen = scrollOffsetWorld * globalZoomLevel;
 
-        // Apply scroll offset relative to the baseline pan at scroll position 0
+        // Apply scroll offset relative to the baseline pan at scroll position 0 (no smoothing = zero inertia)
         targetCameraPanY = mobileAlignedBasePanY - scrollOffsetScreen;
-        cameraPanY += (targetCameraPanY - cameraPanY) * panSmoothness;
+        cameraPanY = targetCameraPanY;
         
         // Update scroll indicator visibility
         if (performance.now() > scrollIndicatorFadeTime && !isMobileScrolling) {
@@ -4802,51 +4797,29 @@ function draw() {
                     // Start fade out hovered lines (will be animated smoothly in draw loop)
                     // hoveredLinesOpacity will fade to 0.0 in draw loop
                 } else if (isHovered && hoveredPoint === point) {
-                    // Still hovering the same point - check if 1 second passed
-                    // BUT: don't apply hover fade logic if we're already in selection/filter/connection mode
-                    // In those modes, opacity is controlled by selection, not by hover
+                    // Still hovering - set connection points from precomputed (use current point refs so positions are correct)
+                    const hoveredFolder = getPointFolder(point);
+                    const precomputed = precomputedConnectionTrajectories.get(hoveredFolder);
+                    if (precomputed && precomputed.points.length > 1) {
+                        const currentRefs = precomputed.points.map(p => points.find(cur => cur.imagePath === p.imagePath)).filter(Boolean);
+                        currentRefs.sort((a, b) => a.originalBaseX - b.originalBaseX);
+                        hoveredConnectedPoints = currentRefs.length > 1 ? currentRefs : points.filter(p => getPointFolder(p) === hoveredFolder).sort((a, b) => a.originalBaseX - b.originalBaseX);
+                    } else {
+                        hoveredConnectedPoints = points.filter(p => getPointFolder(p) === hoveredFolder);
+                        hoveredConnectedPoints.sort((a, b) => a.originalBaseX - b.originalBaseX);
+                    }
+                    // Don't apply fade/connection-mode logic if already in selection/filter/connection mode
                     if (alignedEmojiIndex === null && !isFilterMode && !isConnectionMode) {
                         const hoverDuration = currentTime - hoverStartTime;
-                        if (hoverDuration >= HOVER_FADE_TIMEOUT) {
-                            // Auto-enter connection mode after 1 second hover
-                            enterConnectionMode(point, false); // false = auto-hover, not clicked
-                            
-                            // Fade out images from different folders
-                            const hoveredFolder = point.folderPath || point.imagePath.substring(0, point.imagePath.lastIndexOf('/'));
-                            
-                            // Use pre-computed connection points for this folder (already sorted)
-                            const precomputed = precomputedConnectionTrajectories.get(hoveredFolder);
-                            if (precomputed && precomputed.points.length > 1) {
-                                hoveredConnectedPoints = precomputed.points;
-                            } else {
-                                // Fallback: calculate on the fly if not precomputed
-                                hoveredConnectedPoints = points.filter(p => {
-                                    const pFolder = p.folderPath || p.imagePath.substring(0, p.imagePath.lastIndexOf('/'));
-                                    return pFolder === hoveredFolder;
-                                });
-                                hoveredConnectedPoints.sort((a, b) => {
-                                    const aX = a.originalBaseX;
-                                    const bX = b.originalBaseX;
-                                    return aX - bX;
-                                });
-                            }
-                            
-                            // Set opacity for images
+                        const hoverTimeout = (typeof isMobileDevice === 'function' && isMobileDevice()) ? HOVER_FADE_TIMEOUT : HOVER_FADE_TIMEOUT_WEB;
+                        if (hoverDuration >= hoverTimeout) {
+                            enterConnectionMode(point, false);
                             points.forEach(p => {
-                                const pFolder = p.folderPath || p.imagePath.substring(0, p.imagePath.lastIndexOf('/'));
-                                if (pFolder !== hoveredFolder) {
-                                    p.targetOpacity = 0.0; // Fade to invisible
-                                } else {
-                                    p.targetOpacity = 1.0; // Keep same folder visible
-                                }
+                                p.targetOpacity = getPointFolder(p) === hoveredFolder ? 1.0 : 0.0;
                             });
-                            
-                            // Fade in connection lines
                             hoveredLinesOpacity = 1.0;
                         } else {
-                            // Gradually fade in lines as we approach timeout (linear interpolation)
-                            const fadeProgress = Math.min(hoverDuration / HOVER_FADE_TIMEOUT, 1.0);
-                            // Use faster fade speed for web (2x faster), slower for mobile
+                            const fadeProgress = Math.min(hoverDuration / hoverTimeout, 1.0);
                             const isMobile = window.innerWidth < 768 || ('ontouchstart' in window);
                             const fadeSpeed = isMobile ? HOVER_FADE_IN_SPEED : HOVER_FADE_IN_SPEED_WEB;
                             hoveredLinesOpacity += (fadeProgress - hoveredLinesOpacity) * fadeSpeed;
@@ -6229,7 +6202,7 @@ function displayProjectAboutText(name, aboutLines, moreContent) {
         containerEl.style.display = 'flex';
         containerEl.style.flexDirection = 'column';
         containerEl.style.alignItems = 'stretch';
-        containerEl.style.gap = '8px';
+        containerEl.style.gap = '10px';
         containerEl.style.overflow = 'visible';
         containerEl.style.zIndex = '10002';
         containerEl.style.transform = 'none';
@@ -6462,6 +6435,7 @@ window.addEventListener('resize', () => {
     const newPoints = generatePoints(Math.min(imagePaths.length, 500), 50);
     points.length = 0;
     points.push(...newPoints);
+    precomputeConnectionTrajectories(); // Recompute so dotted-line hover uses current point refs
     // Update mouse position
     targetMouseX = canvas.width / 2;
     targetMouseY = canvas.height / 2;
