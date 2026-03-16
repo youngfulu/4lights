@@ -1,0 +1,10 @@
+name: (Sophie)
+#
+Project type: (Show Operation, Generative video content)
+year: (2025)
+Location: Malaga, Spain.
+Client: (Sophie)
+Agency:(Setup)
+Status: (Finished)
+Contributor: (Ilya Duganov, Alina Tikhonova)
+

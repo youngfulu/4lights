@@ -1,0 +1,10 @@
+name: (Dom Dolla)
+#
+Project type: (Video content, Lasers and Lights programming)
+year: (2024)
+Location: California, United States
+Client: (Coachella)
+Agency:(Setup)
+Status: (Finished)
+Contributor: (Alina Tikhonova)
+

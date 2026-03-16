@@ -1,0 +1,10 @@
+name: (Addon 26 - opening show )
+#
+Project type: (Installation / Spatial audio)
+year: (2025)
+Location: Paris, France.
+Client: (Addon 26)
+Agency:(Inhous)
+Status: (Finished)
+Contributor: (Ilya Duganov, Rustem Imamiev)
+

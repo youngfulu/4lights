@@ -1,0 +1,10 @@
+name: (Yana Kedrina Tour)
+#
+Project type: (Stage Design, Video Content)
+year: (2021)
+Location: Moscow, Russia.
+Client: (Yana Kedrina)
+Agency:(InHouse)
+Status: (Finished)
+Contributor: (Ilya Duganov, Alina Tikhonova)
+

@@ -333,22 +333,15 @@ body {
     opacity: 1;
 }
 
-/* Mobile: fixed at top, scrollable; no border/scrollbar line under text */
+/* Mobile: same font size as web, more padding/air so text and images don't overlap */
 @media (max-width: 767px), (pointer: coarse) {
     .project-about-text.visible {
         padding: 14px 0 18px 0;
         align-items: flex-start;
         text-align: left;
+        max-height: none;
+        overflow: visible;
         gap: 10px;
-        overflow-y: auto;
-        -webkit-overflow-scrolling: touch;
-        border: none !important;
-        outline: none !important;
-        scrollbar-width: none;
-        -ms-overflow-style: none;
-    }
-    .project-about-text.visible::-webkit-scrollbar {
-        display: none;
     }
     .project-about-text .project-name {
         font-size: 22px;
@@ -370,7 +363,6 @@ body {
     font-size: 34px;
     white-space: nowrap;
     font-family: 'Grammatika Demo', Arial, sans-serif;
-    text-transform: none;
 }
 
 .project-info {
@@ -549,7 +541,7 @@ body {
         pointer-events: auto;
     }
     .mobile-category-content-inner {
-        padding: calc(40px + env(safe-area-inset-top, 0px)) 20px 80px;
+        padding: 40px 20px 80px;
         color: #fff;
         font-family: Arial, sans-serif;
         position: absolute;
@@ -557,18 +549,6 @@ body {
         left: 0;
         right: auto;
         text-align: left;
-        box-sizing: border-box;
-        max-height: 100%;
-        overflow-y: auto;
-        -webkit-overflow-scrolling: touch;
-    }
-    .mobile-category-content-inner .mobile-about-name,
-    .mobile-category-content-inner .mobile-about-info {
-        word-break: break-word;
-        overflow-wrap: break-word;
-    }
-    .mobile-category-content-inner .mobile-about-name {
-        text-transform: none;
     }
     .mobile-category-title {
         font-size: 24px;
@@ -634,7 +614,7 @@ body {
     color: #fff;
     font-size: 14px;
     font-family: Arial, sans-serif;
-    text-transform: none;
+    text-transform: lowercase;
     cursor: pointer;
     opacity: 0;
     transform: translateX(-20px);
