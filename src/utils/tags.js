@@ -58,5 +58,10 @@ export function getFolderTags(folderNameRaw, folderTagsMap = FOLDER_TAGS) {
     const hashtagTags = deriveTagsFromFolderName(folderName);
     if (hashtagTags.length > 0) return hashtagTags;
     const strippedName = folderName.replace(/\s+#.*$/, '').trim();
-    return folderTagsMap[folderName] || folderTagsMap[strippedName] || [];
+    const byKey = (key) => {
+        if (!key) return null;
+        const found = Object.keys(folderTagsMap).find((k) => k.toLowerCase() === key.toLowerCase());
+        return found ? folderTagsMap[found] : null;
+    };
+    return byKey(folderName) || byKey(strippedName) || [];
 }

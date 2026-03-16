@@ -1,4 +1,4 @@
-name: (Extrema Festival)
+name: (Dom Dolla S how)
 #
 Project type: (Generative Video Engine, Kinetic Video wall, Laser programming)
 year: (2024)
@@ -6,5 +6,5 @@ Location: Houthalen-Helchteren, Belgium
 Client: (Extrema Festival)
 Agency:(Setup)
 Status: (Finished)
-Contributor: (Alina Tikhonova)
+Contributor: (Pavel Zmunchella, Alina Tikhonova)
 

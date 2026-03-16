@@ -4,7 +4,7 @@ Project type: (Spatial design, light design, technical solutions.)
 year: (2021)
 Location: Saint-Petersburg, Russia.
 Client: (Mirage Cinema)
-Agency:(InHouse)
+Agency:(in-house)
 Status: (Finished)
 Contributor: (Ilya Duganov, Nikita Boyak, Sasha Kodjo)
 

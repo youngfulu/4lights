@@ -1,0 +1,4 @@
+Generative video engine and video content management for the Red Hot Chili Peppers 2022 tour. The system drives and switches visual content in real time across the show—live-generated and pre-authored material integrated into a single pipeline so the band’s visuals stay in sync with the set and the scale of the venues.
+
+We've TouchDesigner programming, integrated artist video engines into the setup studio pipeline, scenes for the show—bridging creative assets with the live production system so content could be driven and switched in real time.
+

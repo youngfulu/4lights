@@ -877,13 +877,28 @@ function layoutAlignedEmojisMobileVertical(animate = true) {
         aboutContainerEl.style.top = '0';
         aboutContainerEl.style.transform = 'none';
         const hAbout = aboutContainerEl.offsetHeight;
-        aboutContainerEl.style.position = prevC.position;
-        aboutContainerEl.style.left = prevC.left;
-        aboutContainerEl.style.width = prevC.width;
-        aboutContainerEl.style.visibility = prevC.visibility;
-        aboutContainerEl.style.display = prevC.display;
-        aboutContainerEl.style.top = prevC.top;
-        aboutContainerEl.style.transform = prevC.transform;
+        if (isMobileDevice()) {
+            const safeTopPx = Math.max(marginScreen, 14);
+            aboutContainerEl.style.setProperty('position', 'fixed', 'important');
+            aboutContainerEl.style.setProperty('left', marginScreen + 'px', 'important');
+            aboutContainerEl.style.setProperty('right', marginScreen + 'px', 'important');
+            aboutContainerEl.style.setProperty('top', safeTopPx + 'px', 'important');
+            aboutContainerEl.style.setProperty('transform', 'translateZ(0)', 'important');
+            aboutContainerEl.style.width = targetWidthScreen + 'px';
+            aboutContainerEl.style.maxHeight = 'calc(100vh - ' + (safeTopPx + 100) + 'px)';
+            aboutContainerEl.style.overflowY = 'auto';
+            aboutContainerEl.style.webkitOverflowScrolling = 'touch';
+            aboutContainerEl.style.visibility = prevC.visibility;
+            aboutContainerEl.style.display = prevC.display;
+        } else {
+            aboutContainerEl.style.position = prevC.position;
+            aboutContainerEl.style.left = prevC.left;
+            aboutContainerEl.style.width = prevC.width;
+            aboutContainerEl.style.visibility = prevC.visibility;
+            aboutContainerEl.style.display = prevC.display;
+            aboutContainerEl.style.top = prevC.top;
+            aboutContainerEl.style.transform = prevC.transform;
+        }
         if (moreElTemp) moreElTemp.style.display = prevMoreDisplay;
         aboutBlockHeightWorld = Math.max(48 / selectedZoom, (hAbout + 24) / selectedZoom); // +air so images don't overlap
         mobileAboutBlockMarginScreen = marginScreen;
@@ -1052,16 +1067,20 @@ function deriveTagsFromFolderName(folderNameRaw) {
     return tags;
 }
 
-// Helper: map folder name (with or without hashtags) to tag list
+// Helper: map folder name (with or without hashtags) to tag list (case-insensitive lookup so all projects appear)
 function getFolderTags(folderNameRaw) {
     const folderName = (folderNameRaw || '').trim();
     const hashtagTags = deriveTagsFromFolderName(folderName);
     if (hashtagTags.length > 0) {
         return hashtagTags;
     }
-    // Fallback to manual mapping using clean names (without hashtag suffixes)
     const strippedName = folderName.replace(/\s+#.*$/, '').trim();
-    return FOLDER_TAGS[folderName] || FOLDER_TAGS[strippedName] || [];
+    const byKey = function (key) {
+        if (!key) return null;
+        const found = Object.keys(FOLDER_TAGS).find(function (k) { return k.toLowerCase() === key.toLowerCase(); });
+        return found ? FOLDER_TAGS[found] : null;
+    };
+    return byKey(folderName) || byKey(strippedName) || [];
 }
 
 // Zoom focal point (for mouse-relative zoom)
@@ -1139,9 +1158,15 @@ const imagePaths = [
     'final images/Addon 26 #instal/addon pc.png',
     'final images/Addon 26 #instal/photo_2021-04-06_03-24-48.jpg',
     'final images/Addon 26 #instal/poster.jpg',
-    'final images/Azerbaijan pavilion VInece Beinalle   #instal/CR.png',
-    'final images/Azerbaijan pavilion VInece Beinalle   #instal/Screenshot 2026-03-06 at 13.46.40.png',
-    'final images/Azerbaijan pavilion VInece Beinalle   #instal/anim-post Screenshot 2026-03-06 at 13.29.47-color-denoise-enhance-1.8x.jpeg',
+    'final images/Bipolar Express #stage #tech/IMG_2470.png',
+    'final images/Bipolar Express #stage #tech/IMG_2695.png',
+    'final images/Bipolar Express #stage #tech/IMG_2742.png',
+    'final images/Bipolar Express #stage #tech/Screenshot 2026-01-07 at 17.41.20.png',
+    'final images/Bipolar Express #stage #tech/Screenshot 2026-01-07 at 17.41.35.png',
+    'final images/Bipolar Express #stage #tech/Screenshot 2026-01-07 at 17.41.47.png',
+    'final images/Bipolar Express #stage #tech/Screenshot 2026-01-08 at 11.44.28.png',
+    'final images/Bipolar Express #stage #tech/Screenshot 2026-03-03 at 15.02.44.png',
+    'final images/Bipolar Express #stage #tech/bp Express.jpg',
     'final images/Bluebeard Castle #stage design/1f8621a766d563d6bbc3a36dbd1d04fa.jpg',
     'final images/Bluebeard Castle #stage design/4.jpg',
     'final images/Bluebeard Castle #stage design/76769.jpg',
@@ -1149,30 +1174,25 @@ const imagePaths = [
     'final images/Bluebeard Castle #stage design/7d0a27ca170dc646851659dac4ab005b.jpg',
     'final images/Bluebeard Castle #stage design/and-3210.jpg',
     'final images/Bluebeard Castle #stage design/d3c63d82a8d15e4eea067a766f0b665e.jpg',
-    'final images/Bluebeard Castle #stage design/e7af5fe7403946483739d3efbce015c9.jpg',
+    'final images/Circular Repetition   #instal/CR.png',
+    'final images/Circular Repetition   #instal/Screenshot 2026-03-06 at 13.46.40.png',
+    'final images/Circular Repetition   #instal/anim-post Screenshot 2026-03-06 at 13.29.47-color-denoise-enhance-1.8x.jpeg',
+    'final images/Circular Repetition   #instal/la bienalle.png',
     'final images/Common Space #spatial #stage/ComfyUI_00025_.png',
     'final images/Common Space #spatial #stage/ComfyUI_00026_.png',
     'final images/Common Space #spatial #stage/photo_2022-06-17_15-23-43.jpg',
     'final images/Common Space #spatial #stage/taktik0004.jpg',
     'final images/Concepts #spatial #concept/photo_2022-09-11_21-38-30.jpg',
     'final images/Concepts #spatial #concept/photo_2022-09-11_21-38-31.jpg',
-    'final images/Dom Dolla Coachella #stage/34.jpg',
     'final images/Dom Dolla Coachella #stage/3MvEimKw.jpeg',
     'final images/Dom Dolla Coachella #stage/44.jpg',
-    'final images/Dom Dolla Coachella #stage/51.jpg',
     'final images/Dom Dolla Coachella #stage/54.jpg',
     'final images/Dom Dolla Coachella #stage/Coachella.jpg',
-    'final images/Dom Dolla Coachella #stage/IpIFlsBg.jpeg',
     'final images/Dom Dolla Coachella #stage/J8QrpcyA.jpeg',
     'final images/Dom Dolla Coachella #stage/KE0ZsNGw.jpeg',
     'final images/Dom Dolla Coachella #stage/U-yCPfrg.jpeg',
-    'final images/Dom Dolla Coachella #stage/U4cm3y3w.jpeg',
-    'final images/Dom Dolla Coachella #stage/WkNC8WDw.jpeg',
     'final images/Dom Dolla Coachella #stage/mCgZDAIw.jpeg',
-    'final images/Dom Dolla Coachella #stage/nB6q8Rgg.jpeg',
     'final images/Dom Dolla Coachella #stage/upscale6.jpeg',
-    'final images/Dom Dolla Coachella #stage/upscaleTDMovieOut.12.jpeg',
-    'final images/Dom Dolla Coachella #stage/upscaleTDMovieOut.4.jpeg',
     'final images/Extrema  #stage/320547899_2990237017948126_3243800018334461643_n.jpg',
     'final images/Extrema  #stage/320629370_818022955968613_1030656669808514981_n.jpg',
     'final images/Extrema  #stage/320686916_669758978159427_4780015944793822764_n.jpg',
@@ -1184,6 +1204,16 @@ const imagePaths = [
     'final images/Extrema  #stage/8880.jpg',
     'final images/Extrema  #stage/upscale5555.jpeg',
     'final images/Extrema  #stage/upscale888.jpeg',
+    'final images/Gate #instal/ComfyUI_00075_.png',
+    'final images/Gate #instal/ComfyUI_00077_.png',
+    'final images/Gate #instal/GATE.jpg',
+    'final images/Gate #instal/Screenshot 2026-02-22 at 15.52.12.png',
+    'final images/Gate #instal/gate4.jpg',
+    'final images/Gula Merah #stage/GM-9.png',
+    'final images/Gula Merah #stage/IMG_5170.JPG',
+    'final images/Gula Merah #stage/Screenshot 2026-02-22 at 16.06.52.png',
+    'final images/Gula Merah #stage/Screenshot 2026-02-22 at 16.06.57.png',
+    'final images/Gula Merah #stage/photo_2022-08-12_13-03-54.jpg',
     'final images/Han Kang\'s The Vegetarian #stage #installation /TDMovieOut.0.jpg',
     'final images/Han Kang\'s The Vegetarian #stage #installation /TDMovieOut.066.jpg',
     'final images/Han Kang\'s The Vegetarian #stage #installation /TDMovieOut.1.jpg',
@@ -1201,15 +1231,16 @@ const imagePaths = [
     'final images/Hard Select 2   #stage #concept/Screenshot 2024-10-17 at 01.52.03.png',
     'final images/Hard Select 2   #stage #concept/Screenshot 2024-10-17 at 01.59.15.png',
     'final images/Hard Select 2   #stage #concept/Screenshot 2024-10-17 at 02.11.34.png',
-    'final images/Hard Select 3   #stage #concept/Screenshot 2024-10-27 at 17.09.21.png',
-    'final images/Hard Select 3   #stage #concept/Screenshot 2024-10-28 at 22.45.48.png',
-    'final images/Hard Select 3   #stage #concept/Screenshot 2024-10-28 at 23.05.32.png',
-    'final images/Hard Select 3   #stage #concept/photo_2024-11-19_23-07-27.jpg',
-    'final images/Hard Select 3   #stage #concept/photo_2024-11-19_23-07-37.jpg',
-    'final images/Hard Select 3   #stage #concept/scrn.png',
-    'final images/Hard Select 3   #stage #concept/untitled55.png',
-    'final images/Hard Select 3   #stage #concept/untitled56.png',
-    'final images/Hard Select 3   #stage #concept/untitled57.png',
+    'final images/Hard Select Booth   #stage #concept/Screenshot 2024-10-27 at 17.09.21.png',
+    'final images/Hard Select Booth   #stage #concept/Screenshot 2024-10-28 at 22.45.48.png',
+    'final images/Hard Select Booth   #stage #concept/Screenshot 2024-10-28 at 23.05.32.png',
+    'final images/Hard Select Booth   #stage #concept/Screenshot 2026-03-15 at 20.20.16.png',
+    'final images/Hard Select Booth   #stage #concept/photo_2024-11-19_23-07-27.jpg',
+    'final images/Hard Select Booth   #stage #concept/photo_2024-11-19_23-07-37.jpg',
+    'final images/Hard Select Booth   #stage #concept/scrn.png',
+    'final images/Hard Select Booth   #stage #concept/untitled55.png',
+    'final images/Hard Select Booth   #stage #concept/untitled56.png',
+    'final images/Hard Select Booth   #stage #concept/untitled57.png',
     'final images/Ice Palace   #stage #concept/10.png',
     'final images/Ice Palace   #stage #concept/11.png',
     'final images/Ice Palace   #stage #concept/20.png',
@@ -1221,25 +1252,36 @@ const imagePaths = [
     'final images/Ice Palace   #stage #concept/Screenshot 2024-11-27 at 17.51.46.png',
     'final images/Ice Palace   #stage #concept/Screenshot 2024-11-27 at 17.54.56.png',
     'final images/Ice Palace   #stage #concept/Screenshot 2024-11-27 at 19.10.28.png',
-    'final images/Ice Palace 2  #stage #concept/1.png',
-    'final images/Ice Palace 2  #stage #concept/12.png',
-    'final images/Ice Palace 2  #stage #concept/18.png',
-    'final images/Ice Palace 2  #stage #concept/4.png',
+    'final images/Inside a Loom Factory #spatial #concept/11.png',
+    'final images/Inside a Loom Factory #spatial #concept/17.png',
+    'final images/Inside a Loom Factory #spatial #concept/19.png',
+    'final images/Inside a Loom Factory #spatial #concept/20.png',
+    'final images/Inside a Loom Factory #spatial #concept/4.png',
+    'final images/Inside a Loom Factory #spatial #concept/Screenshot 2026-03-15 at 20.41.58.png',
+    'final images/Inside a Loom Factory #spatial #concept/Screenshot 2026-03-15 at 20.42.42.png',
+    'final images/Inside a Loom Factory #spatial #concept/Screenshot 2026-03-15 at 20.42.59.png',
     'final images/Justice   #stage/484889846_17946141872956990_4837846011979273179_n.jpg',
     'final images/Justice   #stage/Screenshot 2024-09-20 at 12.34.55.png',
     'final images/Justice   #stage/Screenshot 2024-09-20 at 12.50.27.png',
     'final images/Justice   #stage/Screenshot 2024-09-20 at 12.52.12.png',
     'final images/Justice   #stage/Screenshot 2024-09-20 at 13.10.40.png',
-    'final images/Justice   #stage/Screenshot 2024-09-20 at 13.11.11-2.png',
     'final images/Justice   #stage/Screenshot 2024-09-29 at 02.40.18.png',
     'final images/Justice   #stage/Screenshot 2024-09-29 at 02.42.38.png',
     'final images/Justice   #stage/Screenshot 2024-11-24 at 20.40.26-2.png',
     'final images/Justice   #stage/TDMovieOut.10.png',
+    'final images/Justice   #stage/high-voltage-power-line-16485450.webp',
     'final images/Justice   #stage/justice.jpg',
-    'final images/Kedrina #stage/kedr.jpg',
-    'final images/Kedrina #stage/kedr2.jpg',
-    'final images/Kedrina #stage/kedr3.jpg',
-    'final images/Kedrina #stage/photo_2021-08-07_21-17-07.jpg',
+    'final images/Kedr Livansky #stage/kedr.jpg',
+    'final images/Kedr Livansky #stage/kedr2.jpg',
+    'final images/Kedr Livansky #stage/kedr3.jpg',
+    'final images/Kedr Livansky #stage/photo_2021-08-07_21-17-07.jpg',
+    'final images/Mirag Club #stage #tech/layout.jpg',
+    'final images/Mirag Club #stage #tech/photo_2020-11-30_16-45-16.jpg',
+    'final images/Mirag Club #stage #tech/photo_2020-12-01_20-08-32.jpg',
+    'final images/Mirag Club #stage #tech/photo_2020-12-02_23-41-24.jpg',
+    'final images/Mirag Club #stage #tech/photo_2022-03-21_02-24-47.jpg',
+    'final images/Mirag Club #stage #tech/photo_2022-03-28_03-46-47.jpg',
+    'final images/Mirag Club #stage #tech/photo_2022-08-04_18-43-59.jpg',
     'final images/Mirage Cinema #spatial/101.jpg',
     'final images/Mirage Cinema #spatial/637c8f2f83c5b.jpg',
     'final images/Mirage Cinema #spatial/mirag column.jpg',
@@ -1252,22 +1294,19 @@ const imagePaths = [
     'final images/NXT Museum #spatial #installation/photo_2022-08-25_12-45-30.jpg',
     'final images/NXT Museum #spatial #installation/photo_2022-08-25_16-07-59.jpg',
     'final images/NXT Museum #spatial #installation/photo_2022-08-26_12-24-51.jpg',
-    'final images/New star camp #stage/25.png',
-    'final images/New star camp #stage/37.png',
-    'final images/New star camp #stage/ComfyUI_00053_.png',
-    'final images/New star camp #stage/fin6.png',
-    'final images/Nina kravitz #stage/1767412367827-89738e9a-6d9b-42f3-80b0-81b3d7a50cdc.png',
-    'final images/Nina kravitz #stage/ComfyUI_00009_.png',
-    'final images/Nina kravitz #stage/ComfyUI_00057_.png',
-    'final images/Nina kravitz #stage/ComfyUI_00058_.png',
-    'final images/Nina kravitz #stage/god_rays11.png',
-    'final images/Nina kravitz #stage/photo_2022-11-11_15-45-01.jpg',
-    'final images/Nina kravitz #stage/photo_2022-11-12_14-26-35.jpg',
-    'final images/Nina kravitz #stage/photo_2022-11-12_18-19-42.jpg',
-    'final images/Nina kravitz #stage/photo_2022-11-17_13-32-40.jpg',
+    'final images/New Star Camp #stage/25.png',
+    'final images/New Star Camp #stage/37.png',
+    'final images/New Star Camp #stage/ComfyUI_00053_.png',
+    'final images/Nina Kravitz #stage/1767412367827-89738e9a-6d9b-42f3-80b0-81b3d7a50cdc.png',
+    'final images/Nina Kravitz #stage/god_rays11.png',
+    'final images/Nina Kravitz #stage/photo_2022-11-11_15-45-01.jpg',
+    'final images/Nina Kravitz #stage/photo_2022-11-12_14-26-35.jpg',
+    'final images/Nina Kravitz #stage/photo_2022-11-12_18-19-42.jpg',
+    'final images/Nina Kravitz #stage/photo_2022-11-17_13-32-40.jpg',
     'final images/One Tower #spatial #concept/1 (5).png',
     'final images/One Tower #spatial #concept/ComfyUI_00030_.png',
     'final images/One Tower #spatial #concept/ComfyUI_00031_.png',
+    'final images/One Tower #spatial #concept/Screenshot 2026-03-15 at 20.11.36.png',
     'final images/One Tower #spatial #concept/concept zabor.jpg',
     'final images/One Tower #spatial #concept/zabor pttrns (dragged).jpg',
     'final images/One Tower #spatial #concept/zabor.jpg',
@@ -1277,14 +1316,33 @@ const imagePaths = [
     'final images/Phillaronie de Luxemburg  #stage/449693476_862376902605149_1496274342160015583_n.jpg',
     'final images/Phillaronie de Luxemburg  #stage/96.gif',
     'final images/Phillaronie de Luxemburg  #stage/lux.jpg',
-    'final images/Potato head bali #stage/oli1 (2)-filtered.png',
-    'final images/Potato head bali #stage/photo_2022-11-13_23-59-54.jpg',
-    'final images/Potato head bali #stage/photo_2022-11-14_02-05-12.jpg',
-    'final images/Potato head bali #stage/photo_2022-11-24_17-17-20.jpg',
-    'final images/Potato head bali #stage/photo_3830@13-11-2022_17-43-34-filtered.jpeg',
-    'final images/RHCP #stage #tech/490A2224.jpg',
-    'final images/RHCP #stage #tech/490A2253.jpg',
-    'final images/RHCP #stage #tech/490A2831.jpg',
+    'final images/Port #stage/port - stage 6.jpg',
+    'final images/Port #stage/port - stage 7 .jpg',
+    'final images/Port #stage/port-stage 8 .jpg',
+    'final images/Port #stage/poster.png',
+    'final images/Port #stage/pt.jpg',
+    'final images/Port #stage/red_min.png',
+    'final images/Port #stage/stage concept.jpg',
+    'final images/Potato Head#stage/oli1 (2)-filtered.png',
+    'final images/Potato Head#stage/photo_2022-11-13_23-59-54.jpg',
+    'final images/Potato Head#stage/photo_2022-11-14_02-05-12.jpg',
+    'final images/Potato Head#stage/photo_2022-11-24_17-17-20.jpg',
+    'final images/Potato Head#stage/photo_3830@13-11-2022_17-43-34-filtered.jpeg',
+    'final images/Red Hot Chilli Peppers  #stage #tech/490A2224.jpg',
+    'final images/Red Hot Chilli Peppers  #stage #tech/490A2253.jpg',
+    'final images/Red Hot Chilli Peppers  #stage #tech/490A2831.jpg',
+    'final images/Red Hot Chilli Peppers  #stage #tech/IMG-9137.jpg',
+    'final images/Red Hot Chilli Peppers  #stage #tech/RHCP-picture.jpeg',
+    'final images/Red Hot Chilli Peppers  #stage #tech/rhcp.jpg',
+    'final images/Reflection #spatial #installation/11.png',
+    'final images/Reflection #spatial #installation/14.png',
+    'final images/Reflection #spatial #installation/cc.png',
+    'final images/Signal Festival  #spatial #installation/ComfyUI_00008_.png',
+    'final images/Signal Festival  #spatial #installation/TDMovieOut.0.jpg',
+    'final images/Signal Festival  #spatial #installation/pasted-image-2.png',
+    'final images/Signal Festival  #spatial #installation/pasted-image-3.png',
+    'final images/Signal Festival  #spatial #installation/pasted-image.png',
+    'final images/Signal Festival  #spatial #installation/signal2.jpg',
     'final images/Sophie #stage/000.jpg',
     'final images/Sophie #stage/496709872_18008736773727365_777694170845982356_n.jpg',
     'final images/Sophie #stage/ClesseysSF6-8-Retocada-scaled-r64cni1wd3gyg6elc2c2cq21ftxonw3gcgmr7rt3e8.jpg',
@@ -1292,86 +1350,48 @@ const imagePaths = [
     'final images/Sophie #stage/ComfyUI_00016_.png',
     'final images/Sophie #stage/ComfyUI_00017_.png',
     'final images/Sophie #stage/f2a2a0dc27b7c19d5f41fc8c99b87319b33b8e23.png',
+    'final images/THK #installation/02-THK-Tower.jpg',
+    'final images/THK #installation/thk1.jpg',
+    'final images/THK #installation/thk3.jpg',
+    'final images/THK #installation/thk5.jpeg',
     'final images/Telegraph #spatial /ComfyUI_00021_.png',
     'final images/Telegraph #spatial /Screenshot 2024-02-29 at 19.46.48.png',
+    'final images/Torus #spatial #installation/ComfyUI_00060_.png',
+    'final images/Torus #spatial #installation/untitled11.png',
+    'final images/Torus #spatial #installation/untitled16.png',
+    'final images/Torus #spatial #installation/untitled18.png',
+    'final images/Torus #spatial #installation/untitled19.png',
+    'final images/Tower Building #spatial #installation/19.png',
+    'final images/Tower Building #spatial #installation/2.png',
+    'final images/Tower Building #spatial #installation/22.jpg',
+    'final images/Tower Building #spatial #installation/4.png',
+    'final images/Tower Building #spatial #installation/5.png',
+    'final images/Tower Building #spatial #installation/ComfyUI_00008_.png',
+    'final images/Tower Building #spatial #installation/ComfyUI_00024_.png',
     'final images/Vaba Laba  #stage /43edf180-0aa1-438c-bad4-c5fdaa7208e89.png',
     'final images/Vaba Laba  #stage /737412h8081t27_1620_8.jpg',
     'final images/Vaba Laba  #stage /NP5_4058-1024x683 (1).jpg',
     'final images/Vaba Laba  #stage /d1f174b2-b030-4ee0-bf3d-b1cbd44474f09.png',
-    'final images/bipolar express #stage #tech/IMG_2470.png',
-    'final images/bipolar express #stage #tech/IMG_2695.png',
-    'final images/bipolar express #stage #tech/IMG_2742.png',
-    'final images/bipolar express #stage #tech/Screenshot 2026-01-07 at 17.41.20.png',
-    'final images/bipolar express #stage #tech/Screenshot 2026-01-07 at 17.41.35.png',
-    'final images/bipolar express #stage #tech/Screenshot 2026-01-07 at 17.41.47.png',
-    'final images/bipolar express #stage #tech/Screenshot 2026-01-08 at 11.44.28.png',
-    'final images/bipolar express #stage #tech/Screenshot 2026-03-03 at 15.02.44.png',
+    'final images/View Point  #spatial/14.png',
+    'final images/View Point  #spatial/45.png',
+    'final images/View Point  #spatial/53.png',
+    'final images/View Point  #spatial/Snimok-ehkrana-2023-09-01-v-14.16.47 (1).png',
+    'final images/View Point  #spatial/Snimok-ehkrana-2023-09-01-v-14.18.05.png',
+    'final images/Wish Circles #spatial #installation/Screenshot 2024-11-24 at 20.45.35.png',
+    'final images/Wish Circles #spatial #installation/Screenshot 2024-11-24 at 22.02.56.png',
+    'final images/Wish Circles #spatial #installation/Screenshot 2026-02-22 at 15.27.19.png',
+    'final images/Wish Circles #spatial #installation/Screenshot 2026-02-22 at 15.53.50.png',
     'final images/fixtures decoratif #concept/photo_2022-09-11_20-12-15.jpg',
-    'final images/gate #instal/ComfyUI_00075_.png',
-    'final images/gate #instal/ComfyUI_00077_.png',
-    'final images/gate #instal/Screenshot 2024-11-24 at 20.47.07.png',
-    'final images/gate #instal/Screenshot 2026-02-22 at 15.52.12.png',
-    'final images/gula merah #stage/IMG_5170.JPG',
-    'final images/gula merah #stage/Screenshot 2026-02-22 at 16.06.52.png',
-    'final images/gula merah #stage/Screenshot 2026-02-22 at 16.06.57.png',
-    'final images/gula merah #stage/photo_2022-08-12_13-03-47.jpg',
-    'final images/gula merah #stage/photo_2022-08-12_13-03-54.jpg',
     'final images/la fleurs  #spatial/ComfyUI_00012_.png',
     'final images/la fleurs  #spatial/ComfyUI_00013_.png',
-    'final images/la fleurs  #spatial/ComfyUI_00015_.png',
     'final images/la fleurs  #spatial/ComfyUI_00016_.png',
     'final images/la fleurs  #spatial/ComfyUI_00018_.png',
-    'final images/la fleurs  #spatial/ComfyUI_00019_.png',
     'final images/la fleurs  #spatial/fleurs4.png',
-    'final images/la fleurs  #spatial/hhhpng.png',
     'final images/la fleurs  #spatial/ppp4.png',
     'final images/la fleurs  #spatial/ppp5.png',
-    'final images/mirag club #stage #tech/photo_2020-11-30_16-45-16.jpg',
-    'final images/mirag club #stage #tech/photo_2020-12-01_20-08-32.jpg',
-    'final images/mirag club #stage #tech/photo_2020-12-02_23-41-24.jpg',
-    'final images/mirag club #stage #tech/photo_2022-03-21_02-24-47.jpg',
-    'final images/mirag club #stage #tech/photo_2022-03-28_03-46-47.jpg',
-    'final images/mirag club #stage #tech/photo_2022-08-04_18-43-59.jpg',
-    'final images/missoni #spatial #concept/11.png',
-    'final images/missoni #spatial #concept/17.png',
-    'final images/missoni #spatial #concept/19.png',
-    'final images/missoni #spatial #concept/20.png',
-    'final images/missoni #spatial #concept/4.png',
-    'final images/port #stage/port - stage 6.jpg',
-    'final images/port #stage/port - stage 7 .jpg',
-    'final images/port #stage/port-stage 8 .jpg',
-    'final images/port #stage/poster.png',
-    'final images/port #stage/pt.jpg',
-    'final images/port #stage/red_min.png',
-    'final images/port #stage/stage concept.jpg',
-    'final images/signal #spatial #installation/ComfyUI_00008_.png',
-    'final images/signal #spatial #installation/TDMovieOut.0.jpg',
-    'final images/signal #spatial #installation/pasted-image-2.png',
-    'final images/signal #spatial #installation/pasted-image-3.png',
-    'final images/signal #spatial #installation/pasted-image.png',
-    'final images/signal #spatial #installation/signal2.jpg',
     'final images/thresholds #installation/Screenshot 2024-11-24 at 22.18.45.png',
     'final images/thresholds #installation/Screenshot 2024-11-24 at 22.21.12.png',
-    'final images/thresholds #installation/liminal8.png',
-    'final images/torus #spatial #installation/ComfyUI_00060_.png',
-    'final images/torus #spatial #installation/untitled11.png',
-    'final images/torus #spatial #installation/untitled16.png',
-    'final images/torus #spatial #installation/untitled18.png',
-    'final images/torus #spatial #installation/untitled19.png',
-    'final images/tower building #spatial #installation/19.png',
-    'final images/tower building #spatial #installation/2.png',
-    'final images/tower building #spatial #installation/22.jpg',
-    'final images/tower building #spatial #installation/4.png',
-    'final images/tower building #spatial #installation/5.png',
-    'final images/tower building #spatial #installation/ComfyUI_00008_.png',
-    'final images/tower building #spatial #installation/ComfyUI_00024_.png',
-    'final images/wish circles #spatial #installation/Screenshot 2024-11-24 at 20.45.35.png',
-    'final images/wish circles #spatial #installation/Screenshot 2024-11-24 at 22.02.56.png',
-    'final images/wish circles #spatial #installation/Screenshot 2026-02-22 at 15.27.19.png',
-    'final images/wish circles #spatial #installation/Screenshot 2026-02-22 at 15.53.50.png',
-    'final images/yndx interactive zone #spatial #installation/11.png',
-    'final images/yndx interactive zone #spatial #installation/14.png',
-    'final images/yndx interactive zone #spatial #installation/cc.png'
+    'final images/thresholds #installation/liminal8.png'
 ];
 
 // Image cache: thumb = grid (small), img = full-res (selection mode). Draw uses img || thumb.
@@ -3587,18 +3607,27 @@ function showIndexFolderList(folders) {
             mobileBack.style.zIndex = '20001';
         }
     } else {
-        container.style.left = '50px';
+        // Desktop: blue line = max vertical field for names; second column starts at red line
+        const INDEX_LIST_LEFT_PX = 50;
+        const INDEX_LIST_TOP_VH = 18;
+        const INDEX_LIST_FIELD_HEIGHT_VH = 64;
+        const INDEX_LIST_RED_LINE_LEFT_PX = 320;
+        const INDEX_LIST_GAP_PX = 12;
+
+        container.style.left = INDEX_LIST_LEFT_PX + 'px';
         container.style.right = 'auto';
-        container.style.top = '50%';
+        container.style.top = INDEX_LIST_TOP_VH + 'vh';
         container.style.bottom = 'auto';
-        container.style.transform = 'translateY(-50%)';
+        container.style.transform = 'none';
         container.style.width = 'auto';
         container.style.alignItems = 'flex-start';
-        container.style.gap = '12px';
+        container.style.gap = INDEX_LIST_GAP_PX + 'px';
         container.style.overflowY = '';
-        container.style.maxHeight = '';
+        container.style.maxHeight = INDEX_LIST_FIELD_HEIGHT_VH + 'vh';
         container.style.removeProperty('display');
         container.style.zIndex = '';
+        container.style.flexDirection = 'column';
+        container.style.flexWrap = 'nowrap';
     }
     
     // Create folder items
@@ -3622,6 +3651,49 @@ function showIndexFolderList(folders) {
             item.classList.add('visible');
         }, index * 100);
     });
+
+    // Desktop: if list overflows vertical field, split into two columns (second from red line)
+    if (!isMobile) {
+        const INDEX_LIST_LEFT_PX = 50;
+        const INDEX_LIST_FIELD_HEIGHT_VH = 64;
+        const INDEX_LIST_RED_LINE_LEFT_PX = 320;
+        const INDEX_LIST_GAP_PX = 12;
+
+        requestAnimationFrame(() => {
+            const maxHeightPx = (window.innerHeight * INDEX_LIST_FIELD_HEIGHT_VH) / 100;
+            const items = container.querySelectorAll('.index-folder-item');
+            if (items.length === 0) return;
+            const firstRect = items[0].getBoundingClientRect();
+            const itemHeight = firstRect.height + INDEX_LIST_GAP_PX;
+            const fitInOne = Math.max(1, Math.floor((maxHeightPx + INDEX_LIST_GAP_PX) / itemHeight));
+            if (items.length > fitInOne) {
+                const col1 = document.createElement('div');
+                const col2 = document.createElement('div');
+                col1.className = 'index-folder-list-col';
+                col2.className = 'index-folder-list-col';
+                col1.style.display = 'flex';
+                col1.style.flexDirection = 'column';
+                col1.style.gap = INDEX_LIST_GAP_PX + 'px';
+                col1.style.marginRight = '24px';
+                col2.style.display = 'flex';
+                col2.style.flexDirection = 'column';
+                col2.style.gap = INDEX_LIST_GAP_PX + 'px';
+                col2.style.position = 'absolute';
+                col2.style.left = (INDEX_LIST_RED_LINE_LEFT_PX - INDEX_LIST_LEFT_PX) + 'px';
+                col2.style.top = '0';
+                Array.from(items).forEach((el, i) => {
+                    if (i < fitInOne) col1.appendChild(el); else col2.appendChild(el);
+                });
+                container.style.flexDirection = 'row';
+                container.style.flexWrap = 'nowrap';
+                container.style.alignItems = 'flex-start';
+                container.style.position = 'relative';
+                container.innerHTML = '';
+                container.appendChild(col1);
+                container.appendChild(col2);
+            }
+        });
+    }
     
     // Show container
     container.classList.add('visible');
@@ -5089,24 +5161,7 @@ function draw() {
         }
     }
 
-    // Mobile: position about block above first image (scrolls with content, same approach as more.txt)
-    if (isMobileDevice() && alignedEmojiIndex !== null && mobileAboutBlockCenterYWorld > 0) {
-        const aboutEl = document.getElementById('projectAboutText');
-        if (aboutEl && aboutEl.style.display !== 'none') {
-            const centerY = canvas.height / 2;
-            const screenY = (mobileAboutBlockCenterYWorld - centerY) * globalZoomLevel + centerY + cameraPanY;
-            const top = screenY - (mobileAboutBlockHeightWorld * globalZoomLevel) / 2;
-            aboutEl.style.position = 'fixed';
-            aboutEl.style.left = mobileAboutBlockMarginScreen + 'px';
-            aboutEl.style.width = mobileAboutBlockWidthScreen + 'px';
-            aboutEl.style.top = Math.round(top) + 'px';
-            aboutEl.style.transform = 'none';
-            aboutEl.style.bottom = 'auto';
-            aboutEl.style.right = 'auto';
-            aboutEl.style.visibility = 'visible';
-            aboutEl.style.display = 'block';
-        }
-    }
+    // Mobile: about block is set ONCE in displayProjectAboutText (same as build f9b43d1) – draw() does NOT touch it
 }
 
 // Animation loop (pauses when tab hidden to save CPU/battery)
@@ -5509,9 +5564,8 @@ function showMobileCategoryContent(category) {
             categoryBody.innerHTML = '<div style="line-height: 1.6; font-size: 14px;">We are a small studio working across spatial design, stage environments, spatial sound, and concept development.</div>';
         }
     } else {
-        // Filter images by category
-        const tag = category === 'spatial' ? 'concept' : category;
-        filterByTag(tag);
+        // Filter images by category (stage, install, tech, spatial - each shows its own tag)
+        filterByTag(category);
         
         // Show filtered images info
         const filteredCount = filteredImages ? filteredImages.length : 0;
@@ -6186,7 +6240,7 @@ function displayProjectAboutText(name, aboutLines, moreContent) {
     infoEl.style.visibility = 'visible';
     
     if (isMobileDevice()) {
-        // Mobile: position handled by draw() using world coords (same approach as more.txt)
+        // Mobile: exact logic from build f9b43d1 – about fixed at top of viewport, set once, draw() never touches it
         if (containerEl.parentNode && containerEl.parentNode !== document.body) {
             document.body.appendChild(containerEl);
         }
@@ -6198,23 +6252,49 @@ function displayProjectAboutText(name, aboutLines, moreContent) {
             categoryContent.style.opacity = '1';
             categoryContent.style.background = 'transparent';
         }
-        containerEl.style.position = 'fixed';
+        const marginPx = canvas ? Math.max(14, canvas.width * 0.04) : 14;
+        const safeTop = Math.max(marginPx, 14);
+        containerEl.setAttribute('data-mobile-about-fixed', '1');
+        containerEl.style.setProperty('position', 'fixed', 'important');
+        containerEl.style.setProperty('left', marginPx + 'px', 'important');
+        containerEl.style.setProperty('right', marginPx + 'px', 'important');
+        containerEl.style.setProperty('top', safeTop + 'px', 'important');
+        containerEl.style.setProperty('bottom', 'auto', 'important');
+        containerEl.style.setProperty('transform', 'translateZ(0)', 'important');
+        containerEl.style.zIndex = '10002';
+        containerEl.style.width = 'auto';
+        containerEl.style.maxWidth = 'none';
+        containerEl.style.maxHeight = 'calc(100vh - ' + (safeTop + 100) + 'px)';
+        containerEl.style.overflowY = 'auto';
+        containerEl.style.webkitOverflowScrolling = 'touch';
         containerEl.style.display = 'flex';
         containerEl.style.flexDirection = 'column';
         containerEl.style.alignItems = 'stretch';
-        containerEl.style.gap = '10px';
-        containerEl.style.overflow = 'visible';
-        containerEl.style.zIndex = '10002';
-        containerEl.style.transform = 'none';
+        containerEl.style.gap = '8px';
+        containerEl.style.border = 'none';
+        containerEl.style.outline = 'none';
         nameEl.style.position = 'static';
-        nameEl.style.textAlign = 'left';
+        nameEl.style.left = '';
+        nameEl.style.right = '';
+        nameEl.style.top = '';
         infoEl.style.position = 'static';
-        infoEl.style.textAlign = 'left';
+        infoEl.style.left = '';
+        infoEl.style.right = '';
+        infoEl.style.top = '';
         if (moreEl && moreEl.textContent.trim()) moreEl.style.visibility = 'hidden';
         void containerEl.offsetHeight;
         setTimeout(() => { nameEl.style.opacity = '1'; }, 0);
-        // Trigger relayout so about block space is reserved in the gallery
+        requestAnimationFrame(function reapplyFixed() {
+            if (!containerEl.parentNode || containerEl.getAttribute('data-mobile-about-fixed') !== '1') return;
+            containerEl.style.setProperty('position', 'fixed', 'important');
+            containerEl.style.setProperty('left', marginPx + 'px', 'important');
+            containerEl.style.setProperty('right', marginPx + 'px', 'important');
+            containerEl.style.setProperty('top', safeTop + 'px', 'important');
+            containerEl.style.setProperty('bottom', 'auto', 'important');
+            containerEl.style.setProperty('transform', 'translateZ(0)', 'important');
+        });
         scheduleAlignedMobileRelayoutIfNeeded();
+        return;
     }
     
     // Desktop: default position; updateProjectAboutTextPosition will set exact positions
@@ -6226,7 +6306,7 @@ function displayProjectAboutText(name, aboutLines, moreContent) {
     }
     void containerEl.offsetHeight;
     
-    // Update position every frame (desktop only; mobile positioning is in draw())
+    // Update position every frame (desktop only; mobile set once in displayProjectAboutText, draw() does not touch it)
     if (window.updateProjectAboutTextPos) {
         cancelAnimationFrame(window.updateProjectAboutTextPos);
     }
@@ -6387,6 +6467,7 @@ function hideProjectAboutText() {
     }
     
     containerEl.classList.remove('visible');
+    containerEl.removeAttribute('data-mobile-about-fixed');
     containerEl.style.transition = 'opacity 0.1s ease-out';
     containerEl.style.opacity = '0';
     

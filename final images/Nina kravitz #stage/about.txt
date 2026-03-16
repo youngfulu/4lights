@@ -4,7 +4,7 @@ Project type: (Stage Design)
 year: (2022)
 Location: Bali, Indonesia.
 Client: (Ku De Ta club)
-Agency:(Inhouse)
+Agency:(in-house)
 Status: (Finished)
 Contributor: (Ilya Duganov)
 
