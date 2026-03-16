@@ -1,0 +1,3 @@
+THK Tower is a lighting and projection mapping installation using over a thousand lighting fixtures. The system generates real-time visual content across the tower. The concept references Tri Hita Karana, a Balinese philosophy of balance between nature, people, and the spiritual world.
+Sound system
+As part of the project, a procedural music system was developed for the installation. It generates a continuously evolving harmonic soundscape using deviations from traditional Balinese musical scales.

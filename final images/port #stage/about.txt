@@ -4,7 +4,7 @@ Project type: (Stage design, Concept design)
 year: (2022)
 Location: Bali, Indonesia.
 Client: (NDA)
-Agency:(Inhouse)
+Agency:(in-house)
 Status: (Concept)
 Contributor: (Ilya Duganov, Made with Hate)
 

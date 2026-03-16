@@ -1,0 +1,10 @@
+name: (Hard Selects Booth)
+#
+Project type: (Stage Design)
+year: (2024)
+Location: USA, Los Angeles.
+Client: (Hard Events)
+Agency:(Working Knowledge)
+Status: (Concept)
+Contributor: (Ilya Duganov, Alexandr Chistov)
+

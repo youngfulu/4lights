@@ -1,0 +1,10 @@
+name: (Red Hot Chili Peppers tour 2022)
+#
+Project type: (Generative video engine design, video content mmanagement)
+year: (2022)
+Location: Los-Angeles, USA.
+Client: (RHCP)
+Agency:(Setup)
+Status: (Finished)
+Contributor: (Ilya Duganov)
+

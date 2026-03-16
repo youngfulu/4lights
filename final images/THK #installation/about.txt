@@ -1,0 +1,12 @@
+name: (THK Tower)
+#
+Project type: (Installation, Procedural Music and SFX)
+year: (2022)
+Location: Bali, Indonesia.
+Client: (Nuanu)
+Agency:(Delivered)
+Status: (Finished)
+Contributor: (Ilya Duganov, Maksim Harin, Slava Rybin)
+
+
+

@@ -1,0 +1,1 @@
+Gate is a media object that serves as an entrance group to the Media Park in Naunu Creative City. For this installation we designed custom software with a multiband spectral filter, with its bands mapped to the pixel bars inside the gate structure to create natural light and sound movement triggered by guests passing through.
