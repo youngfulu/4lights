@@ -3,12 +3,24 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 import fs from 'fs';
 
-// LOT2: serve original project's dist/img at /img (read-only, no copy)
-const ORIGINAL_IMG = path.resolve(process.cwd(), '..', 'dist', 'img');
+// LOT2: serve/copy images from repository sources.
+const IMAGE_SOURCE_CANDIDATES = [
+  path.resolve(process.cwd(), '..', 'dist', 'img'),
+  path.resolve(process.cwd(), '..', 'final images'),
+  path.resolve(process.cwd(), '..', 'public', 'final images'),
+];
 const SKIP_EXT = new Set(['.tiff', '.psd', '.mov', '.mp4', '.avi', '.heic', '.heif', '.raw', '.cr2', '.nef', '.arw', '.bmp', '.pdf']);
+
+function pickImageSource() {
+  for (const candidate of IMAGE_SOURCE_CANDIDATES) {
+    if (fs.existsSync(candidate)) return candidate;
+  }
+  return IMAGE_SOURCE_CANDIDATES[0];
+}
 
 export default defineConfig(({ command }) => {
   const isProd = command === 'build';
+  const IMAGE_SOURCE = pickImageSource();
   return {
     base: isProd ? '/4lights/' : '/',
     plugins: [
@@ -22,13 +34,13 @@ export default defineConfig(({ command }) => {
               try { return decodeURIComponent(s.replace(/%2523/g, '%23')); } catch { return s; }
             });
             const urlPath = segments.join(path.sep).replace(/%23/g, '#');
-            let filePath = path.join(ORIGINAL_IMG, urlPath);
+            let filePath = path.join(IMAGE_SOURCE, urlPath);
             if (!fs.existsSync(filePath) || !fs.statSync(filePath).isFile()) {
               const noThumb = urlPath.replace(/^thumb[/\\]/, '');
-              if (noThumb !== urlPath) filePath = path.join(ORIGINAL_IMG, noThumb);
+              if (noThumb !== urlPath) filePath = path.join(IMAGE_SOURCE, noThumb);
             }
             const resolved = path.normalize(path.resolve(filePath));
-            if (!resolved.startsWith(path.resolve(ORIGINAL_IMG)) || !fs.existsSync(resolved) || !fs.statSync(resolved).isFile()) {
+            if (!resolved.startsWith(path.resolve(IMAGE_SOURCE)) || !fs.existsSync(resolved) || !fs.statSync(resolved).isFile()) {
               return next();
             }
             const ext = path.extname(resolved).toLowerCase();
@@ -39,9 +51,9 @@ export default defineConfig(({ command }) => {
           });
         },
         closeBundle() {
-          if (!isProd || !fs.existsSync(ORIGINAL_IMG)) return;
+          if (!isProd || !fs.existsSync(IMAGE_SOURCE)) return;
           const outImg = path.resolve(process.cwd(), 'dist', 'img');
-          const origThumb = path.join(ORIGINAL_IMG, 'thumb');
+          const origThumb = path.join(IMAGE_SOURCE, 'thumb');
           function copyRecursive(src, dest) {
             fs.mkdirSync(dest, { recursive: true });
             for (const e of fs.readdirSync(src, { withFileTypes: true })) {
@@ -52,9 +64,10 @@ export default defineConfig(({ command }) => {
               else if (!SKIP_EXT.has(path.extname(e.name).toLowerCase())) fs.copyFileSync(s, d);
             }
           }
-          copyRecursive(ORIGINAL_IMG, outImg);
+          copyRecursive(IMAGE_SOURCE, outImg);
           if (fs.existsSync(origThumb)) copyRecursive(origThumb, path.join(outImg, 'thumb'));
-          console.log('LOT2: copied original img to dist/img');
+          console.log('LOT2: image source =', IMAGE_SOURCE);
+          console.log('LOT2: copied image source to dist/img');
         },
       },
     ],

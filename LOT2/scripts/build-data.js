@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
- * LOT2: Build project data from ORIGINAL project's dist/img (read-only).
+ * LOT2: Build project data from repository image sources.
  * Run from LOT2 folder: node scripts/build-data.js
- * Reads from ../dist/img (sibling of LOT2) - original project's built images.
+ * Prefers ../dist/img, then falls back to ../final images, then ../public/final images.
  */
 import fs from 'fs';
 import path from 'path';
@@ -10,8 +10,19 @@ import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const LOT2_ROOT = path.resolve(__dirname, '..');
-const ORIGINAL_IMG = path.resolve(LOT2_ROOT, '..', 'dist', 'img');
+const IMAGE_SOURCE_CANDIDATES = [
+  path.resolve(LOT2_ROOT, '..', 'dist', 'img'),
+  path.resolve(LOT2_ROOT, '..', 'final images'),
+  path.resolve(LOT2_ROOT, '..', 'public', 'final images'),
+];
 const WEB_EXT = new Set(['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg']);
+
+function pickImageSource() {
+  for (const candidate of IMAGE_SOURCE_CANDIDATES) {
+    if (fs.existsSync(candidate)) return candidate;
+  }
+  return IMAGE_SOURCE_CANDIDATES[0];
+}
 
 function deriveTags(name) {
   const n = (name || '').toLowerCase();
@@ -92,11 +103,13 @@ function scanFolders(dir, basePath = '') {
 }
 
 function main() {
-  const folders = scanFolders(ORIGINAL_IMG);
+  const imageSource = pickImageSource();
+  const folders = scanFolders(imageSource);
   const dest = path.join(LOT2_ROOT, 'public', 'data', 'projects.json');
   const destDir = path.dirname(dest);
   if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true });
   fs.writeFileSync(dest, JSON.stringify({ folders, imageBase: '/img' }, null, 2), 'utf8');
+  console.log('LOT2: image source =', imageSource);
   console.log('LOT2: wrote', folders.length, 'projects to', dest);
 }
 
