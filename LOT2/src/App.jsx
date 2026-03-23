@@ -272,7 +272,7 @@ function ProjectDetail({ projects }) {
 function App() {
   const { folders } = useProjects();
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={import.meta.env.BASE_URL}>
       <Routes>
         <Route path="/" element={<Home projects={folders} />} />
         <Route path="/project/:pathEnc" element={<ProjectDetail projects={folders} />} />

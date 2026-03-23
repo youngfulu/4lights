@@ -10,6 +10,7 @@ const SKIP_EXT = new Set(['.tiff', '.psd', '.mov', '.mp4', '.avi', '.heic', '.he
 export default defineConfig(({ command }) => {
   const isProd = command === 'build';
   return {
+    base: isProd ? '/4lights/' : '/',
     plugins: [
       react(),
       {

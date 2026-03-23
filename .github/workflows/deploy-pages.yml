@@ -26,19 +26,22 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
+          cache-dependency-path: LOT2/package-lock.json
 
       - name: Install dependencies
         run: npm ci
+        working-directory: LOT2
 
       - name: Build
         run: npm run build
+        working-directory: LOT2
         env:
           NODE_ENV: production
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: dist
+          path: LOT2/dist
 
   deploy:
     needs: build
