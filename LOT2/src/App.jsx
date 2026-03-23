@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo, useRef } from 'react';
 import { BrowserRouter, Routes, Route, Link, useParams, useNavigate } from 'react-router-dom';
 
-const IMAGE_BASE = '/img';
+const IMAGE_BASE = `${import.meta.env.BASE_URL.replace(/\/$/, '')}/img`;
 
 function useProjects() {
   const [data, setData] = useState({ folders: [], imageBase: IMAGE_BASE });
