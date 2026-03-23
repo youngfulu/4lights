@@ -180,7 +180,17 @@ function ProjectDetail({ projects }) {
     const loadMaybeText = async (name) => {
       try {
         const r = await fetch(`${base}/${name}`);
-        return r.ok ? r.text() : '';
+        if (!r.ok) return '';
+        const ct = String(r.headers.get('content-type') || '').toLowerCase();
+        const txt = await r.text();
+        const trimmed = txt.trim();
+        if (!trimmed) return '';
+        // When file is missing, dev server can return the SPA HTML (200 OK).
+        // Guard against injecting HTML into "more".
+        if (ct.includes('text/html') || trimmed.startsWith('<!DOCTYPE html') || trimmed.includes('<html')) {
+          return '';
+        }
+        return trimmed;
       } catch {
         return '';
       }
@@ -192,14 +202,14 @@ function ProjectDetail({ projects }) {
         // Some projects may use alternate file names.
         const candidates = ['more.txt', 'More.txt', 'MORE.txt', 'extra.txt'];
         for (const c of candidates) {
-          const txt = (await loadMaybeText(c)).trim();
+          const txt = await loadMaybeText(c);
           if (txt) return txt;
         }
         return '';
       })(),
     ]).then(([aboutText, moreText]) => {
       setAbout(parseAboutText(aboutText));
-      setMore(moreText?.trim() || null);
+      setMore(moreText || null);
     });
   }, [project]);
 

@@ -83,15 +83,15 @@
 }
 .index-table-head {
   display: grid;
-  grid-template-columns: 1fr minmax(140px, 0.35fr) minmax(100px, 0.2fr) minmax(64px, 0.12fr);
-  gap: 24px 16px;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1fr) minmax(80px, 0.55fr);
+  gap: 20px;
   padding-bottom: 12px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.35);
   margin-bottom: 10px;
 }
 .index-th {
   font-family: var(--font-sans);
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 500;
   text-transform: none;
   letter-spacing: 0;
@@ -133,10 +133,10 @@
 }
 .index-row {
   display: grid;
-  grid-template-columns: 1fr minmax(140px, 0.35fr) minmax(100px, 0.2fr) minmax(64px, 0.12fr);
-  gap: 24px 16px;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1fr) minmax(80px, 0.55fr);
+  gap: 20px;
   padding: 8px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.22);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.35);
   color: inherit;
   text-align: left;
   transition: background 0.2s var(--ease-out), opacity 0.2s;
@@ -158,20 +158,25 @@
   outline-offset: 2px;
 }
 .index-cell {
-  font-size: 13px;
+  font-size: 15px;
   line-height: 1.4;
 }
 .index-cell-project {
   font-family: var(--font-sans);
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 400;
 }
 .index-cell-categories,
 .index-cell-location,
 .index-cell-year {
   font-family: var(--font-sans);
-  font-size: 13px;
+  font-size: 15px;
   color: var(--muted);
+}
+.index-th-year,
+.index-cell-year {
+  text-align: right;
+  justify-self: end;
 }
 
 /* ----- Index row hover preview: center of screen, 1/6 viewport ----- */
