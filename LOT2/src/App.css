@@ -1,0 +1,380 @@
+/* LOT2 — Amsterdam Berlin index structure (amsterdamberlin.com) */
+
+.layout {
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--bg);
+  color: var(--fg);
+}
+
+/* ----- Index page header: Logo | Index | Info ----- */
+.ab-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--header-h);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  z-index: 100;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+.header-nav {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+.header-link {
+  font-size: 14px;
+  text-transform: capitalize;
+  color: var(--fg);
+  transition: opacity 0.2s var(--ease-out);
+}
+.header-link:hover { opacity: 0.7; }
+
+.logo {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0;
+  transition: opacity 0.2s var(--ease-out);
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.logo:hover { opacity: 0.8; }
+.lot2-badge {
+  font-family: var(--font-sans);
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 4px 8px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 4px;
+  color: var(--fg);
+}
+
+.back-link {
+  font-size: 14px;
+  text-transform: lowercase;
+  padding: 8px 0;
+  transition: opacity 0.2s var(--ease-out);
+}
+.back-link:hover { opacity: 0.7; }
+
+/* ----- Index main: Project | Categories | Location | Year table ----- */
+.layout-index .index-main {
+  padding: calc(var(--header-h) + 32px) 16px 64px;
+  max-width: none;
+  margin: 0;
+}
+.layout-index .index-table-wrap {
+  width: 100%;
+}
+.layout-index .index-table-wrap,
+.layout-index .index-table-head,
+.layout-index .index-rows {
+  width: 100%;
+}
+.index-table-head {
+  display: grid;
+  grid-template-columns: 1fr minmax(140px, 0.35fr) minmax(100px, 0.2fr) minmax(64px, 0.12fr);
+  gap: 24px 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 10px;
+}
+.index-th {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--muted);
+}
+.index-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  margin-bottom: 24px;
+}
+.index-filter-btn {
+  font-size: 12px;
+  text-transform: lowercase;
+  color: var(--muted);
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  transition: color 0.2s, border-color 0.2s, background 0.2s;
+}
+.index-filter-btn:hover,
+.index-filter-btn.active {
+  color: var(--fg);
+  border-color: rgba(255, 255, 255, 0.35);
+}
+.index-filter-btn.active { background: rgba(255, 255, 255, 0.06); }
+.index-filter-clear {
+  font-size: 12px;
+  color: var(--muted);
+  padding: 6px 12px;
+  transition: color 0.2s;
+}
+.index-filter-clear:hover { color: var(--fg); }
+
+.index-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.index-row {
+  display: grid;
+  grid-template-columns: 1fr minmax(140px, 0.35fr) minmax(100px, 0.2fr) minmax(64px, 0.12fr);
+  gap: 24px 16px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.22);
+  color: inherit;
+  text-align: left;
+  transition: background 0.2s var(--ease-out), opacity 0.2s;
+  align-items: baseline;
+  width: 100%;
+}
+.index-row:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+.index-rows.has-hover .index-row {
+  opacity: 0.38;
+}
+.index-rows.has-hover .index-row.is-active {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.06);
+}
+.index-row:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
+}
+.index-cell {
+  font-size: 13px;
+  line-height: 1.4;
+}
+.index-cell-project {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 400;
+}
+.index-cell-categories,
+.index-cell-location,
+.index-cell-year {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* ----- Index row hover preview: center of screen, 1/6 viewport ----- */
+.index-preview {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(680px, 44vw);
+  max-height: 72vh;
+  height: auto;
+  z-index: 50;
+  pointer-events: none;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.4);
+  animation: index-preview-in 0.2s var(--ease-out) forwards;
+}
+.index-preview img {
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  max-height: 72vh;
+  display: block;
+}
+@keyframes index-preview-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+/* ----- Info section (We are + contact) ----- */
+.info-section {
+  padding: 64px clamp(24px, 5vw, 56px) 80px;
+  max-width: 1200px;
+  margin: 0 auto;
+  border-top: 1px solid var(--border);
+}
+.info-inner {
+  max-width: 560px;
+}
+.info-heading {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 16px;
+}
+.info-body {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.info-body p { margin-bottom: 1em; }
+.info-body strong { color: var(--fg); }
+.info-contact {
+  margin-top: 24px;
+  font-family: var(--font-sans);
+  font-size: 13px;
+}
+.info-contact a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: opacity 0.2s;
+}
+.info-contact a:hover { opacity: 0.8; }
+.info-lang {
+  margin-top: 20px;
+  font-size: 13px;
+  font-family: var(--font-sans);
+  color: var(--muted);
+}
+.info-lang button { transition: color 0.2s; }
+.info-lang button:hover,
+.info-lang button.active { color: var(--fg); }
+.info-lang-sep { margin: 0 6px; opacity: 0.5; }
+
+/* ----- Project detail header (same bar, back link) ----- */
+.header:not(.ab-header) {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--header-h);
+  display: flex;
+  align-items: center;
+  padding: 0 clamp(24px, 5vw, 56px);
+  z-index: 100;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+
+/* Main content (project detail) */
+.main {
+  padding: var(--header-h) clamp(24px, 5vw, 56px) 80px;
+  max-width: var(--content-max);
+  margin: 0 auto;
+}
+
+/* Project detail page */
+.project-detail-main {
+  padding-top: calc(var(--header-h) + 24px);
+}
+.project-detail-content {
+  display: grid;
+  grid-template-columns: minmax(0, 280px) 1fr;
+  gap: clamp(24px, 5vw, 64px);
+  align-items: start;
+}
+.project-info-panel {
+  position: sticky;
+  top: calc(var(--header-h) + 24px);
+}
+.project-title {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.4;
+  margin-bottom: 14px;
+}
+.project-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--muted);
+}
+.meta-row { display: flex; gap: 12px; }
+.meta-row dt { flex-shrink: 0; min-width: 90px; }
+.meta-row dd { margin: 0; }
+.project-more {
+  margin-top: 24px;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.project-more p { margin-bottom: 0.5em; }
+
+.project-gallery {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.gallery-item {
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.04);
+}
+.gallery-item img {
+  width: 100%;
+  height: auto;
+  vertical-align: middle;
+}
+
+/* Mobile — index table becomes stacked / simplified */
+@media (max-width: 767px) {
+  .ab-header,
+  .header {
+    padding: 0 16px;
+    height: 56px;
+  }
+  :root { --header-h: 56px; }
+  .header-nav { gap: 20px; }
+  .index-main {
+    padding: calc(var(--header-h) + 24px) 16px 48px;
+  }
+  .index-table-head {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .index-th-location,
+  .index-th-year { display: none; }
+  .index-row {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    padding: 14px 0;
+  }
+  .index-cell-location,
+  .index-cell-year { display: none; }
+  .index-cell-project { font-size: 16px; }
+  .index-filters { margin-bottom: 16px; }
+  .info-section { padding: 40px 16px 60px; }
+  .project-detail-content {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  .project-info-panel { position: static; }
+
+  .index-preview {
+    width: 88vw;
+    max-width: 420px;
+    max-height: 64vh;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .index-row { transition: none; }
+  .index-preview { animation: none; }
+}
