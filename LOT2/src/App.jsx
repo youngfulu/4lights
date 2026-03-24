@@ -69,26 +69,74 @@ const CATEGORY_LABELS = {
 };
 
 /* ------------------------------------------------------------------ */
-/*  1. Preload all index preview images so they appear instantly      */
+/*  1. Preload index hover images (thumb then full — same as <img>)  */
 /* ------------------------------------------------------------------ */
+function preloadOneUrl(src, high = false) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    if (high && 'fetchPriority' in img) img.fetchPriority = 'high';
+    const done = () => {
+      if (typeof img.decode === 'function') {
+        img.decode().then(resolve).catch(resolve);
+      } else {
+        resolve();
+      }
+    };
+    img.onload = done;
+    img.onerror = () => resolve();
+    img.src = src;
+  });
+}
+
+/** Same URL strategy as hover preview: thumb first, then full size. */
+function preloadIndexPreviewForProject(p, high = false) {
+  const file = p.indexImage || p.images[0];
+  const thumb = imageUrl(p.path, file, true);
+  const full = imageUrl(p.path, file, false);
+  return preloadOneUrl(thumb, high).then(() => {
+    // Warm full size too so onError path and sharper cache hits are instant.
+    if (full !== thumb) return preloadOneUrl(full, false);
+  });
+}
+
 function usePreloadIndexImages(projects) {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
     if (!projects.length) return;
-    let loaded = 0;
-    const total = projects.length;
-    const tick = () => { if (++loaded >= total) setReady(true); };
+    let cancelled = false;
 
-    projects.forEach((p) => {
-      const img = new Image();
-      img.onload = tick;
-      img.onerror = tick;
-      img.src = imageUrl(p.path, p.indexImage || p.images[0], true);
-    });
+    const headLinks = [];
+    const PRIORITY_PRELOADS = 8;
+    for (let i = 0; i < Math.min(PRIORITY_PRELOADS, projects.length); i++) {
+      const p = projects[i];
+      const file = p.indexImage || p.images[0];
+      const href = imageUrl(p.path, file, true);
+      const link = document.createElement('link');
+      link.rel = 'preload';
+      link.as = 'image';
+      link.href = href;
+      link.setAttribute('fetchpriority', 'high');
+      document.head.appendChild(link);
+      headLinks.push(link);
+    }
 
-    const timeout = setTimeout(() => setReady(true), 4000);
-    return () => clearTimeout(timeout);
+    (async () => {
+      await Promise.all(
+        projects.map((p, i) => preloadIndexPreviewForProject(p, i < PRIORITY_PRELOADS)),
+      );
+      if (!cancelled) setReady(true);
+    })();
+
+    const timeout = setTimeout(() => {
+      if (!cancelled) setReady(true);
+    }, 12000);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timeout);
+      headLinks.forEach((el) => el.remove());
+    };
   }, [projects]);
 
   return ready || !projects.length;
