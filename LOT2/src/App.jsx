@@ -256,31 +256,12 @@ function SwipeIndicator({ indicator }) {
 /*  Shared header — LOT2 + Index / Info on every page                 */
 /* ------------------------------------------------------------------ */
 function SiteHeader() {
-  const go = useTransitionNavigate();
-  const location = useLocation();
-
-  const handleIndex = () => {
-    if (location.pathname === '/') {
-      document.getElementById('index-anchor')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    } else {
-      go('/');
-    }
-  };
-
-  const handleInfo = () => {
-    if (location.pathname === '/') {
-      document.getElementById('info-anchor')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    } else {
-      go('/?scrollTo=info');
-    }
-  };
-
   return (
     <header className="header ab-header">
       <TransitionLink to="/" className="logo" aria-label="LOT2 Home">LOT2</TransitionLink>
       <nav className="header-nav">
-        <button type="button" className="header-link" onClick={handleIndex}>Index</button>
-        <button type="button" className="header-link" onClick={handleInfo}>Info</button>
+        <TransitionLink to="/" className="header-link">Index</TransitionLink>
+        <TransitionLink to="/info" className="header-link">Info</TransitionLink>
       </nav>
     </header>
   );
@@ -292,22 +273,12 @@ function SiteHeader() {
 function Home({ projects }) {
   const [hoveredProject, setHoveredProject] = useState(null);
   const imagesReady = usePreloadIndexImages(projects);
-  const location = useLocation();
-
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    if (params.get('scrollTo') === 'info') {
-      setTimeout(() => {
-        document.getElementById('info-anchor')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 100);
-    }
-  }, [location.search]);
 
   return (
     <div className="layout layout-index">
       <SiteHeader />
 
-      <main className={`main index-main ${imagesReady ? 'index-main--ready' : ''}`} id="index-anchor">
+      <main className={`main index-main ${imagesReady ? 'index-main--ready' : ''}`}>
         <div className="index-table-wrap">
           <div className="index-table-head">
             <div className="index-th index-th-project">Project</div>
@@ -350,11 +321,49 @@ function Home({ projects }) {
         </div>
       )}
 
-      <section className="info-section" id="info-anchor">
-        <div className="info-contact">
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Info page (amsterdamberlin.com/info layout)                       */
+/* ------------------------------------------------------------------ */
+function InfoPage() {
+  return (
+    <div className="layout layout-info">
+      <SiteHeader />
+      <main className="main info-main">
+        <p className="info-lead">
+          LOT2 is an independent creative studio that designs and produces experiences.
+          The cross-disciplinary team works at the intersection of spatial design,
+          technology and storytelling to translate abstract narratives into tangible moments.
+        </p>
+
+        <div className="info-columns">
+          <div className="info-col">
+            <h3 className="info-col-heading">Services</h3>
+            <ul className="info-col-list">
+              <li>Spatial Design</li>
+              <li>Stage Design</li>
+              <li>Light Design</li>
+              <li>Acoustic Design</li>
+              <li>Interactive Design</li>
+              <li>Architecture</li>
+              <li>Fabrication</li>
+              <li>Video Content</li>
+              <li>Creative Direction</li>
+              <li>Concept Development</li>
+            </ul>
+          </div>
+        </div>
+
+        <div className="info-footer-contact">
+          <h3 className="info-col-heading">Contact</h3>
+          <p className="info-address">44 Rue Beauregard, 75002 Paris, France</p>
+          <a href="tel:+33623973028" className="info-phone">+33 6 23 97 30 28</a>
           <a href="mailto:hello@weare.io">hello@weare.io</a>
         </div>
-      </section>
+      </main>
     </div>
   );
 }
@@ -514,6 +523,7 @@ function App() {
     <BrowserRouter basename={import.meta.env.BASE_URL}>
       <Routes>
         <Route path="/" element={<Home projects={sorted} />} />
+        <Route path="/info" element={<InfoPage />} />
         <Route path="/project/:pathEnc" element={<ProjectDetail projects={sorted} />} />
       </Routes>
     </BrowserRouter>

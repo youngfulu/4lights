@@ -66,19 +66,6 @@
   gap: 10px;
 }
 .logo:hover { opacity: 0.8; }
-.lot2-badge {
-  font-family: var(--font-sans);
-  font-size: 10px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  padding: 4px 8px;
-  background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  border-radius: 4px;
-  color: var(--fg);
-}
-
 /* ----- Index main: Project | Categories | Location | Year table ----- */
 .layout-index .index-main {
   padding: calc(var(--header-h) + 32px) 16px 64px;
@@ -116,35 +103,6 @@
   letter-spacing: 0;
   color: var(--muted);
 }
-.index-filters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 12px;
-  margin-bottom: 24px;
-}
-.index-filter-btn {
-  font-size: 12px;
-  text-transform: lowercase;
-  color: var(--muted);
-  padding: 6px 12px;
-  border: 1px solid var(--border);
-  border-radius: 2px;
-  transition: color 0.2s, border-color 0.2s, background 0.2s;
-}
-.index-filter-btn:hover,
-.index-filter-btn.active {
-  color: var(--fg);
-  border-color: rgba(255, 255, 255, 0.35);
-}
-.index-filter-btn.active { background: rgba(255, 255, 255, 0.06); }
-.index-filter-clear {
-  font-size: 12px;
-  color: var(--muted);
-  padding: 6px 12px;
-  transition: color 0.2s;
-}
-.index-filter-clear:hover { color: var(--fg); }
-
 .index-rows {
   display: flex;
   flex-direction: column;
@@ -232,21 +190,65 @@
   }
 }
 
-/* ----- Info / contact footer ----- */
-.info-section {
-  padding: 48px 16px 64px;
-  border-top: 1px solid var(--border);
+/* ----- Info page (amsterdamberlin.com/info layout) ----- */
+.info-main {
+  padding: calc(var(--header-h) + 56px) 16px 80px;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
 }
-.info-contact {
+.info-lead {
+  font-family: var(--font-sans);
+  font-size: clamp(20px, 2.4vw, 32px);
+  font-weight: 500;
+  line-height: 1.3;
+  max-width: 100%;
+  margin-bottom: 64px;
+}
+.info-columns {
+  display: flex;
+  gap: 64px;
+  flex-wrap: wrap;
+  margin-bottom: 56px;
+}
+.info-col-heading {
   font-family: var(--font-sans);
   font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+  margin-bottom: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
-.info-contact a {
+.info-col-list {
+  list-style: none;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.8;
+  color: var(--fg);
+}
+.info-footer-contact {
+  margin-top: auto;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  padding-top: 40px;
+  border-top: 1px solid var(--border);
+  line-height: 1.8;
+}
+.info-footer-contact a {
+  display: block;
   text-decoration: underline;
   text-underline-offset: 3px;
   transition: opacity 0.2s;
 }
-.info-contact a:hover { opacity: 0.8; }
+.info-footer-contact a:hover { opacity: 0.8; }
+.info-address {
+  color: var(--muted);
+}
+.info-phone {
+  color: var(--muted);
+}
 
 /* Main content (project detail) */
 .main {
@@ -370,7 +372,6 @@
   .index-cell-location,
   .index-cell-year { display: none; }
   .index-cell-project { font-size: 16px; }
-  .index-filters { margin-bottom: 16px; }
   .info-section { padding: 40px 16px 60px; }
   .project-detail-content {
     grid-template-columns: 1fr;
