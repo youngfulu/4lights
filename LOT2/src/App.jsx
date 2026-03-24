@@ -52,6 +52,14 @@ function sortByYear(projects) {
   });
 }
 
+function isExcludedFromIndex(project) {
+  const raw = String(project?.rawName || '');
+  if (raw.startsWith('0_')) return true;
+  const pathParts = String(project?.path || '').split('/');
+  const leaf = pathParts[pathParts.length - 1] || '';
+  return leaf.startsWith('0_');
+}
+
 const CATEGORY_LABELS = {
   stage: 'Stage design',
   installation: 'Installation',
@@ -358,7 +366,6 @@ function InfoPage() {
         </div>
 
         <div className="info-footer-contact">
-          <h3 className="info-col-heading">Contact</h3>
           <p className="info-address">44 Rue Beauregard, 75002 Paris, France</p>
           <a href="tel:+33623973028" className="info-phone">+33 6 23 97 30 28</a>
           <a href="mailto:hello@weare.io">hello@weare.io</a>
@@ -518,7 +525,10 @@ function ProjectDetail({ projects }) {
 /* ------------------------------------------------------------------ */
 function App() {
   const { folders } = useProjects();
-  const sorted = useMemo(() => sortByYear(folders), [folders]);
+  const sorted = useMemo(
+    () => sortByYear((folders || []).filter((p) => !isExcludedFromIndex(p))),
+    [folders],
+  );
   return (
     <BrowserRouter basename={import.meta.env.BASE_URL}>
       <Routes>

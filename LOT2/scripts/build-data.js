@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
- * LOT2: Build project data from repository image sources.
+ * LOT2: Build project data from final images source.
  * Run from LOT2 folder: node scripts/build-data.js
- * Prefers ../dist/img, then falls back to ../final images, then ../public/final images.
+ * Uses only ../final images.
  */
 import fs from 'fs';
 import path from 'path';
@@ -10,19 +10,8 @@ import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const LOT2_ROOT = path.resolve(__dirname, '..');
-const IMAGE_SOURCE_CANDIDATES = [
-  path.resolve(LOT2_ROOT, '..', 'dist', 'img'),
-  path.resolve(LOT2_ROOT, '..', 'final images'),
-  path.resolve(LOT2_ROOT, '..', 'public', 'final images'),
-];
+const IMAGE_SOURCE = path.resolve(LOT2_ROOT, '..', 'final images');
 const WEB_EXT = new Set(['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg']);
-
-function pickImageSource() {
-  for (const candidate of IMAGE_SOURCE_CANDIDATES) {
-    if (fs.existsSync(candidate)) return candidate;
-  }
-  return IMAGE_SOURCE_CANDIDATES[0];
-}
 
 function deriveTags(name) {
   const n = (name || '').toLowerCase();
@@ -79,10 +68,14 @@ function scanFolders(dir, basePath = '') {
         const aboutPath = path.join(full, 'about.txt');
         images.sort((a, b) => a.localeCompare(b));
         const { location, city, year } = parseAboutForIndex(aboutPath);
-        // If an image is marked for index preview, prefer it; otherwise use any image.
-        // Marker: filename contains "ind_name"
+        // Index preview priority:
+        // 1) filename starts with "ind_" (requested marker)
+        // 2) legacy marker containing "ind_name"
+        // 3) first image in sorted list
         const indexImage =
-          images.find((img) => img.toLowerCase().includes('ind_name')) || images[0];
+          images.find((img) => /^ind_/i.test(img)) ||
+          images.find((img) => img.toLowerCase().includes('ind_name')) ||
+          images[0];
         list.push({
           path: rel,
           name: displayName(e.name),
@@ -103,7 +96,7 @@ function scanFolders(dir, basePath = '') {
 }
 
 function main() {
-  const imageSource = pickImageSource();
+  const imageSource = IMAGE_SOURCE;
   const folders = scanFolders(imageSource);
   const dest = path.join(LOT2_ROOT, 'public', 'data', 'projects.json');
   const destDir = path.dirname(dest);

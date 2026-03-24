@@ -1,34 +1,13 @@
 {
   "folders": [
     {
-      "path": "2gis  #spatial",
-      "name": "2gis",
-      "rawName": "2gis  #spatial",
-      "images": [
-        "14.png",
-        "45.png",
-        "53.png",
-        "Snimok-ehkrana-2023-09-01-v-14.16.47 (1).png",
-        "Snimok-ehkrana-2023-09-01-v-14.18.05.png"
-      ],
-      "hasAbout": true,
-      "hasMore": true,
-      "tags": [
-        "spatial"
-      ],
-      "location": "Saint-Petersburg, Russia.",
-      "city": "Saint-Petersburg",
-      "year": "2023",
-      "indexImage": "14.png"
-    },
-    {
       "path": "Addon 26 #instal",
       "name": "Addon 26",
       "rawName": "Addon 26 #instal",
       "images": [
-        "addon pc.png",
         "IMG_3654.png",
         "IMG_3659.png",
+        "ind_addon pc.png",
         "photo_2021-04-06_03-24-48.jpg",
         "poster.jpg",
         "Screenshot 2026-01-03 at 15.53.30.png",
@@ -46,36 +25,17 @@
       "location": "Paris, France.",
       "city": "Paris",
       "year": "2025",
-      "indexImage": "addon pc.png"
-    },
-    {
-      "path": "Azerbaijan pavilion VInece Beinalle   #instal",
-      "name": "Azerbaijan pavilion VInece Beinalle",
-      "rawName": "Azerbaijan pavilion VInece Beinalle   #instal",
-      "images": [
-        "anim-post Screenshot 2026-03-06 at 13.29.47-color-denoise-enhance-1.8x.jpeg",
-        "CR.png",
-        "Screenshot 2026-03-06 at 13.46.40.png"
-      ],
-      "hasAbout": true,
-      "hasMore": true,
-      "tags": [
-        "installation"
-      ],
-      "location": "Vince, Italy",
-      "city": "Vince",
-      "year": "2019",
-      "indexImage": "anim-post Screenshot 2026-03-06 at 13.29.47-color-denoise-enhance-1.8x.jpeg"
+      "indexImage": "ind_addon pc.png"
     },
     {
       "path": "Bipolar Express #stage #tech",
       "name": "Bipolar Express",
       "rawName": "Bipolar Express #stage #tech",
       "images": [
-        "bp Express.jpg",
         "IMG_2470.png",
         "IMG_2695.png",
         "IMG_2742.png",
+        "ind_bp Express.jpg",
         "Screenshot 2026-01-07 at 17.41.20.png",
         "Screenshot 2026-01-07 at 17.41.35.png",
         "Screenshot 2026-01-07 at 17.41.47.png",
@@ -91,7 +51,7 @@
       "location": "",
       "city": "",
       "year": "2024",
-      "indexImage": "bp Express.jpg"
+      "indexImage": "ind_bp Express.jpg"
     },
     {
       "path": "Bluebeard Castle #stage design",
@@ -102,10 +62,10 @@
         "4.jpg",
         "76769.jpg",
         "789696 copy.jpg",
-        "7d0a27ca170dc646851659dac4ab005b.jpg",
         "and-3210.jpg",
         "d3c63d82a8d15e4eea067a766f0b665e.jpg",
-        "e7af5fe7403946483739d3efbce015c9.jpg"
+        "e7af5fe7403946483739d3efbce015c9.jpg",
+        "ind_7d0a27ca170dc646851659dac4ab005b.jpg"
       ],
       "hasAbout": true,
       "hasMore": true,
@@ -115,15 +75,15 @@
       "location": "Festspielhaus Baden-Baden, Germany",
       "city": "Festspielhaus Baden-Baden",
       "year": "2023",
-      "indexImage": "1f8621a766d563d6bbc3a36dbd1d04fa.jpg"
+      "indexImage": "ind_7d0a27ca170dc646851659dac4ab005b.jpg"
     },
     {
       "path": "Circular Repetition   #instal",
       "name": "Circular Repetition",
       "rawName": "Circular Repetition   #instal",
       "images": [
-        "anim-post Screenshot 2026-03-06 at 13.29.47-color-denoise-enhance-1.8x.jpeg",
         "CR.png",
+        "ind_anim-post Screenshot 2026-03-06 at 13.29.47-color-denoise-enhance-1.8x.jpeg",
         "la bienalle.png",
         "Screenshot 2026-03-06 at 13.46.40.png"
       ],
@@ -135,47 +95,7 @@
       "location": "Vince, Italy",
       "city": "Vince",
       "year": "2019",
-      "indexImage": "anim-post Screenshot 2026-03-06 at 13.29.47-color-denoise-enhance-1.8x.jpeg"
-    },
-    {
-      "path": "Common Space #spatial #stage",
-      "name": "Common Space",
-      "rawName": "Common Space #spatial #stage",
-      "images": [
-        "ComfyUI_00025_.png",
-        "ComfyUI_00026_.png",
-        "photo_2022-06-17_15-23-43.jpg",
-        "taktik0004.jpg"
-      ],
-      "hasAbout": true,
-      "hasMore": true,
-      "tags": [
-        "stage",
-        "spatial"
-      ],
-      "location": "Moscow, Russia.",
-      "city": "Moscow",
-      "year": "2022",
-      "indexImage": "ComfyUI_00025_.png"
-    },
-    {
-      "path": "Concepts #spatial #concept",
-      "name": "Concepts",
-      "rawName": "Concepts #spatial #concept",
-      "images": [
-        "photo_2022-09-11_21-38-30.jpg",
-        "photo_2022-09-11_21-38-31.jpg"
-      ],
-      "hasAbout": false,
-      "hasMore": false,
-      "tags": [
-        "concept",
-        "spatial"
-      ],
-      "location": "",
-      "city": "",
-      "year": "",
-      "indexImage": "photo_2022-09-11_21-38-30.jpg"
+      "indexImage": "ind_anim-post Screenshot 2026-03-06 at 13.29.47-color-denoise-enhance-1.8x.jpeg"
     },
     {
       "path": "Dom Dolla Coachella #stage",
@@ -187,10 +107,10 @@
         "44.jpg",
         "54.jpg",
         "Coachella.jpg",
+        "ind_mCgZDAIw.jpeg",
         "IpIFlsBg.jpeg",
         "J8QrpcyA.jpeg",
         "KE0ZsNGw.jpeg",
-        "mCgZDAIw.jpeg",
         "nB6q8Rgg.jpeg",
         "U-yCPfrg.jpeg",
         "upscale6.jpeg",
@@ -205,7 +125,7 @@
       "location": "California, United States",
       "city": "California",
       "year": "2024",
-      "indexImage": "34.jpg"
+      "indexImage": "ind_mCgZDAIw.jpeg"
     },
     {
       "path": "Extrema  #stage",
@@ -216,11 +136,11 @@
         "320629370_818022955968613_1030656669808514981_n.jpg",
         "320686916_669758978159427_4780015944793822764_n.jpg",
         "320690080_955171568778844_2334285356422279150_n.jpg",
-        "322025281_199616095956195_3940761391865284334_n.jpg",
         "323080705_1881136108885951_3399831401371450183_n.jpg",
         "323579819_696825955437089_5888966217247731061_n.jpg",
         "323876631_704630261041234_5887248445516184892_n.jpg",
         "8880.jpg",
+        "ind_322025281_199616095956195_3940761391865284334_n.jpg",
         "upscale5555.jpeg",
         "upscale888.jpeg"
       ],
@@ -232,24 +152,7 @@
       "location": "Houthalen-Helchteren, Belgium",
       "city": "Houthalen-Helchteren",
       "year": "2024",
-      "indexImage": "320547899_2990237017948126_3243800018334461643_n.jpg"
-    },
-    {
-      "path": "fixtures decoratif #concept",
-      "name": "fixtures decoratif",
-      "rawName": "fixtures decoratif #concept",
-      "images": [
-        "photo_2022-09-11_20-12-15.jpg"
-      ],
-      "hasAbout": false,
-      "hasMore": false,
-      "tags": [
-        "concept"
-      ],
-      "location": "",
-      "city": "",
-      "year": "",
-      "indexImage": "photo_2022-09-11_20-12-15.jpg"
+      "indexImage": "ind_322025281_199616095956195_3940761391865284334_n.jpg"
     },
     {
       "path": "Gate #instal",
@@ -257,10 +160,9 @@
       "rawName": "Gate #instal",
       "images": [
         "ComfyUI_00075_.png",
-        "ComfyUI_00077_.png",
         "GATE.jpg",
         "gate4.jpg",
-        "Screenshot 2024-11-24 at 20.47.07.png",
+        "ind_ComfyUI_00077_.png",
         "Screenshot 2026-02-22 at 15.52.12.png"
       ],
       "hasAbout": true,
@@ -271,16 +173,15 @@
       "location": "Bali, Indonesia.",
       "city": "Bali",
       "year": "2024",
-      "indexImage": "ComfyUI_00075_.png"
+      "indexImage": "ind_ComfyUI_00077_.png"
     },
     {
       "path": "Gula Merah #stage",
       "name": "Gula Merah",
       "rawName": "Gula Merah #stage",
       "images": [
-        "GM-9.png",
         "IMG_5170.JPG",
-        "photo_2022-08-12_13-03-47.jpg",
+        "ind_GM-9.png",
         "photo_2022-08-12_13-03-54.jpg",
         "Screenshot 2026-02-22 at 16.06.52.png",
         "Screenshot 2026-02-22 at 16.06.57.png"
@@ -293,16 +194,16 @@
       "location": "Bali, Indonesia.",
       "city": "Bali",
       "year": "2022",
-      "indexImage": "GM-9.png"
+      "indexImage": "ind_GM-9.png"
     },
     {
       "path": "Han Kang's The Vegetarian #stage #installation ",
       "name": "Han Kang's The Vegetarian",
       "rawName": "Han Kang's The Vegetarian #stage #installation ",
       "images": [
+        "ind_TDMovieOut.066.jpg",
         "photo_2025-09-27_17-58-17.jpg",
         "TDMovieOut.0.jpg",
-        "TDMovieOut.066.jpg",
         "TDMovieOut.1.jpg",
         "TDMovieOut.2.jpg",
         "TDMovieOut.4.jpg",
@@ -318,152 +219,7 @@
       "location": "Heidelberg, Germany",
       "city": "Heidelberg",
       "year": "2025",
-      "indexImage": "photo_2025-09-27_17-58-17.jpg"
-    },
-    {
-      "path": "Hard Select  #stage #concept",
-      "name": "Hard Select",
-      "rawName": "Hard Select  #stage #concept",
-      "images": [
-        "Screenshot 2024-09-20 at 14.24.36.png",
-        "Screenshot 2024-09-20 at 15.21.16.png",
-        "Screenshot 2024-09-21 at 19.01.06.png",
-        "Screenshot 2024-09-21 at 19.01.11.png",
-        "Screenshot 2024-09-21 at 20.36.07.png"
-      ],
-      "hasAbout": true,
-      "hasMore": false,
-      "tags": [
-        "stage",
-        "concept"
-      ],
-      "location": "USA, Los Angeles.",
-      "city": "USA",
-      "year": "2024",
-      "indexImage": "Screenshot 2024-09-20 at 14.24.36.png"
-    },
-    {
-      "path": "Hard Select 2   #stage #concept",
-      "name": "Hard Select 2",
-      "rawName": "Hard Select 2   #stage #concept",
-      "images": [
-        "Screenshot 2024-10-17 at 01.18.10.png",
-        "Screenshot 2024-10-17 at 01.52.03.png",
-        "Screenshot 2024-10-17 at 01.59.15.png",
-        "Screenshot 2024-10-17 at 02.11.34.png"
-      ],
-      "hasAbout": true,
-      "hasMore": false,
-      "tags": [
-        "stage",
-        "concept"
-      ],
-      "location": "USA, Los Angeles.",
-      "city": "USA",
-      "year": "2024",
-      "indexImage": "Screenshot 2024-10-17 at 01.18.10.png"
-    },
-    {
-      "path": "Hard Select 3   #stage #concept",
-      "name": "Hard Select 3",
-      "rawName": "Hard Select 3   #stage #concept",
-      "images": [
-        "photo_2024-11-19_23-07-27.jpg",
-        "photo_2024-11-19_23-07-37.jpg",
-        "Screenshot 2024-10-27 at 17.09.21.png",
-        "Screenshot 2024-10-28 at 22.45.48.png",
-        "Screenshot 2024-10-28 at 23.05.32.png",
-        "scrn.png",
-        "untitled55.png",
-        "untitled56.png",
-        "untitled57.png"
-      ],
-      "hasAbout": true,
-      "hasMore": false,
-      "tags": [
-        "stage",
-        "concept"
-      ],
-      "location": "USA, Los Angeles.",
-      "city": "USA",
-      "year": "2024",
-      "indexImage": "photo_2024-11-19_23-07-27.jpg"
-    },
-    {
-      "path": "Hard Select Booth   #stage #concept",
-      "name": "Hard Select Booth",
-      "rawName": "Hard Select Booth   #stage #concept",
-      "images": [
-        "photo_2024-11-19_23-07-27.jpg",
-        "photo_2024-11-19_23-07-37.jpg",
-        "Screenshot 2024-10-27 at 17.09.21.png",
-        "Screenshot 2024-10-28 at 22.45.48.png",
-        "Screenshot 2024-10-28 at 23.05.32.png",
-        "Screenshot 2026-03-15 at 20.20.16.png",
-        "scrn.png",
-        "untitled55.png",
-        "untitled56.png",
-        "untitled57.png"
-      ],
-      "hasAbout": true,
-      "hasMore": true,
-      "tags": [
-        "stage",
-        "concept"
-      ],
-      "location": "USA, Los Angeles.",
-      "city": "USA",
-      "year": "2024",
-      "indexImage": "photo_2024-11-19_23-07-27.jpg"
-    },
-    {
-      "path": "Ice Palace   #stage #concept",
-      "name": "Ice Palace",
-      "rawName": "Ice Palace   #stage #concept",
-      "images": [
-        "10.png",
-        "11.png",
-        "20.png",
-        "22.png",
-        "23.png",
-        "Screenshot 2024-11-25 at 16.07.05.png",
-        "Screenshot 2024-11-27 at 16.49.00.png",
-        "Screenshot 2024-11-27 at 16.50.36.png",
-        "Screenshot 2024-11-27 at 17.51.46.png",
-        "Screenshot 2024-11-27 at 17.54.56.png",
-        "Screenshot 2024-11-27 at 19.10.28.png"
-      ],
-      "hasAbout": true,
-      "hasMore": false,
-      "tags": [
-        "stage",
-        "concept"
-      ],
-      "location": "USA, Las Vegas.",
-      "city": "USA",
-      "year": "2024",
-      "indexImage": "10.png"
-    },
-    {
-      "path": "Ice Palace 2  #stage #concept",
-      "name": "Ice Palace 2",
-      "rawName": "Ice Palace 2  #stage #concept",
-      "images": [
-        "1.png",
-        "12.png",
-        "18.png",
-        "4.png"
-      ],
-      "hasAbout": false,
-      "hasMore": false,
-      "tags": [
-        "stage",
-        "concept"
-      ],
-      "location": "",
-      "city": "",
-      "year": "",
-      "indexImage": "1.png"
+      "indexImage": "ind_TDMovieOut.066.jpg"
     },
     {
       "path": "Inside a Loom Factory #spatial #concept",
@@ -474,9 +230,8 @@
         "17.png",
         "19.png",
         "20.png",
-        "4.png",
+        "ind_4.png",
         "Screenshot 2026-03-15 at 20.41.58.png",
-        "Screenshot 2026-03-15 at 20.42.42.png",
         "Screenshot 2026-03-15 at 20.42.59.png"
       ],
       "hasAbout": true,
@@ -488,7 +243,7 @@
       "location": "",
       "city": "",
       "year": "2024",
-      "indexImage": "11.png"
+      "indexImage": "ind_4.png"
     },
     {
       "path": "Justice   #stage",
@@ -497,13 +252,12 @@
       "images": [
         "484889846_17946141872956990_4837846011979273179_n.jpg",
         "high-voltage-power-line-16485450.webp",
+        "ind_Screenshot 2024-09-20 at 12.52.12.png",
         "justice.jpg",
         "Screenshot 2024-09-20 at 12.34.55.png",
         "Screenshot 2024-09-20 at 12.50.27.png",
-        "Screenshot 2024-09-20 at 12.52.12.png",
         "Screenshot 2024-09-20 at 13.10.40.png",
         "Screenshot 2024-09-20 at 13.11.11-2.png",
-        "Screenshot 2024-09-29 at 02.40.18.png",
         "Screenshot 2024-09-29 at 02.42.38.png",
         "Screenshot 2024-11-24 at 20.40.26-2.png",
         "TDMovieOut.10.png"
@@ -516,15 +270,15 @@
       "location": "USA, Los Angeles.",
       "city": "USA",
       "year": "2024",
-      "indexImage": "484889846_17946141872956990_4837846011979273179_n.jpg"
+      "indexImage": "ind_Screenshot 2024-09-20 at 12.52.12.png"
     },
     {
       "path": "Kedr Livansky #stage",
       "name": "Kedr Livansky",
       "rawName": "Kedr Livansky #stage",
       "images": [
+        "ind_kedr2.jpg",
         "kedr.jpg",
-        "kedr2.jpg",
         "kedr3.jpg",
         "photo_2021-08-07_21-17-07.jpg"
       ],
@@ -536,7 +290,7 @@
       "location": "Moscow, Russia.",
       "city": "Moscow",
       "year": "2021",
-      "indexImage": "kedr.jpg"
+      "indexImage": "ind_kedr2.jpg"
     },
     {
       "path": "la fleurs  #spatial",
@@ -544,13 +298,12 @@
       "rawName": "la fleurs  #spatial",
       "images": [
         "ComfyUI_00012_.png",
-        "ComfyUI_00013_.png",
         "ComfyUI_00015_.png",
         "ComfyUI_00016_.png",
         "ComfyUI_00018_.png",
         "ComfyUI_00019_.png",
         "fleurs4.png",
-        "hhhpng.png",
+        "ind_ComfyUI_00013_.png",
         "ppp4.png",
         "ppp5.png"
       ],
@@ -562,20 +315,19 @@
       "location": "NDA",
       "city": "NDA",
       "year": "2024",
-      "indexImage": "ComfyUI_00012_.png"
+      "indexImage": "ind_ComfyUI_00013_.png"
     },
     {
       "path": "Mirag Club #stage #tech",
       "name": "Mirag Club",
       "rawName": "Mirag Club #stage #tech",
       "images": [
+        "ind_photo_2022-08-04_18-43-59.jpg",
         "layout.jpg",
         "photo_2020-11-30_16-45-16.jpg",
         "photo_2020-12-01_20-08-32.jpg",
         "photo_2020-12-02_23-41-24.jpg",
-        "photo_2022-03-21_02-24-47.jpg",
-        "photo_2022-03-28_03-46-47.jpg",
-        "photo_2022-08-04_18-43-59.jpg"
+        "photo_2022-03-21_02-24-47.jpg"
       ],
       "hasAbout": true,
       "hasMore": true,
@@ -586,7 +338,7 @@
       "location": "Saint-Petersburg, Russia.",
       "city": "Saint-Petersburg",
       "year": "2021",
-      "indexImage": "layout.jpg"
+      "indexImage": "ind_photo_2022-08-04_18-43-59.jpg"
     },
     {
       "path": "Mirage Cinema #spatial",
@@ -595,8 +347,9 @@
       "images": [
         "101.jpg",
         "637c8f2f83c5b.jpg",
+        "image-793195ce-df67-4613-9187-70651938c352.webp",
+        "ind_image-812c1c48-2c83-4863-a30b-14a0a2ae77f3.webp",
         "mirag column.jpg",
-        "pasted-image-2.png",
         "pasted-image.png",
         "photo_2627@28-07-2021_12-20-48.jpg",
         "photo_2659@07-08-2021_22-14-26.jpg"
@@ -609,96 +362,7 @@
       "location": "Saint-Petersburg, Russia.",
       "city": "Saint-Petersburg",
       "year": "2021",
-      "indexImage": "101.jpg"
-    },
-    {
-      "path": "missoni #spatial #concept",
-      "name": "missoni",
-      "rawName": "missoni #spatial #concept",
-      "images": [
-        "11.png",
-        "17.png",
-        "19.png",
-        "20.png",
-        "4.png"
-      ],
-      "hasAbout": true,
-      "hasMore": false,
-      "tags": [
-        "concept",
-        "spatial"
-      ],
-      "location": "",
-      "city": "",
-      "year": "2024",
-      "indexImage": "11.png"
-    },
-    {
-      "path": "New Star Camp #stage",
-      "name": "New Star Camp",
-      "rawName": "New Star Camp #stage",
-      "images": [
-        "25.png",
-        "37.png",
-        "ComfyUI_00053_.png",
-        "fin6.png"
-      ],
-      "hasAbout": true,
-      "hasMore": false,
-      "tags": [
-        "stage"
-      ],
-      "location": "Sochi, Russia.",
-      "city": "Sochi",
-      "year": "2022",
-      "indexImage": "25.png"
-    },
-    {
-      "path": "Nina Kravitz #stage",
-      "name": "Nina Kravitz",
-      "rawName": "Nina Kravitz #stage",
-      "images": [
-        "1767412367827-89738e9a-6d9b-42f3-80b0-81b3d7a50cdc.png",
-        "ComfyUI_00009_.png",
-        "ComfyUI_00057_.png",
-        "ComfyUI_00058_.png",
-        "god_rays11.png",
-        "photo_2022-11-11_15-45-01.jpg",
-        "photo_2022-11-12_14-26-35.jpg",
-        "photo_2022-11-12_18-19-42.jpg",
-        "photo_2022-11-17_13-32-40.jpg"
-      ],
-      "hasAbout": true,
-      "hasMore": true,
-      "tags": [
-        "stage"
-      ],
-      "location": "Bali, Indonesia.",
-      "city": "Bali",
-      "year": "2022",
-      "indexImage": "1767412367827-89738e9a-6d9b-42f3-80b0-81b3d7a50cdc.png"
-    },
-    {
-      "path": "NXT Museum #spatial #installation",
-      "name": "NXT Museum",
-      "rawName": "NXT Museum #spatial #installation",
-      "images": [
-        "photo_2022-08-25_12-45-14.jpg",
-        "photo_2022-08-25_12-45-28.jpg",
-        "photo_2022-08-25_12-45-30.jpg",
-        "photo_2022-08-25_16-07-59.jpg",
-        "photo_2022-08-26_12-24-51.jpg"
-      ],
-      "hasAbout": false,
-      "hasMore": false,
-      "tags": [
-        "installation",
-        "spatial"
-      ],
-      "location": "",
-      "city": "",
-      "year": "",
-      "indexImage": "photo_2022-08-25_12-45-14.jpg"
+      "indexImage": "ind_image-812c1c48-2c83-4863-a30b-14a0a2ae77f3.webp"
     },
     {
       "path": "One Tower #spatial #concept",
@@ -770,48 +434,6 @@
       "indexImage": "port - stage 6.jpg"
     },
     {
-      "path": "Potato Head#stage",
-      "name": "Potato Head",
-      "rawName": "Potato Head#stage",
-      "images": [
-        "oli1 (2)-filtered.png",
-        "photo_2022-11-13_23-59-54.jpg",
-        "photo_2022-11-14_02-05-12.jpg",
-        "photo_2022-11-24_17-17-20.jpg",
-        "photo_3830@13-11-2022_17-43-34-filtered.jpeg"
-      ],
-      "hasAbout": false,
-      "hasMore": false,
-      "tags": [
-        "stage"
-      ],
-      "location": "",
-      "city": "",
-      "year": "",
-      "indexImage": "oli1 (2)-filtered.png"
-    },
-    {
-      "path": "Potato head bali #stage",
-      "name": "Potato head bali",
-      "rawName": "Potato head bali #stage",
-      "images": [
-        "oli1 (2)-filtered.png",
-        "photo_2022-11-13_23-59-54.jpg",
-        "photo_2022-11-14_02-05-12.jpg",
-        "photo_2022-11-24_17-17-20.jpg",
-        "photo_3830@13-11-2022_17-43-34-filtered.jpeg"
-      ],
-      "hasAbout": false,
-      "hasMore": false,
-      "tags": [
-        "stage"
-      ],
-      "location": "",
-      "city": "",
-      "year": "",
-      "indexImage": "oli1 (2)-filtered.png"
-    },
-    {
       "path": "Red Hot Chilli Peppers  #stage #tech",
       "name": "Red Hot Chilli Peppers",
       "rawName": "Red Hot Chilli Peppers  #stage #tech",
@@ -833,26 +455,6 @@
       "city": "Los-Angeles",
       "year": "2022",
       "indexImage": "490A2224.jpg"
-    },
-    {
-      "path": "Reflection #spatial #installation",
-      "name": "Reflection",
-      "rawName": "Reflection #spatial #installation",
-      "images": [
-        "11.png",
-        "14.png",
-        "cc.png"
-      ],
-      "hasAbout": true,
-      "hasMore": false,
-      "tags": [
-        "installation",
-        "spatial"
-      ],
-      "location": "Moscow, Russia.",
-      "city": "Moscow",
-      "year": "2021",
-      "indexImage": "11.png"
     },
     {
       "path": "Signal Festival  #spatial #installation",
@@ -901,24 +503,6 @@
       "indexImage": "000.jpg"
     },
     {
-      "path": "Telegraph #spatial ",
-      "name": "Telegraph",
-      "rawName": "Telegraph #spatial ",
-      "images": [
-        "ComfyUI_00021_.png",
-        "Screenshot 2024-02-29 at 19.46.48.png"
-      ],
-      "hasAbout": true,
-      "hasMore": false,
-      "tags": [
-        "spatial"
-      ],
-      "location": "Moscow, Russia.",
-      "city": "Moscow",
-      "year": "2022",
-      "indexImage": "ComfyUI_00021_.png"
-    },
-    {
       "path": "THK #installation",
       "name": "THK",
       "rawName": "THK #installation",
@@ -937,71 +521,6 @@
       "city": "Bali",
       "year": "2022",
       "indexImage": "02-THK-Tower.jpg"
-    },
-    {
-      "path": "thresholds #installation",
-      "name": "thresholds",
-      "rawName": "thresholds #installation",
-      "images": [
-        "liminal8.png",
-        "Screenshot 2024-11-24 at 22.18.45.png",
-        "Screenshot 2024-11-24 at 22.21.12.png"
-      ],
-      "hasAbout": true,
-      "hasMore": true,
-      "tags": [
-        "installation"
-      ],
-      "location": "Utrecht, Netherlands",
-      "city": "Utrecht",
-      "year": "2023",
-      "indexImage": "liminal8.png"
-    },
-    {
-      "path": "Torus #spatial #installation",
-      "name": "Torus",
-      "rawName": "Torus #spatial #installation",
-      "images": [
-        "ComfyUI_00060_.png",
-        "untitled11.png",
-        "untitled16.png",
-        "untitled18.png",
-        "untitled19.png"
-      ],
-      "hasAbout": true,
-      "hasMore": false,
-      "tags": [
-        "installation",
-        "spatial"
-      ],
-      "location": "Moscow, Russia.",
-      "city": "Moscow",
-      "year": "2024",
-      "indexImage": "ComfyUI_00060_.png"
-    },
-    {
-      "path": "Tower Building #spatial #installation",
-      "name": "Tower Building",
-      "rawName": "Tower Building #spatial #installation",
-      "images": [
-        "19.png",
-        "2.png",
-        "22.jpg",
-        "4.png",
-        "5.png",
-        "ComfyUI_00008_.png",
-        "ComfyUI_00024_.png"
-      ],
-      "hasAbout": true,
-      "hasMore": false,
-      "tags": [
-        "installation",
-        "spatial"
-      ],
-      "location": "Moscow, Russia .",
-      "city": "Moscow",
-      "year": "2024",
-      "indexImage": "19.png"
     },
     {
       "path": "Vaba Laba  #stage ",
@@ -1064,46 +583,6 @@
       "city": "Bali",
       "year": "2025",
       "indexImage": "Screenshot 2024-11-24 at 20.45.35.png"
-    },
-    {
-      "path": "Yana Kedrina #stage",
-      "name": "Yana Kedrina",
-      "rawName": "Yana Kedrina #stage",
-      "images": [
-        "kedr.jpg",
-        "kedr2.jpg",
-        "kedr3.jpg",
-        "photo_2021-08-07_21-17-07.jpg"
-      ],
-      "hasAbout": true,
-      "hasMore": false,
-      "tags": [
-        "stage"
-      ],
-      "location": "Moscow, Russia.",
-      "city": "Moscow",
-      "year": "2021",
-      "indexImage": "kedr.jpg"
-    },
-    {
-      "path": "yndx interactive zone #spatial #installation",
-      "name": "yndx interactive zone",
-      "rawName": "yndx interactive zone #spatial #installation",
-      "images": [
-        "11.png",
-        "14.png",
-        "cc.png"
-      ],
-      "hasAbout": true,
-      "hasMore": false,
-      "tags": [
-        "installation",
-        "spatial"
-      ],
-      "location": "Moscow, Russia.",
-      "city": "Moscow",
-      "year": "2021",
-      "indexImage": "11.png"
     }
   ],
   "imageBase": "/img"

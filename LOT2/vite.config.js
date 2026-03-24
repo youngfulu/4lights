@@ -3,24 +3,12 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 import fs from 'fs';
 
-// LOT2: serve/copy images from repository sources.
-const IMAGE_SOURCE_CANDIDATES = [
-  path.resolve(process.cwd(), '..', 'dist', 'img'),
-  path.resolve(process.cwd(), '..', 'final images'),
-  path.resolve(process.cwd(), '..', 'public', 'final images'),
-];
+// LOT2: serve/copy images only from final images.
+const IMAGE_SOURCE = path.resolve(process.cwd(), '..', 'final images');
 const SKIP_EXT = new Set(['.tiff', '.psd', '.mov', '.mp4', '.avi', '.heic', '.heif', '.raw', '.cr2', '.nef', '.arw', '.bmp', '.pdf']);
-
-function pickImageSource() {
-  for (const candidate of IMAGE_SOURCE_CANDIDATES) {
-    if (fs.existsSync(candidate)) return candidate;
-  }
-  return IMAGE_SOURCE_CANDIDATES[0];
-}
 
 export default defineConfig(({ command }) => {
   const isProd = command === 'build';
-  const IMAGE_SOURCE = pickImageSource();
   return {
     base: isProd ? '/4lights/' : '/',
     plugins: [
