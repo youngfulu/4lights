@@ -1,66 +1,10 @@
-import { useEffect, useLayoutEffect, useState, useMemo, useRef, useCallback } from 'react';
-import {
-  BrowserRouter,
-  Routes,
-  Route,
-  Link,
-  useParams,
-  useNavigate,
-  useLocation,
-  resolvePath,
-} from 'react-router-dom';
+import { useEffect, useState, useMemo, useRef } from 'react';
+import { BrowserRouter, Routes, Route, Link, useParams, useNavigate } from 'react-router-dom';
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, '') || '';
 const IMAGE_BASE = `${BASE}/img`;
 /** GitHub Pages serves app under /4lights/ — never use root-absolute /data/... */
 const PROJECTS_JSON_URL = `${BASE}/data/projects.json`;
-
-function sortProjectsByYear(projects) {
-  const yearNum = (y) => {
-    const n = parseInt(String(y || '').trim(), 10);
-    return Number.isFinite(n) ? n : null;
-  };
-  return [...projects].sort((a, b) => {
-    const ay = yearNum(a.year);
-    const by = yearNum(b.year);
-    if (ay === null && by === null) return a.name.localeCompare(b.name);
-    if (ay === null) return 1;
-    if (by === null) return -1;
-    if (by !== ay) return by - ay;
-    return a.name.localeCompare(b.name);
-  });
-}
-
-function startNavTransition(run) {
-  if (typeof document !== 'undefined' && document.startViewTransition) {
-    document.startViewTransition(run);
-  } else {
-    run();
-  }
-}
-
-function TransitionLink({ to, className, children, ...rest }) {
-  const navigate = useNavigate();
-  const location = useLocation();
-  return (
-    <Link
-      to={to}
-      className={className}
-      {...rest}
-      onClick={(e) => {
-        if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
-        const target = resolvePath(to, location.pathname).pathname;
-        if (target === location.pathname) {
-          e.preventDefault();
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-          return;
-        }
-        e.preventDefault();
-        startNavTransition(() => navigate(to));
-      }}
-    />
-  );
-}
 
 function useProjects() {
   const [data, setData] = useState({ folders: [], imageBase: IMAGE_BASE });
@@ -92,76 +36,47 @@ const CATEGORY_LABELS = {
   spatial: 'Spatial design',
 };
 
-function useIndexThumbnailsPreload(projects) {
-  const sorted = useMemo(() => sortProjectsByYear(projects), [projects]);
-  const [ready, setReady] = useState(false);
-
-  useEffect(() => {
-    if (sorted.length === 0) {
-      setReady(true);
-      return;
-    }
-    let cancelled = false;
-    const urls = sorted.map((p) => imageUrl(p.path, p.indexImage || p.images[0], true));
-    Promise.all(
-      urls.map(
-        (src) =>
-          new Promise((resolve) => {
-            const img = new Image();
-            img.onload = () => resolve();
-            img.onerror = () => resolve();
-            img.src = src;
-          }),
-      ),
-    ).then(() => {
-      if (!cancelled) setReady(true);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [sorted]);
-
-  return { sorted, ready };
-}
-
 function Home({ projects }) {
+  const [lang, setLang] = useState('en');
   const [hoveredProject, setHoveredProject] = useState(null);
   const indexRef = useRef(null);
   const infoRef = useRef(null);
-  const { sorted: sortedFiltered, ready: indexImagesReady } = useIndexThumbnailsPreload(projects);
+
+  const sortedFiltered = useMemo(() => {
+    const yearNum = (y) => {
+      const n = parseInt(String(y || '').trim(), 10);
+      return Number.isFinite(n) ? n : null;
+    };
+
+    return [...projects].sort((a, b) => {
+      // Descending year (newest first), like most portfolios and like the reference screenshot.
+      const ay = yearNum(a.year);
+      const by = yearNum(b.year);
+      if (ay === null && by === null) return a.name.localeCompare(b.name);
+      if (ay === null) return 1;
+      if (by === null) return -1;
+      if (by !== ay) return by - ay;
+      return a.name.localeCompare(b.name);
+    });
+  }, [projects]);
 
   const scrollTo = (ref) => {
-    const el = ref.current;
-    if (!el) return;
-    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    requestAnimationFrame(() => {
-      el.classList.remove('section-enter');
-      void el.offsetWidth;
-      el.classList.add('section-enter');
-      window.setTimeout(() => el.classList.remove('section-enter'), 650);
-    });
+    ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
   return (
     <div className="layout layout-index">
       <header className="header ab-header">
-        <TransitionLink to="/" className="logo" aria-label="LOT2 Home">
+        <Link to="/" className="logo" aria-label="LOT2 Home">
           LOT2
-        </TransitionLink>
+        </Link>
         <nav className="header-nav">
-          <button type="button" className="header-link" onClick={() => scrollTo(indexRef)}>
-            Index
-          </button>
-          <button type="button" className="header-link" onClick={() => scrollTo(infoRef)}>
-            Info
-          </button>
+          <button type="button" className="header-link" onClick={() => scrollTo(indexRef)}>Index</button>
+          <button type="button" className="header-link" onClick={() => scrollTo(infoRef)}>Info</button>
         </nav>
       </header>
 
-      <main
-        className={`main index-main ${indexImagesReady ? 'index-main--ready' : ''}`}
-        ref={indexRef}
-      >
+      <main className="main index-main" ref={indexRef}>
         <div className="index-table-wrap">
           <div className="index-table-head">
             <div className="index-th index-th-project">Project</div>
@@ -171,7 +86,7 @@ function Home({ projects }) {
           </div>
           <div className={`index-rows ${hoveredProject ? 'has-hover' : ''}`}>
             {sortedFiltered.map((project) => (
-              <TransitionLink
+              <Link
                 key={project.path}
                 to={`/project/${encodeURIComponent(project.path)}`}
                 className={`index-row ${hoveredProject?.path === project.path ? 'is-active' : ''}`}
@@ -186,7 +101,7 @@ function Home({ projects }) {
                 </div>
                 <div className="index-cell index-cell-location">{project.city || project.location || '—'}</div>
                 <div className="index-cell index-cell-year">{project.year || '—'}</div>
-              </TransitionLink>
+              </Link>
             ))}
           </div>
         </div>
@@ -206,8 +121,27 @@ function Home({ projects }) {
 
       <section className="info-section" ref={infoRef}>
         <div className="info-inner">
+          <h2 className="info-heading">Info</h2>
+          <div className="info-body">
+            {lang === 'en' ? (
+              <>
+                <p><strong>We are</strong> — a Paris-based creative studio run by a community of contributors. We deliver spatial design through an all-in-one approach that connects acoustic design, architecture, interactive design, fabrication, light design, and video content.</p>
+                <p><strong>We are</strong>: Ilyazd Duganov, Ali Tihonava, Lada LD, Skander Jabi.</p>
+              </>
+            ) : (
+              <>
+                <p><strong>We are</strong> — un studio créatif parisien animé par une communauté de contributeurs. Nous créons le design spatial grâce à une approche globale qui connecte design acoustique, architecture, design interactif, fabrication, design lumière et contenu vidéo.</p>
+                <p><strong>We are</strong>: Ilyazd Duganov, Ali Tihonava, Lada LD, Skander Jabi.</p>
+              </>
+            )}
+          </div>
           <div className="info-contact">
             <a href="mailto:hello@weare.io">hello@weare.io</a>
+          </div>
+          <div className="info-lang">
+            <button type="button" className={lang === 'en' ? 'active' : ''} onClick={() => setLang('en')}>EN</button>
+            <span className="info-lang-sep">/</span>
+            <button type="button" className={lang === 'fr' ? 'active' : ''} onClick={() => setLang('fr')}>FR</button>
           </div>
         </div>
       </section>
@@ -240,51 +174,13 @@ function parseAboutText(text) {
   return { name, lines };
 }
 
-function SwipeArrow({ dir }) {
-  return (
-    <svg className="swipe-arrow-svg" viewBox="0 0 48 48" aria-hidden>
-      {dir === 'prev' ? (
-        <path fill="rgba(255,255,255,0.88)" d="M30 8 L14 24 L30 40 L26 44 L6 24 L26 4 Z" />
-      ) : (
-        <path fill="rgba(255,255,255,0.88)" d="M18 8 L34 24 L18 40 L22 44 L42 24 L22 4 Z" />
-      )}
-    </svg>
-  );
-}
-
 function ProjectDetail({ projects }) {
   const { pathEnc } = useParams();
   const navigate = useNavigate();
   const folderPath = pathEnc ? decodeURIComponent(pathEnc) : '';
   const project = useMemo(() => projects.find((p) => p.path === folderPath), [projects, folderPath]);
-  const sorted = useMemo(() => sortProjectsByYear(projects), [projects]);
-  const idx = useMemo(
-    () => sorted.findIndex((p) => p.path === folderPath),
-    [sorted, folderPath],
-  );
-  const prevProject = idx > 0 ? sorted[idx - 1] : null;
-  const nextProject = idx >= 0 && idx < sorted.length - 1 ? sorted[idx + 1] : null;
-
   const [about, setAbout] = useState(null);
   const [more, setMore] = useState(null);
-  const [swipeHint, setSwipeHint] = useState(null);
-  const touchStart = useRef({ x: 0, y: 0 });
-  const wheelAccum = useRef(0);
-  const wheelTimer = useRef(null);
-  const detailRootRef = useRef(null);
-
-  const goProject = useCallback(
-    (p) => {
-      if (!p) return;
-      const path = `/project/${encodeURIComponent(p.path)}`;
-      startNavTransition(() => navigate(path));
-    },
-    [navigate],
-  );
-
-  const goHome = useCallback(() => {
-    startNavTransition(() => navigate('/'));
-  }, [navigate]);
 
   useEffect(() => {
     if (!project) return;
@@ -297,6 +193,8 @@ function ProjectDetail({ projects }) {
         const txt = await r.text();
         const trimmed = txt.trim();
         if (!trimmed) return '';
+        // When file is missing, dev server can return the SPA HTML (200 OK).
+        // Guard against injecting HTML into "more".
         if (ct.includes('text/html') || trimmed.startsWith('<!DOCTYPE html') || trimmed.includes('<html')) {
           return '';
         }
@@ -309,6 +207,7 @@ function ProjectDetail({ projects }) {
     Promise.all([
       loadMaybeText('about.txt'),
       (async () => {
+        // Some projects may use alternate file names.
         const candidates = ['more.txt', 'More.txt', 'MORE.txt', 'extra.txt'];
         for (const c of candidates) {
           const txt = await loadMaybeText(c);
@@ -322,113 +221,21 @@ function ProjectDetail({ projects }) {
     });
   }, [project]);
 
-  useLayoutEffect(() => {
-    if (!project) return undefined;
-
-    const onTouchStart = (e) => {
-      touchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-      setSwipeHint(null);
-    };
-
-    const onTouchMove = (e) => {
-      const x = e.touches[0].clientX;
-      const y = e.touches[0].clientY;
-      const dx = x - touchStart.current.x;
-      const dy = y - touchStart.current.y;
-      if (Math.abs(dx) < 24 || Math.abs(dy) > Math.abs(dx) * 0.85) {
-        setSwipeHint(null);
-        return;
-      }
-      if (dx > 28 && prevProject) setSwipeHint('prev');
-      else if (dx < -28 && nextProject) setSwipeHint('next');
-      else setSwipeHint(null);
-    };
-
-    const onTouchEnd = (e) => {
-      const x = e.changedTouches[0].clientX;
-      const y = e.changedTouches[0].clientY;
-      const dx = x - touchStart.current.x;
-      const dy = y - touchStart.current.y;
-      setSwipeHint(null);
-      if (Math.abs(dx) < 56 || Math.abs(dy) > Math.abs(dx) * 0.85) return;
-      if (dx > 0 && prevProject) goProject(prevProject);
-      else if (dx < 0 && nextProject) goProject(nextProject);
-    };
-
-    const el = detailRootRef.current;
-    if (!el) return undefined;
-    el.addEventListener('touchstart', onTouchStart, { passive: true });
-    el.addEventListener('touchmove', onTouchMove, { passive: true });
-    el.addEventListener('touchend', onTouchEnd, { passive: true });
-    return () => {
-      el.removeEventListener('touchstart', onTouchStart);
-      el.removeEventListener('touchmove', onTouchMove);
-      el.removeEventListener('touchend', onTouchEnd);
-    };
-  }, [project, prevProject, nextProject, goProject]);
-
-  useLayoutEffect(() => {
-    if (!project) return undefined;
-
-    const onWheel = (e) => {
-      if (Math.abs(e.deltaX) < 18 || Math.abs(e.deltaX) < Math.abs(e.deltaY)) return;
-      e.preventDefault();
-      wheelAccum.current += e.deltaX;
-      if (wheelTimer.current) clearTimeout(wheelTimer.current);
-      wheelTimer.current = window.setTimeout(() => {
-        const acc = wheelAccum.current;
-        wheelAccum.current = 0;
-        if (acc > 72 && nextProject) {
-          setSwipeHint('next');
-          window.setTimeout(() => setSwipeHint(null), 280);
-          goProject(nextProject);
-        } else if (acc < -72 && prevProject) {
-          setSwipeHint('prev');
-          window.setTimeout(() => setSwipeHint(null), 280);
-          goProject(prevProject);
-        }
-      }, 80);
-    };
-
-    window.addEventListener('wheel', onWheel, { passive: false });
-    return () => {
-      window.removeEventListener('wheel', onWheel);
-      if (wheelTimer.current) clearTimeout(wheelTimer.current);
-    };
-  }, [project, prevProject, nextProject, goProject]);
-
   if (!project) {
     return (
       <div className="layout">
         <header className="header">
-          <button type="button" className="back-link" onClick={goHome}>
-            ← back
-          </button>
+          <button type="button" className="back-link" onClick={() => navigate('/')}>← back</button>
         </header>
-        <main className="main">
-          <p>Project not found.</p>
-        </main>
+        <main className="main"><p>Project not found.</p></main>
       </div>
     );
   }
 
   return (
-    <div ref={detailRootRef} className="layout project-detail-view">
-      <div
-        className={`swipe-edge-hint swipe-edge-hint--prev ${swipeHint === 'prev' ? 'is-visible' : ''}`}
-        aria-hidden
-      >
-        <SwipeArrow dir="prev" />
-      </div>
-      <div
-        className={`swipe-edge-hint swipe-edge-hint--next ${swipeHint === 'next' ? 'is-visible' : ''}`}
-        aria-hidden
-      >
-        <SwipeArrow dir="next" />
-      </div>
-
+    <div className="layout project-detail-view">
       <header className="header">
-        <button type="button" className="back-link" onClick={goHome} aria-label="Back to projects">
+        <button type="button" className="back-link" onClick={() => navigate('/')} aria-label="Back to projects">
           ← back
         </button>
       </header>

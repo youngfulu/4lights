@@ -1,37 +1,5 @@
 /* LOT2 — Amsterdam Berlin index structure (amsterdamberlin.com) */
 
-/* ----- Route transitions (View Transitions API) — soft slide + fade ----- */
-@supports (view-transition-name: none) {
-  ::view-transition-old(root) {
-    animation: lot2-vt-out 0.48s var(--ease-out) both;
-  }
-  ::view-transition-new(root) {
-    animation: lot2-vt-in 0.48s var(--ease-out) both;
-  }
-}
-
-@keyframes lot2-vt-out {
-  from {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  to {
-    opacity: 0;
-    transform: translateY(0.45rem);
-  }
-}
-
-@keyframes lot2-vt-in {
-  from {
-    opacity: 0;
-    transform: translateY(0.45rem);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
 .layout {
   min-height: 100vh;
   min-height: 100dvh;
@@ -104,13 +72,6 @@
   padding: calc(var(--header-h) + 32px) 16px 64px;
   max-width: none;
   margin: 0;
-  opacity: 0;
-  transform: translateY(10px);
-  transition: opacity 0.5s var(--ease-out), transform 0.5s var(--ease-out);
-}
-.layout-index .index-main.index-main--ready {
-  opacity: 1;
-  transform: translateY(0);
 }
 .layout-index .index-table-wrap {
   width: 100%;
@@ -252,25 +213,34 @@
   }
 }
 
-/* ----- Info / contact (aligned with project column) ----- */
+/* ----- Info section (We are + contact) ----- */
 .info-section {
-  padding: 64px 16px 80px;
-  max-width: none;
-  margin: 0;
+  padding: 64px clamp(24px, 5vw, 56px) 80px;
+  max-width: 1200px;
+  margin: 0 auto;
   border-top: 1px solid var(--border);
 }
 .info-inner {
-  display: grid;
-  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1fr) minmax(80px, 0.55fr);
-  gap: 20px;
-  width: 100%;
-  align-items: start;
+  max-width: 560px;
 }
-.info-contact {
-  grid-column: 1;
-  margin-top: 0;
+.info-heading {
   font-family: var(--font-sans);
-  font-size: 15px;
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 16px;
+}
+.info-body {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.info-body p { margin-bottom: 1em; }
+.info-body strong { color: var(--fg); }
+.info-contact {
+  margin-top: 24px;
+  font-family: var(--font-sans);
+  font-size: 13px;
 }
 .info-contact a {
   text-decoration: underline;
@@ -278,53 +248,16 @@
   transition: opacity 0.2s;
 }
 .info-contact a:hover { opacity: 0.8; }
-
-/* In-page section jumps (Index / Info) */
-.section-enter {
-  animation: section-soft-in 0.55s var(--ease-out) both;
+.info-lang {
+  margin-top: 20px;
+  font-size: 13px;
+  font-family: var(--font-sans);
+  color: var(--muted);
 }
-@keyframes section-soft-in {
-  from {
-    opacity: 0.35;
-    transform: translateY(0.45rem);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* ----- Project: swipe prev/next hints (trackpad + touch) ----- */
-.swipe-edge-hint {
-  position: fixed;
-  top: 0;
-  bottom: 0;
-  width: min(38vw, 240px);
-  pointer-events: none;
-  z-index: 200;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  transition: opacity 0.18s var(--ease-out);
-}
-.swipe-edge-hint--prev {
-  left: 0;
-}
-.swipe-edge-hint--next {
-  right: 0;
-}
-.swipe-edge-hint.is-visible {
-  opacity: 0.82;
-}
-.swipe-arrow-svg {
-  width: 76px;
-  height: 76px;
-  filter: blur(9px) drop-shadow(0 0 24px rgba(255, 255, 255, 0.35));
-}
-.project-detail-view {
-  position: relative;
-}
+.info-lang button { transition: color 0.2s; }
+.info-lang button:hover,
+.info-lang button.active { color: var(--fg); }
+.info-lang-sep { margin: 0 6px; opacity: 0.5; }
 
 /* ----- Project detail header (same bar, back link) ----- */
 .header:not(.ab-header) {
@@ -432,9 +365,6 @@
   .index-cell-project { font-size: 16px; }
   .index-filters { margin-bottom: 16px; }
   .info-section { padding: 40px 16px 60px; }
-  .info-inner {
-    grid-template-columns: 1fr;
-  }
   .project-detail-content {
     grid-template-columns: 1fr;
     gap: 24px;
@@ -452,20 +382,4 @@
 @media (prefers-reduced-motion: reduce) {
   .index-row { transition: none; }
   .index-preview { animation: none; }
-  .layout-index .index-main {
-    opacity: 1;
-    transform: none;
-    transition: none;
-  }
-  .section-enter { animation: none; }
-  .swipe-edge-hint { transition: none; }
-}
-
-@supports (view-transition-name: none) {
-  @media (prefers-reduced-motion: reduce) {
-    ::view-transition-old(root),
-    ::view-transition-new(root) {
-      animation: none !important;
-    }
-  }
 }

@@ -46,3 +46,12 @@ button {
   cursor: pointer;
 }
 
+/* View Transitions (cutting-edge) */
+@supports (view-transition-name: none) {
+  .project-card {
+    view-transition-name: none;
+  }
+  .project-detail-view {
+    view-transition-name: project-detail;
+  }
+}
