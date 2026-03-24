@@ -1,8 +1,0 @@
-name: (Spectral Weaving)
-#
-Project type: (Spatial design)
-Client: (Missoni)
-Agency:(Neu.team)
-Status: (unreleased)
-Contributor: Ilya Duganov, Lada 
-year: (2024)
