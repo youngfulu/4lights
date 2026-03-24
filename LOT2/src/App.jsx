@@ -146,9 +146,9 @@ function useSwipeNavigation(onSwipeLeft, onSwipeRight) {
 
   useEffect(() => {
     const s = stateRef.current;
-    const TOUCH_THRESHOLD = 80;
-    const WHEEL_THRESHOLD = 150;
-    const COOLDOWN_MS = 600;
+    const TOUCH_THRESHOLD = 28;
+    const WHEEL_THRESHOLD = 50;
+    const COOLDOWN_MS = 400;
 
     const setCooldown = () => {
       s.cooldown = true;
@@ -207,7 +207,7 @@ function useSwipeNavigation(onSwipeLeft, onSwipeRight) {
         s.wheelAccum = 0;
         s.wheelActive = false;
         setIndicator({ active: false, direction: null, progress: 0 });
-      }, 180);
+      }, 100);
     };
 
     document.addEventListener('touchstart', onTouchStart, { passive: true });

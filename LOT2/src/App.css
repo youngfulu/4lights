@@ -3,21 +3,21 @@
 /* ===== View Transitions: slide-down + fade (amsterdamberlin.com style) ===== */
 @supports (view-transition-name: none) {
   ::view-transition-old(root) {
-    animation: lot2-exit 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation: lot2-exit 1.25s cubic-bezier(0.4, 0, 0.2, 1) both;
   }
   ::view-transition-new(root) {
-    animation: lot2-enter 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation: lot2-enter 0.75s cubic-bezier(0.0, 0, 0.2, 1) 0.35s both;
   }
 }
 
 @keyframes lot2-exit {
-  from { opacity: 1; transform: translateY(0); filter: blur(0); }
-  to   { opacity: 0; transform: translateY(18px); filter: blur(2px); }
+  0%   { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(136px); }
 }
 
 @keyframes lot2-enter {
-  from { opacity: 0; transform: translateY(18px); filter: blur(2px); }
-  to   { opacity: 1; transform: translateY(0); filter: blur(0); }
+  0%   { opacity: 0; transform: translateY(128px); }
+  100% { opacity: 1; transform: translateY(0); }
 }
 
 .layout {
