@@ -1,14 +1,22 @@
 import { useEffect, useState, useMemo, useRef } from 'react';
 import { BrowserRouter, Routes, Route, Link, useParams, useNavigate } from 'react-router-dom';
 
-const IMAGE_BASE = `${import.meta.env.BASE_URL.replace(/\/$/, '')}/img`;
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, '') || '';
+const IMAGE_BASE = `${BASE}/img`;
+/** GitHub Pages serves app under /4lights/ — never use root-absolute /data/... */
+const PROJECTS_JSON_URL = `${BASE}/data/projects.json`;
 
 function useProjects() {
   const [data, setData] = useState({ folders: [], imageBase: IMAGE_BASE });
   useEffect(() => {
-    fetch('/data/projects.json')
+    fetch(PROJECTS_JSON_URL)
       .then((r) => r.json())
-      .then(setData)
+      .then((json) =>
+        setData({
+          folders: Array.isArray(json?.folders) ? json.folders : [],
+          imageBase: IMAGE_BASE,
+        }),
+      )
       .catch(() => setData({ folders: [], imageBase: IMAGE_BASE }));
   }, []);
   return data;
