@@ -1,9 +1,17 @@
-import { useEffect, useState, useMemo, useRef } from 'react';
-import { BrowserRouter, Routes, Route, Link, useParams, useNavigate } from 'react-router-dom';
+import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
+import { flushSync } from 'react-dom';
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Link,
+  useParams,
+  useNavigate,
+  useLocation,
+} from 'react-router-dom';
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, '') || '';
 const IMAGE_BASE = `${BASE}/img`;
-/** GitHub Pages serves app under /4lights/ — never use root-absolute /data/... */
 const PROJECTS_JSON_URL = `${BASE}/data/projects.json`;
 
 function useProjects() {
@@ -24,8 +32,24 @@ function useProjects() {
 
 function imageUrl(folderPath, filename, thumb = false) {
   const prefix = thumb ? 'thumb/' : '';
-  const path = `${prefix}${folderPath}/${filename}`;
-  return `${IMAGE_BASE}/${path.split('/').map(encodeURIComponent).join('/')}`;
+  const p = `${prefix}${folderPath}/${filename}`;
+  return `${IMAGE_BASE}/${p.split('/').map(encodeURIComponent).join('/')}`;
+}
+
+function sortByYear(projects) {
+  const yearNum = (y) => {
+    const n = parseInt(String(y || '').trim(), 10);
+    return Number.isFinite(n) ? n : null;
+  };
+  return [...projects].sort((a, b) => {
+    const ay = yearNum(a.year);
+    const by = yearNum(b.year);
+    if (ay === null && by === null) return a.name.localeCompare(b.name);
+    if (ay === null) return 1;
+    if (by === null) return -1;
+    if (by !== ay) return by - ay;
+    return a.name.localeCompare(b.name);
+  });
 }
 
 const CATEGORY_LABELS = {
@@ -36,47 +60,254 @@ const CATEGORY_LABELS = {
   spatial: 'Spatial design',
 };
 
-function Home({ projects }) {
-  const [lang, setLang] = useState('en');
-  const [hoveredProject, setHoveredProject] = useState(null);
-  const indexRef = useRef(null);
-  const infoRef = useRef(null);
+/* ------------------------------------------------------------------ */
+/*  1. Preload all index preview images so they appear instantly      */
+/* ------------------------------------------------------------------ */
+function usePreloadIndexImages(projects) {
+  const [ready, setReady] = useState(false);
 
-  const sortedFiltered = useMemo(() => {
-    const yearNum = (y) => {
-      const n = parseInt(String(y || '').trim(), 10);
-      return Number.isFinite(n) ? n : null;
-    };
+  useEffect(() => {
+    if (!projects.length) return;
+    let loaded = 0;
+    const total = projects.length;
+    const tick = () => { if (++loaded >= total) setReady(true); };
 
-    return [...projects].sort((a, b) => {
-      // Descending year (newest first), like most portfolios and like the reference screenshot.
-      const ay = yearNum(a.year);
-      const by = yearNum(b.year);
-      if (ay === null && by === null) return a.name.localeCompare(b.name);
-      if (ay === null) return 1;
-      if (by === null) return -1;
-      if (by !== ay) return by - ay;
-      return a.name.localeCompare(b.name);
+    projects.forEach((p) => {
+      const img = new Image();
+      img.onload = tick;
+      img.onerror = tick;
+      img.src = imageUrl(p.path, p.indexImage || p.images[0], true);
     });
+
+    const timeout = setTimeout(() => setReady(true), 4000);
+    return () => clearTimeout(timeout);
   }, [projects]);
 
-  const scrollTo = (ref) => {
-    ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  return ready || !projects.length;
+}
+
+/* ------------------------------------------------------------------ */
+/*  2. View Transitions API wrapper for smooth page changes           */
+/* ------------------------------------------------------------------ */
+function useTransitionNavigate() {
+  const navigate = useNavigate();
+  return useCallback(
+    (to) => {
+      if (!document.startViewTransition) {
+        navigate(to);
+        return;
+      }
+      document.startViewTransition(() => {
+        flushSync(() => navigate(to));
+      });
+    },
+    [navigate],
+  );
+}
+
+function TransitionLink({ to, className, children, onMouseEnter, onMouseLeave, onFocus, onBlur }) {
+  const go = useTransitionNavigate();
+  const location = useLocation();
+  const handleClick = (e) => {
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+    e.preventDefault();
+    if (location.pathname === to) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+    go(to);
+  };
+  return (
+    <Link
+      to={to}
+      className={className}
+      onClick={handleClick}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+      onFocus={onFocus}
+      onBlur={onBlur}
+    >
+      {children}
+    </Link>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  3. Swipe / trackpad gesture navigation                            */
+/* ------------------------------------------------------------------ */
+function useSwipeNavigation(onSwipeLeft, onSwipeRight) {
+  const [indicator, setIndicator] = useState({ active: false, direction: null, progress: 0 });
+  const stateRef = useRef({
+    touchStartX: 0, touchStartY: 0, touchDelta: 0,
+    locked: false, tracking: false,
+    wheelAccum: 0, wheelTimer: null, wheelActive: false,
+    cooldown: false,
+  });
+
+  useEffect(() => {
+    const s = stateRef.current;
+    const TOUCH_THRESHOLD = 80;
+    const WHEEL_THRESHOLD = 150;
+    const COOLDOWN_MS = 600;
+
+    const setCooldown = () => {
+      s.cooldown = true;
+      setTimeout(() => { s.cooldown = false; }, COOLDOWN_MS);
+    };
+
+    const onTouchStart = (e) => {
+      if (s.cooldown) return;
+      s.touchStartX = e.touches[0].clientX;
+      s.touchStartY = e.touches[0].clientY;
+      s.touchDelta = 0;
+      s.locked = false;
+      s.tracking = true;
+    };
+
+    const onTouchMove = (e) => {
+      if (!s.tracking) return;
+      const dx = e.touches[0].clientX - s.touchStartX;
+      const dy = e.touches[0].clientY - s.touchStartY;
+      if (!s.locked) {
+        if (Math.abs(dy) > Math.abs(dx) * 0.6) { s.tracking = false; return; }
+        s.locked = true;
+      }
+      s.touchDelta = dx;
+      const progress = Math.min(Math.abs(dx) / (TOUCH_THRESHOLD * 1.5), 1);
+      setIndicator({ active: true, direction: dx > 0 ? 'right' : 'left', progress });
+    };
+
+    const onTouchEnd = () => {
+      if (s.tracking && Math.abs(s.touchDelta) > TOUCH_THRESHOLD) {
+        if (s.touchDelta < 0 && onSwipeLeft) { onSwipeLeft(); setCooldown(); }
+        else if (s.touchDelta > 0 && onSwipeRight) { onSwipeRight(); setCooldown(); }
+      }
+      s.tracking = false;
+      setIndicator({ active: false, direction: null, progress: 0 });
+    };
+
+    const onWheel = (e) => {
+      if (s.cooldown) return;
+      if (Math.abs(e.deltaY) > Math.abs(e.deltaX) * 2) return;
+      if (Math.abs(e.deltaX) < 3) return;
+
+      s.wheelAccum += e.deltaX;
+      s.wheelActive = true;
+
+      const progress = Math.min(Math.abs(s.wheelAccum) / (WHEEL_THRESHOLD * 1.5), 1);
+      const direction = s.wheelAccum > 0 ? 'left' : 'right';
+      setIndicator({ active: true, direction, progress });
+
+      clearTimeout(s.wheelTimer);
+      s.wheelTimer = setTimeout(() => {
+        if (s.wheelActive && Math.abs(s.wheelAccum) > WHEEL_THRESHOLD) {
+          if (s.wheelAccum > 0 && onSwipeLeft) { onSwipeLeft(); setCooldown(); }
+          else if (s.wheelAccum < 0 && onSwipeRight) { onSwipeRight(); setCooldown(); }
+        }
+        s.wheelAccum = 0;
+        s.wheelActive = false;
+        setIndicator({ active: false, direction: null, progress: 0 });
+      }, 180);
+    };
+
+    document.addEventListener('touchstart', onTouchStart, { passive: true });
+    document.addEventListener('touchmove', onTouchMove, { passive: true });
+    document.addEventListener('touchend', onTouchEnd);
+    window.addEventListener('wheel', onWheel, { passive: true });
+
+    return () => {
+      document.removeEventListener('touchstart', onTouchStart);
+      document.removeEventListener('touchmove', onTouchMove);
+      document.removeEventListener('touchend', onTouchEnd);
+      window.removeEventListener('wheel', onWheel);
+      clearTimeout(s.wheelTimer);
+    };
+  }, [onSwipeLeft, onSwipeRight]);
+
+  return indicator;
+}
+
+function SwipeIndicator({ indicator }) {
+  const { active, direction, progress } = indicator;
+  if (!active || !direction || progress < 0.05) return null;
+  const isLeft = direction === 'left';
+  return (
+    <div
+      className={`swipe-indicator swipe-indicator--${direction}`}
+      style={{ opacity: 0.25 + progress * 0.6 }}
+      aria-hidden
+    >
+      <div className="swipe-arrow" style={{ transform: `translateX(${isLeft ? '' : '-'}${(1 - progress) * 24}px) scale(${0.7 + progress * 0.3})` }}>
+        <svg width="28" height="48" viewBox="0 0 28 48" fill="none">
+          <path
+            d={isLeft ? 'M8 4l16 20L8 44' : 'M20 4L4 24l16 20'}
+            stroke="currentColor"
+            strokeWidth="3"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Shared header — LOT2 + Index / Info on every page                 */
+/* ------------------------------------------------------------------ */
+function SiteHeader() {
+  const go = useTransitionNavigate();
+  const location = useLocation();
+
+  const handleIndex = () => {
+    if (location.pathname === '/') {
+      document.getElementById('index-anchor')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+      go('/');
+    }
+  };
+
+  const handleInfo = () => {
+    if (location.pathname === '/') {
+      document.getElementById('info-anchor')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+      go('/?scrollTo=info');
+    }
   };
 
   return (
-    <div className="layout layout-index">
-      <header className="header ab-header">
-        <Link to="/" className="logo" aria-label="LOT2 Home">
-          LOT2
-        </Link>
-        <nav className="header-nav">
-          <button type="button" className="header-link" onClick={() => scrollTo(indexRef)}>Index</button>
-          <button type="button" className="header-link" onClick={() => scrollTo(infoRef)}>Info</button>
-        </nav>
-      </header>
+    <header className="header ab-header">
+      <TransitionLink to="/" className="logo" aria-label="LOT2 Home">LOT2</TransitionLink>
+      <nav className="header-nav">
+        <button type="button" className="header-link" onClick={handleIndex}>Index</button>
+        <button type="button" className="header-link" onClick={handleInfo}>Info</button>
+      </nav>
+    </header>
+  );
+}
 
-      <main className="main index-main" ref={indexRef}>
+/* ------------------------------------------------------------------ */
+/*  Home (Index page)                                                 */
+/* ------------------------------------------------------------------ */
+function Home({ projects }) {
+  const [hoveredProject, setHoveredProject] = useState(null);
+  const imagesReady = usePreloadIndexImages(projects);
+  const location = useLocation();
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('scrollTo') === 'info') {
+      setTimeout(() => {
+        document.getElementById('info-anchor')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    }
+  }, [location.search]);
+
+  return (
+    <div className="layout layout-index">
+      <SiteHeader />
+
+      <main className={`main index-main ${imagesReady ? 'index-main--ready' : ''}`} id="index-anchor">
         <div className="index-table-wrap">
           <div className="index-table-head">
             <div className="index-th index-th-project">Project</div>
@@ -85,8 +316,8 @@ function Home({ projects }) {
             <div className="index-th index-th-year">Year</div>
           </div>
           <div className={`index-rows ${hoveredProject ? 'has-hover' : ''}`}>
-            {sortedFiltered.map((project) => (
-              <Link
+            {projects.map((project) => (
+              <TransitionLink
                 key={project.path}
                 to={`/project/${encodeURIComponent(project.path)}`}
                 className={`index-row ${hoveredProject?.path === project.path ? 'is-active' : ''}`}
@@ -101,7 +332,7 @@ function Home({ projects }) {
                 </div>
                 <div className="index-cell index-cell-location">{project.city || project.location || '—'}</div>
                 <div className="index-cell index-cell-year">{project.year || '—'}</div>
-              </Link>
+              </TransitionLink>
             ))}
           </div>
         </div>
@@ -119,36 +350,18 @@ function Home({ projects }) {
         </div>
       )}
 
-      <section className="info-section" ref={infoRef}>
-        <div className="info-inner">
-          <h2 className="info-heading">Info</h2>
-          <div className="info-body">
-            {lang === 'en' ? (
-              <>
-                <p><strong>We are</strong> — a Paris-based creative studio run by a community of contributors. We deliver spatial design through an all-in-one approach that connects acoustic design, architecture, interactive design, fabrication, light design, and video content.</p>
-                <p><strong>We are</strong>: Ilyazd Duganov, Ali Tihonava, Lada LD, Skander Jabi.</p>
-              </>
-            ) : (
-              <>
-                <p><strong>We are</strong> — un studio créatif parisien animé par une communauté de contributeurs. Nous créons le design spatial grâce à une approche globale qui connecte design acoustique, architecture, design interactif, fabrication, design lumière et contenu vidéo.</p>
-                <p><strong>We are</strong>: Ilyazd Duganov, Ali Tihonava, Lada LD, Skander Jabi.</p>
-              </>
-            )}
-          </div>
-          <div className="info-contact">
-            <a href="mailto:hello@weare.io">hello@weare.io</a>
-          </div>
-          <div className="info-lang">
-            <button type="button" className={lang === 'en' ? 'active' : ''} onClick={() => setLang('en')}>EN</button>
-            <span className="info-lang-sep">/</span>
-            <button type="button" className={lang === 'fr' ? 'active' : ''} onClick={() => setLang('fr')}>FR</button>
-          </div>
+      <section className="info-section" id="info-anchor">
+        <div className="info-contact">
+          <a href="mailto:hello@weare.io">hello@weare.io</a>
         </div>
       </section>
     </div>
   );
 }
 
+/* ------------------------------------------------------------------ */
+/*  Project detail                                                    */
+/* ------------------------------------------------------------------ */
 function parseAboutText(text) {
   if (!text || !text.trim()) return { name: '—', lines: [] };
   const parts = text.split('#');
@@ -176,9 +389,17 @@ function parseAboutText(text) {
 
 function ProjectDetail({ projects }) {
   const { pathEnc } = useParams();
-  const navigate = useNavigate();
+  const goTo = useTransitionNavigate();
   const folderPath = pathEnc ? decodeURIComponent(pathEnc) : '';
-  const project = useMemo(() => projects.find((p) => p.path === folderPath), [projects, folderPath]);
+
+  const currentIndex = useMemo(
+    () => projects.findIndex((p) => p.path === folderPath),
+    [projects, folderPath],
+  );
+  const project = currentIndex >= 0 ? projects[currentIndex] : null;
+  const prevProject = currentIndex > 0 ? projects[currentIndex - 1] : null;
+  const nextProject = currentIndex < projects.length - 1 ? projects[currentIndex + 1] : null;
+
   const [about, setAbout] = useState(null);
   const [more, setMore] = useState(null);
 
@@ -193,8 +414,6 @@ function ProjectDetail({ projects }) {
         const txt = await r.text();
         const trimmed = txt.trim();
         if (!trimmed) return '';
-        // When file is missing, dev server can return the SPA HTML (200 OK).
-        // Guard against injecting HTML into "more".
         if (ct.includes('text/html') || trimmed.startsWith('<!DOCTYPE html') || trimmed.includes('<html')) {
           return '';
         }
@@ -207,7 +426,6 @@ function ProjectDetail({ projects }) {
     Promise.all([
       loadMaybeText('about.txt'),
       (async () => {
-        // Some projects may use alternate file names.
         const candidates = ['more.txt', 'More.txt', 'MORE.txt', 'extra.txt'];
         for (const c of candidates) {
           const txt = await loadMaybeText(c);
@@ -221,12 +439,24 @@ function ProjectDetail({ projects }) {
     });
   }, [project]);
 
+  const handleSwipeLeft = useCallback(() => {
+    if (nextProject) goTo(`/project/${encodeURIComponent(nextProject.path)}`);
+  }, [nextProject, goTo]);
+
+  const handleSwipeRight = useCallback(() => {
+    if (prevProject) goTo(`/project/${encodeURIComponent(prevProject.path)}`);
+    else goTo('/');
+  }, [prevProject, goTo]);
+
+  const swipe = useSwipeNavigation(
+    nextProject ? handleSwipeLeft : null,
+    handleSwipeRight,
+  );
+
   if (!project) {
     return (
       <div className="layout">
-        <header className="header">
-          <button type="button" className="back-link" onClick={() => navigate('/')}>← back</button>
-        </header>
+        <SiteHeader />
         <main className="main"><p>Project not found.</p></main>
       </div>
     );
@@ -234,11 +464,7 @@ function ProjectDetail({ projects }) {
 
   return (
     <div className="layout project-detail-view">
-      <header className="header">
-        <button type="button" className="back-link" onClick={() => navigate('/')} aria-label="Back to projects">
-          ← back
-        </button>
-      </header>
+      <SiteHeader />
       <main className="main project-detail-main">
         <div className="project-detail-content">
           <aside className="project-info-panel">
@@ -273,17 +499,22 @@ function ProjectDetail({ projects }) {
           </div>
         </div>
       </main>
+      <SwipeIndicator indicator={swipe} />
     </div>
   );
 }
 
+/* ------------------------------------------------------------------ */
+/*  App root                                                          */
+/* ------------------------------------------------------------------ */
 function App() {
   const { folders } = useProjects();
+  const sorted = useMemo(() => sortByYear(folders), [folders]);
   return (
     <BrowserRouter basename={import.meta.env.BASE_URL}>
       <Routes>
-        <Route path="/" element={<Home projects={folders} />} />
-        <Route path="/project/:pathEnc" element={<ProjectDetail projects={folders} />} />
+        <Route path="/" element={<Home projects={sorted} />} />
+        <Route path="/project/:pathEnc" element={<ProjectDetail projects={sorted} />} />
       </Routes>
     </BrowserRouter>
   );

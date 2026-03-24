@@ -1,5 +1,25 @@
 /* LOT2 — Amsterdam Berlin index structure (amsterdamberlin.com) */
 
+/* ===== View Transitions: slide-down + fade (amsterdamberlin.com style) ===== */
+@supports (view-transition-name: none) {
+  ::view-transition-old(root) {
+    animation: lot2-exit 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  ::view-transition-new(root) {
+    animation: lot2-enter 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+}
+
+@keyframes lot2-exit {
+  from { opacity: 1; transform: translateY(0); filter: blur(0); }
+  to   { opacity: 0; transform: translateY(18px); filter: blur(2px); }
+}
+
+@keyframes lot2-enter {
+  from { opacity: 0; transform: translateY(18px); filter: blur(2px); }
+  to   { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+
 .layout {
   min-height: 100vh;
   min-height: 100dvh;
@@ -37,9 +57,9 @@
 
 .logo {
   font-family: var(--font-sans);
-  font-size: 13px;
-  font-weight: 400;
-  letter-spacing: 0;
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
   transition: opacity 0.2s var(--ease-out);
   display: inline-flex;
   align-items: center;
@@ -59,19 +79,18 @@
   color: var(--fg);
 }
 
-.back-link {
-  font-size: 14px;
-  text-transform: lowercase;
-  padding: 8px 0;
-  transition: opacity 0.2s var(--ease-out);
-}
-.back-link:hover { opacity: 0.7; }
-
 /* ----- Index main: Project | Categories | Location | Year table ----- */
 .layout-index .index-main {
   padding: calc(var(--header-h) + 32px) 16px 64px;
   max-width: none;
   margin: 0;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.55s var(--ease-out), transform 0.55s var(--ease-out);
+}
+.layout-index .index-main.index-main--ready {
+  opacity: 1;
+  transform: translateY(0);
 }
 .layout-index .index-table-wrap {
   width: 100%;
@@ -213,32 +232,12 @@
   }
 }
 
-/* ----- Info section (We are + contact) ----- */
+/* ----- Info / contact footer ----- */
 .info-section {
-  padding: 64px clamp(24px, 5vw, 56px) 80px;
-  max-width: 1200px;
-  margin: 0 auto;
+  padding: 48px 16px 64px;
   border-top: 1px solid var(--border);
 }
-.info-inner {
-  max-width: 560px;
-}
-.info-heading {
-  font-family: var(--font-sans);
-  font-size: 13px;
-  font-weight: 500;
-  margin-bottom: 16px;
-}
-.info-body {
-  font-family: var(--font-sans);
-  font-size: 13px;
-  line-height: 1.5;
-  color: var(--muted);
-}
-.info-body p { margin-bottom: 1em; }
-.info-body strong { color: var(--fg); }
 .info-contact {
-  margin-top: 24px;
   font-family: var(--font-sans);
   font-size: 13px;
 }
@@ -248,35 +247,10 @@
   transition: opacity 0.2s;
 }
 .info-contact a:hover { opacity: 0.8; }
-.info-lang {
-  margin-top: 20px;
-  font-size: 13px;
-  font-family: var(--font-sans);
-  color: var(--muted);
-}
-.info-lang button { transition: color 0.2s; }
-.info-lang button:hover,
-.info-lang button.active { color: var(--fg); }
-.info-lang-sep { margin: 0 6px; opacity: 0.5; }
-
-/* ----- Project detail header (same bar, back link) ----- */
-.header:not(.ab-header) {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: var(--header-h);
-  display: flex;
-  align-items: center;
-  padding: 0 clamp(24px, 5vw, 56px);
-  z-index: 100;
-  background: var(--bg);
-  border-bottom: 1px solid var(--border);
-}
 
 /* Main content (project detail) */
 .main {
-  padding: var(--header-h) clamp(24px, 5vw, 56px) 80px;
+  padding: var(--header-h) 16px 80px;
   max-width: var(--content-max);
   margin: 0 auto;
 }
@@ -337,6 +311,39 @@
   vertical-align: middle;
 }
 
+/* ----- Swipe indicator arrows ----- */
+.swipe-indicator {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  width: 72px;
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  transition: opacity 0.12s ease-out;
+}
+.swipe-indicator--left {
+  right: 0;
+  background: linear-gradient(to left, rgba(255, 255, 255, 0.06), transparent);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+.swipe-indicator--right {
+  left: 0;
+  background: linear-gradient(to right, rgba(255, 255, 255, 0.06), transparent);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+.swipe-arrow {
+  color: rgba(255, 255, 255, 0.55);
+  transition: transform 0.1s ease-out;
+}
+.swipe-arrow svg {
+  display: block;
+}
+
 /* Mobile — index table becomes stacked / simplified */
 @media (max-width: 767px) {
   .ab-header,
@@ -382,4 +389,8 @@
 @media (prefers-reduced-motion: reduce) {
   .index-row { transition: none; }
   .index-preview { animation: none; }
+  .layout-index .index-main { transition: none; opacity: 1; transform: none; }
+  .swipe-indicator { display: none; }
+  ::view-transition-old(root),
+  ::view-transition-new(root) { animation: none !important; }
 }
