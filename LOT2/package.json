@@ -8,7 +8,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "build-data": "node scripts/build-data.js",
-    "prebuild": "npm run build-data"
+    "build-entrance": "node scripts/build-entrance.js",
+    "prebuild": "npm run build-data && npm run build-entrance"
   },
   "dependencies": {
     "react": "^18.2.0",

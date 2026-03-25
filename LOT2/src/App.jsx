@@ -13,6 +13,8 @@ import {
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, '') || '';
 const IMAGE_BASE = `${BASE}/img`;
 const PROJECTS_JSON_URL = `${BASE}/data/projects.json`;
+const ENTRANCE_FRAMES_URL = `${BASE}/data/entrance.json`;
+const ENTRANCE_BASE = `${BASE}/entrance`;
 
 function useProjects() {
   const [data, setData] = useState({ folders: [], imageBase: IMAGE_BASE });
@@ -28,6 +30,17 @@ function useProjects() {
       .catch(() => setData({ folders: [], imageBase: IMAGE_BASE }));
   }, []);
   return data;
+}
+
+function useEntranceFrames() {
+  const [frames, setFrames] = useState([]);
+  useEffect(() => {
+    fetch(ENTRANCE_FRAMES_URL)
+      .then((r) => (r.ok ? r.json() : { frames: [] }))
+      .then((j) => setFrames(Array.isArray(j?.frames) ? j.frames : []))
+      .catch(() => setFrames([]));
+  }, []);
+  return frames;
 }
 
 function imageUrl(folderPath, filename, thumb = false) {
@@ -71,6 +84,82 @@ function useMobileTouchIndex() {
     return () => mq.removeEventListener('change', onChange);
   }, []);
   return matches;
+}
+
+function StartScreen({ onDismiss }) {
+  const frames = useEntranceFrames();
+  const [frameIdx, setFrameIdx] = useState(0);
+  const [bgOn, setBgOn] = useState(false);
+  const startRef = useRef({ y0: 0, active: false });
+  const [dragY, setDragY] = useState(0);
+  const [dismissing, setDismissing] = useState(false);
+
+  useEffect(() => {
+    const t = setTimeout(() => setBgOn(true), 3000);
+    return () => clearTimeout(t);
+  }, []);
+
+  useEffect(() => {
+    if (!bgOn || !frames.length) return;
+    const id = setInterval(() => setFrameIdx((i) => (i + 1) % frames.length), 200);
+    return () => clearInterval(id);
+  }, [bgOn, frames.length]);
+
+  const frameSrc = frames.length
+    ? `${ENTRANCE_BASE}/${encodeURIComponent(frames[frameIdx])}`
+    : '';
+
+  const dismiss = () => {
+    try { sessionStorage.setItem('lot2_start_seen', '1'); } catch {}
+    onDismiss?.();
+  };
+
+  const onTouchStart = (e) => {
+    startRef.current = { y0: e.touches[0].clientY, active: true };
+    setDragY(0);
+  };
+  const onTouchMove = (e) => {
+    if (!startRef.current.active) return;
+    const dy = e.touches[0].clientY - startRef.current.y0;
+    setDragY(dy);
+  };
+  const onTouchEnd = () => {
+    startRef.current.active = false;
+    const dy = dragY;
+    setDragY(0);
+    // Requested: swipe page down to enter.
+    if (dy > 80 && !dismissing) {
+      setDismissing(true);
+      // Let fade/blur happen, then scroll into first project.
+      window.setTimeout(() => dismiss(), 420);
+    }
+  };
+
+  const progress = dismissing ? 1 : Math.min(Math.max(dragY, 0) / 180, 1);
+  const opacity = 1 - progress * 0.85;
+  const blur = progress * 14;
+  const translateY = dismissing ? 220 : dragY;
+
+  return (
+    <div
+      className="start-screen"
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+      style={{ transform: `translateY(${translateY}px)`, opacity, filter: `blur(${blur}px)` }}
+      role="dialog"
+      aria-label="Start screen"
+      aria-modal="true"
+    >
+      {bgOn && frameSrc && <img className="start-screen__bg" src={frameSrc} alt="" decoding="async" />}
+      <div className="start-screen__fade" />
+      <div className="start-screen__logo" aria-hidden>
+        <span className="start-screen__lot">LOT</span>
+        <span className="start-screen__two">2</span>
+      </div>
+      <div className="start-screen__hint" aria-hidden>Swipe to enter</div>
+    </div>
+  );
 }
 
 const CATEGORY_LABELS = {
@@ -356,10 +445,30 @@ function Home({ projects }) {
   const mobileTouch = useMobileTouchIndex();
   const [hoveredProject, setHoveredProject] = useState(null);
   const imagesReady = usePreloadIndexImages(projects);
+  const [showStart, setShowStart] = useState(() => {
+    try {
+      const navEntries = performance.getEntriesByType('navigation');
+      const navType = navEntries?.[0]?.type || '';
+      // If user reloads, treat it as re-entering the website.
+      if (navType === 'reload') return true;
+      return !sessionStorage.getItem('lot2_start_seen');
+    } catch {
+      return true;
+    }
+  });
+  const firstCardRef = useRef(null);
+
+  const dismissStart = useCallback(() => {
+    setShowStart(false);
+    requestAnimationFrame(() => {
+      firstCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }, []);
+
   if (mobileTouch) {
     return (
       <div className="layout layout-index layout-index--touch">
-        <SiteHeader />
+        {!showStart && <SiteHeader />}
 
         <main className={`main index-main ${imagesReady ? 'index-main--ready' : ''}`}>
           <div className="mobile-index-cards">
@@ -372,14 +481,18 @@ function Home({ projects }) {
                   key={p.path}
                   to={`/project/${encodeURIComponent(p.path)}`}
                   className="mobile-index-card"
+                  onClick={() => {
+                    try { sessionStorage.setItem('lot2_start_seen', '1'); } catch {}
+                  }}
                 >
                   <img
+                    ref={i === 0 ? firstCardRef : undefined}
                     className="mobile-index-card__img"
                     src={imageUrl(p.path, file, false)}
                     alt=""
                     loading={i < 3 ? 'eager' : 'lazy'}
                     decoding="async"
-                    fetchPriority={i < 3 ? 'high' : 'auto'}
+                    fetchpriority={i < 3 ? 'high' : undefined}
                     onError={(e) => {
                       e.currentTarget.src = imageUrl(p.path, file, true);
                     }}
@@ -407,6 +520,8 @@ function Home({ projects }) {
             </a>
           </div>
         </footer>
+
+        {showStart && <StartScreen onDismiss={dismissStart} />}
       </div>
     );
   }

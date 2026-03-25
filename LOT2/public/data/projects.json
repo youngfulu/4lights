@@ -8,9 +8,9 @@
         "IMG_3654.png",
         "IMG_3659.png",
         "ind_addon pc.png",
+        "ind_Screenshot 2026-01-03 at 15.53.30.png",
         "photo_2021-04-06_03-24-48.jpg",
         "poster.jpg",
-        "Screenshot 2026-01-03 at 15.53.30.png",
         "Screenshot 2026-01-03 at 15.53.45.png",
         "Screenshot 2026-01-03 at 15.54.20.png",
         "TDMovieOut.0.png",
@@ -32,10 +32,10 @@
       "name": "Bipolar Express",
       "rawName": "Bipolar Express #stage #tech",
       "images": [
-        "IMG_2470.png",
+        "Express.jpg",
         "IMG_2695.png",
         "IMG_2742.png",
-        "ind_bp Express.jpg",
+        "ind_bp IMG_2470.png",
         "Screenshot 2026-01-07 at 17.41.20.png",
         "Screenshot 2026-01-07 at 17.41.35.png",
         "Screenshot 2026-01-07 at 17.41.47.png",
@@ -51,7 +51,7 @@
       "location": "",
       "city": "",
       "year": "2024",
-      "indexImage": "ind_bp Express.jpg"
+      "indexImage": "ind_bp IMG_2470.png"
     },
     {
       "path": "Bluebeard Castle #stage design",
@@ -415,10 +415,10 @@
       "name": "Port",
       "rawName": "Port #stage",
       "images": [
+        "ind_poster.png",
         "port - stage 6.jpg",
         "port - stage 7 .jpg",
         "port-stage 8 .jpg",
-        "poster.png",
         "pt.jpg",
         "red_min.png",
         "stage concept.jpg"
@@ -431,7 +431,7 @@
       "location": "Bali, Indonesia.",
       "city": "Bali",
       "year": "2022",
-      "indexImage": "port - stage 6.jpg"
+      "indexImage": "ind_poster.png"
     },
     {
       "path": "Red Hot Chilli Peppers  #stage #tech",
@@ -442,8 +442,8 @@
         "490A2253.jpg",
         "490A2831.jpg",
         "IMG-9137.jpg",
-        "RHCP-picture.jpeg",
-        "rhcp.jpg"
+        "ind_rhcp.jpg",
+        "RHCP-picture.jpeg"
       ],
       "hasAbout": true,
       "hasMore": true,
@@ -454,7 +454,7 @@
       "location": "Los-Angeles, USA.",
       "city": "Los-Angeles",
       "year": "2022",
-      "indexImage": "490A2224.jpg"
+      "indexImage": "ind_rhcp.jpg"
     },
     {
       "path": "Signal Festival  #spatial #installation",
@@ -485,12 +485,12 @@
       "rawName": "Sophie #stage",
       "images": [
         "000.jpg",
-        "496709872_18008736773727365_777694170845982356_n.jpg",
         "ClesseysSF6-8-Retocada-scaled-r64cni1wd3gyg6elc2c2cq21ftxonw3gcgmr7rt3e8.jpg",
         "ComfyUI_00015_.png",
         "ComfyUI_00016_.png",
         "ComfyUI_00017_.png",
-        "f2a2a0dc27b7c19d5f41fc8c99b87319b33b8e23.png"
+        "f2a2a0dc27b7c19d5f41fc8c99b87319b33b8e23.png",
+        "ind_496709872_18008736773727365_777694170845982356_n.jpg"
       ],
       "hasAbout": true,
       "hasMore": false,
@@ -500,14 +500,14 @@
       "location": "Malaga, Spain.",
       "city": "Malaga",
       "year": "2025",
-      "indexImage": "000.jpg"
+      "indexImage": "ind_496709872_18008736773727365_777694170845982356_n.jpg"
     },
     {
       "path": "THK #installation",
       "name": "THK",
       "rawName": "THK #installation",
       "images": [
-        "02-THK-Tower.jpg",
+        "ind_02-THK-Tower.jpg",
         "thk1.jpg",
         "thk3.jpg",
         "thk5.jpeg"
@@ -520,7 +520,7 @@
       "location": "Bali, Indonesia.",
       "city": "Bali",
       "year": "2022",
-      "indexImage": "02-THK-Tower.jpg"
+      "indexImage": "ind_02-THK-Tower.jpg"
     },
     {
       "path": "Vaba Laba  #stage ",
