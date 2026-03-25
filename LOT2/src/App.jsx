@@ -128,7 +128,8 @@ function StartScreen({ onDismiss }) {
     const dy = dragY;
     setDragY(0);
     // Requested: swipe page down to enter.
-    if (dy > 80 && !dismissing) {
+    const halfScreen = (typeof window !== 'undefined' ? window.innerHeight : 800) / 2;
+    if (dy > halfScreen && !dismissing) {
       setDismissing(true);
       // Let fade/blur happen, then scroll into first project.
       window.setTimeout(() => dismiss(), 420);
