@@ -95,7 +95,9 @@ function StartScreen({ onDismiss }) {
   const [dismissing, setDismissing] = useState(false);
 
   useEffect(() => {
-    const t = setTimeout(() => setBgOn(true), 3000);
+    // LOT takes 2s. Then "2" appears after +0.5s.
+    // Background should start after "2" finishes => ~2.5s total.
+    const t = setTimeout(() => setBgOn(true), 2500);
     return () => clearTimeout(t);
   }, []);
 
@@ -129,7 +131,10 @@ function StartScreen({ onDismiss }) {
     setDragY(0);
     // Requested: swipe page down to enter.
     const halfScreen = (typeof window !== 'undefined' ? window.innerHeight : 800) / 2;
-    if (dy > halfScreen && !dismissing) {
+    const shouldDismiss = Math.abs(dy) > halfScreen;
+    // When user swipes finger up, clientY decreases => dy is negative.
+    const isEnterSwipeUp = dy < -halfScreen;
+    if ((isEnterSwipeUp || dy > halfScreen) && shouldDismiss && !dismissing) {
       setDismissing(true);
       // Let fade/blur happen, then scroll into first project.
       window.setTimeout(() => dismiss(), 420);

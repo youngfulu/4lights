@@ -463,7 +463,7 @@
   .start-screen__fade {
     position: absolute;
     inset: 0;
-    background: radial-gradient(80% 60% at 50% 35%, rgba(0,0,0,0.1), rgba(0,0,0,0.55) 60%, rgba(0,0,0,0.8));
+    background: radial-gradient(80% 60% at 50% 35%, rgba(0,0,0,0.08), rgba(0,0,0,0.35) 60%, rgba(0,0,0,0.55));
     pointer-events: none;
   }
   .start-screen__logo {
