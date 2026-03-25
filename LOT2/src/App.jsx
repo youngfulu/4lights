@@ -60,6 +60,19 @@ function isExcludedFromIndex(project) {
   return leaf.startsWith('0_');
 }
 
+/** True when viewport is phone-sized and primary input is touch (desktop unchanged). */
+function useMobileTouchIndex() {
+  const [matches, setMatches] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px) and (hover: none)');
+    const onChange = () => setMatches(mq.matches);
+    onChange();
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
+  return matches;
+}
+
 const CATEGORY_LABELS = {
   stage: 'Stage design',
   installation: 'Installation',
@@ -161,10 +174,11 @@ function useTransitionNavigate() {
   );
 }
 
-function TransitionLink({ to, className, children, onMouseEnter, onMouseLeave, onFocus, onBlur }) {
+function TransitionLink({ to, className, children, onMouseEnter, onMouseLeave, onFocus, onBlur, onClick }) {
   const go = useTransitionNavigate();
   const location = useLocation();
   const handleClick = (e) => {
+    onClick?.(e);
     if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
     e.preventDefault();
     if (location.pathname === to) {
@@ -326,9 +340,76 @@ function SiteHeader() {
 /* ------------------------------------------------------------------ */
 /*  Home (Index page)                                                 */
 /* ------------------------------------------------------------------ */
+function IndexRowCells({ project }) {
+  const cat = project.tags?.map((t) => CATEGORY_LABELS[t] || t).join(', ') || '—';
+  return (
+    <>
+      <div className="index-cell index-cell-project">{project.name}</div>
+      <div className="index-cell index-cell-categories">{cat}</div>
+      <div className="index-cell index-cell-location">{project.city || project.location || '—'}</div>
+      <div className="index-cell index-cell-year">{project.year || '—'}</div>
+    </>
+  );
+}
+
 function Home({ projects }) {
+  const mobileTouch = useMobileTouchIndex();
   const [hoveredProject, setHoveredProject] = useState(null);
   const imagesReady = usePreloadIndexImages(projects);
+  if (mobileTouch) {
+    return (
+      <div className="layout layout-index layout-index--touch">
+        <SiteHeader />
+
+        <main className={`main index-main ${imagesReady ? 'index-main--ready' : ''}`}>
+          <div className="mobile-index-cards">
+            {projects.map((p, i) => {
+              const file = p.indexImage || p.images[0];
+              const typeKey = p.tags?.[0] || '';
+              const typeLabel = typeKey ? CATEGORY_LABELS[typeKey] || typeKey : '—';
+              return (
+                <TransitionLink
+                  key={p.path}
+                  to={`/project/${encodeURIComponent(p.path)}`}
+                  className="mobile-index-card"
+                >
+                  <img
+                    className="mobile-index-card__img"
+                    src={imageUrl(p.path, file, false)}
+                    alt=""
+                    loading={i < 3 ? 'eager' : 'lazy'}
+                    decoding="async"
+                    fetchPriority={i < 3 ? 'high' : 'auto'}
+                    onError={(e) => {
+                      e.currentTarget.src = imageUrl(p.path, file, true);
+                    }}
+                  />
+                  <div className="mobile-index-card__text">
+                    <div className="mobile-index-card__name">{p.name}</div>
+                    <div className="mobile-index-card__type">{typeLabel}</div>
+                  </div>
+                </TransitionLink>
+              );
+            })}
+          </div>
+        </main>
+
+        <footer className="mobile-index-footer" aria-label="Contact">
+          <div className="mobile-index-footer__line">44 Rue Beauregard, 75002 Paris, France</div>
+          <div className="mobile-index-footer__line">
+            <a className="mobile-index-footer__link" href="tel:+33623973028">
+              +33 6 23 97 30 28
+            </a>
+          </div>
+          <div className="mobile-index-footer__line">
+            <a className="mobile-index-footer__link" href="mailto:hello@weare.io">
+              hello@weare.io
+            </a>
+          </div>
+        </footer>
+      </div>
+    );
+  }
 
   return (
     <div className="layout layout-index">
@@ -353,12 +434,7 @@ function Home({ projects }) {
                 onFocus={() => setHoveredProject(project)}
                 onBlur={() => setHoveredProject(null)}
               >
-                <div className="index-cell index-cell-project">{project.name}</div>
-                <div className="index-cell index-cell-categories">
-                  {project.tags?.map((t) => CATEGORY_LABELS[t] || t).join(', ') || '—'}
-                </div>
-                <div className="index-cell index-cell-location">{project.city || project.location || '—'}</div>
-                <div className="index-cell index-cell-year">{project.year || '—'}</div>
+                <IndexRowCells project={project} />
               </TransitionLink>
             ))}
           </div>
@@ -376,7 +452,6 @@ function Home({ projects }) {
           />
         </div>
       )}
-
     </div>
   );
 }
