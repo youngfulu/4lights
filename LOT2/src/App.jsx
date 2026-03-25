@@ -93,6 +93,9 @@ function StartScreen({ onDismiss }) {
   const startRef = useRef({ y0: 0, active: false });
   const [dragY, setDragY] = useState(0);
   const [dismissing, setDismissing] = useState(false);
+  const dragYRef = useRef(0);
+  const touchT0Ref = useRef(0);
+  const dismissDirRef = useRef(-1); // -1 = swipe up, +1 = swipe down
 
   useEffect(() => {
     // LOT takes 2s. Then "2" appears after +0.5s.
@@ -119,22 +122,34 @@ function StartScreen({ onDismiss }) {
   const onTouchStart = (e) => {
     startRef.current = { y0: e.touches[0].clientY, active: true };
     setDragY(0);
+    dragYRef.current = 0;
+    touchT0Ref.current = Date.now();
   };
   const onTouchMove = (e) => {
     if (!startRef.current.active) return;
     const dy = e.touches[0].clientY - startRef.current.y0;
+    dragYRef.current = dy;
+    dismissDirRef.current = dy < 0 ? -1 : 1;
     setDragY(dy);
   };
   const onTouchEnd = () => {
     startRef.current.active = false;
-    const dy = dragY;
+    const dy = dragYRef.current;
     setDragY(0);
     // Requested: swipe page down to enter.
     const halfScreen = (typeof window !== 'undefined' ? window.innerHeight : 800) / 2;
-    const shouldDismiss = Math.abs(dy) > halfScreen;
-    // When user swipes finger up, clientY decreases => dy is negative.
-    const isEnterSwipeUp = dy < -halfScreen;
-    if ((isEnterSwipeUp || dy > halfScreen) && shouldDismiss && !dismissing) {
+    // iPhone-like: allow smaller drag and also use velocity.
+    // dy is negative when finger moves up.
+    const enterDistance = Math.max(90, halfScreen * 0.25);
+    const dt = Math.max(16, Date.now() - touchT0Ref.current);
+    const velocityY = dy / dt; // px per ms
+    const fastEnter = velocityY < -0.6;
+    const shouldEnter = dy < -enterDistance || fastEnter;
+
+    // Fallback: keep old behavior for "very large" drags.
+    const shouldDismissBig = Math.abs(dy) > halfScreen;
+
+    if ((shouldEnter || dy > halfScreen) && shouldDismissBig && !dismissing) {
       setDismissing(true);
       // Let fade/blur happen, then scroll into first project.
       window.setTimeout(() => dismiss(), 420);
@@ -144,7 +159,7 @@ function StartScreen({ onDismiss }) {
   const progress = dismissing ? 1 : Math.min(Math.max(dragY, 0) / 180, 1);
   const opacity = 1 - progress * 0.85;
   const blur = progress * 14;
-  const translateY = dismissing ? 220 : dragY;
+  const translateY = dismissing ? (dismissDirRef.current < 0 ? -220 : 220) : dragY;
 
   return (
     <div
