@@ -11,11 +11,13 @@
   .ab-header {
     view-transition-name: lot2-header;
   }
-  ::view-transition-old(lot2-header) {
-    animation: lot2-header-exit 1.25s cubic-bezier(0.4, 0, 0.2, 1) both;
-  }
+  /* Header stays fixed: no slide/fade with route content */
+  ::view-transition-old(lot2-header),
   ::view-transition-new(lot2-header) {
-    animation: lot2-header-enter 0.75s cubic-bezier(0.0, 0, 0.2, 1) 0.35s both;
+    animation: none !important;
+  }
+  ::view-transition-group(lot2-header) {
+    animation-duration: 0s !important;
   }
 }
 
@@ -25,16 +27,6 @@
 }
 
 @keyframes lot2-enter {
-  0%   { opacity: 0; transform: translateY(128px); }
-  100% { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes lot2-header-exit {
-  0%   { opacity: 1; transform: translateY(0); }
-  100% { opacity: 0; transform: translateY(136px); }
-}
-
-@keyframes lot2-header-enter {
   0%   { opacity: 0; transform: translateY(128px); }
   100% { opacity: 1; transform: translateY(0); }
 }
@@ -448,7 +440,9 @@
     inset: 0;
     z-index: 1000;
     background: var(--bg);
-    touch-action: pan-y;
+    /* pan-y was letting the page scroll underneath while swiping */
+    touch-action: none;
+    overscroll-behavior: none;
     will-change: transform, opacity, filter;
     transition: transform 0.55s var(--ease-out), opacity 0.55s var(--ease-out), filter 0.55s var(--ease-out);
   }

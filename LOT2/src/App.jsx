@@ -98,6 +98,26 @@ function StartScreen({ onDismiss }) {
   const dismissDirRef = useRef(-1); // -1 = swipe up, +1 = swipe down
 
   useEffect(() => {
+    const el = document.documentElement;
+    const prevOverflow = el.style.overflow;
+    const prevOverscroll = el.style.overscrollBehavior;
+    const bodyPrevOverflow = document.body.style.overflow;
+    const bodyPrevTouchAction = document.body.style.touchAction;
+    el.style.overflow = 'hidden';
+    el.style.overscrollBehavior = 'none';
+    document.body.style.overflow = 'hidden';
+    document.body.style.touchAction = 'none';
+    el.classList.add('lot2-start-lock');
+    return () => {
+      el.style.overflow = prevOverflow;
+      el.style.overscrollBehavior = prevOverscroll;
+      document.body.style.overflow = bodyPrevOverflow;
+      document.body.style.touchAction = bodyPrevTouchAction;
+      el.classList.remove('lot2-start-lock');
+    };
+  }, []);
+
+  useEffect(() => {
     // LOT takes 2s. Then "2" appears after +0.5s.
     // Background should start after "2" finishes => ~2.5s total.
     const t = setTimeout(() => setBgOn(true), 2500);
@@ -146,12 +166,8 @@ function StartScreen({ onDismiss }) {
     const fastEnter = velocityY < -0.6;
     const shouldEnter = dy < -enterDistance || fastEnter;
 
-    // Fallback: keep old behavior for "very large" drags.
-    const shouldDismissBig = Math.abs(dy) > halfScreen;
-
-    if ((shouldEnter || dy > halfScreen) && shouldDismissBig && !dismissing) {
+    if ((shouldEnter || dy > halfScreen) && !dismissing) {
       setDismissing(true);
-      // Let fade/blur happen, then scroll into first project.
       window.setTimeout(() => dismiss(), 420);
     }
   };
