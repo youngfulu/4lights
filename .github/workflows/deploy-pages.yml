@@ -1,4 +1,4 @@
-# Deploy LOT2 to GitHub Pages at https://youngfulu.github.io/lot2/
+# Deploy LOT2 to GitHub Pages at https://youngfulu.github.io/LOT2/
 name: Deploy to GitHub Pages
 
 on:

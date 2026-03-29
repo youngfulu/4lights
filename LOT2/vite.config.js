@@ -11,7 +11,8 @@ const SKIP_EXT = new Set(['.tiff', '.psd', '.mov', '.mp4', '.avi', '.heic', '.he
 export default defineConfig(({ command }) => {
   const isProd = command === 'build';
   return {
-    base: isProd ? '/lot2/' : '/',
+    // Must match GitHub repo name casing exactly (e.g. LOT2 → /LOT2/, not /lot2/)
+    base: isProd ? '/LOT2/' : '/',
     plugins: [
       react(),
       {
