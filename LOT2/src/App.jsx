@@ -281,6 +281,71 @@ function usePreloadIndexImages(projects) {
   return ready || !projects.length;
 }
 
+/** Desktop only: LOT2 fades in 0.5s, stays until index images preloaded, fades out 0.25s. */
+function DesktopIndexLoader({ imagesReady, onComplete }) {
+  const [entered, setEntered] = useState(false);
+  const [enterDone, setEnterDone] = useState(false);
+  const [exiting, setExiting] = useState(false);
+  const finishedRef = useRef(false);
+
+  const finish = useCallback(() => {
+    if (finishedRef.current) return;
+    finishedRef.current = true;
+    onComplete?.();
+  }, [onComplete]);
+
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setEntered(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
+
+  useEffect(() => {
+    const t = window.setTimeout(() => setEnterDone(true), 500);
+    return () => clearTimeout(t);
+  }, []);
+
+  useEffect(() => {
+    if (!imagesReady || !enterDone || exiting) return;
+    setExiting(true);
+  }, [imagesReady, enterDone, exiting]);
+
+  useEffect(() => {
+    if (!exiting) return;
+    let mq;
+    try {
+      mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    } catch {
+      return;
+    }
+    if (!mq.matches) return;
+    const t = window.setTimeout(finish, 80);
+    return () => clearTimeout(t);
+  }, [exiting, finish]);
+
+  useEffect(() => {
+    if (!exiting) return;
+    const t = window.setTimeout(finish, 800);
+    return () => clearTimeout(t);
+  }, [exiting, finish]);
+
+  const onTransitionEnd = (e) => {
+    if (e.propertyName !== 'opacity' || !exiting) return;
+    finish();
+  };
+
+  return (
+    <div
+      className={`desktop-index-loader ${entered ? 'desktop-index-loader--entered' : ''} ${exiting ? 'desktop-index-loader--exit' : ''}`}
+      onTransitionEnd={onTransitionEnd}
+      role="status"
+      aria-live="polite"
+      aria-label="Loading index"
+    >
+      <span className="desktop-index-loader__logo">LOT2</span>
+    </div>
+  );
+}
+
 /* ------------------------------------------------------------------ */
 /*  2. View Transitions API wrapper for smooth page changes           */
 /* ------------------------------------------------------------------ */
@@ -482,6 +547,7 @@ function Home({ projects }) {
   const mobileTouch = useMobileTouchIndex();
   const [hoveredProject, setHoveredProject] = useState(null);
   const imagesReady = usePreloadIndexImages(projects);
+  const [desktopLoaderDone, setDesktopLoaderDone] = useState(false);
   const [showStart, setShowStart] = useState(() => {
     try {
       const navEntries = performance.getEntriesByType('navigation');
@@ -563,11 +629,13 @@ function Home({ projects }) {
     );
   }
 
+  const indexReady = imagesReady && desktopLoaderDone;
+
   return (
     <div className="layout layout-index">
       <SiteHeader />
 
-      <main className={`main index-main ${imagesReady ? 'index-main--ready' : ''}`}>
+      <main className={`main index-main ${indexReady ? 'index-main--ready' : ''}`}>
         <div className="index-table-wrap">
           <div className="index-table-head">
             <div className="index-th index-th-project">Project</div>
@@ -594,15 +662,21 @@ function Home({ projects }) {
       </main>
 
       {hoveredProject && (
-        <div className="index-preview" aria-hidden>
+        <div key={hoveredProject.path} className="index-preview" aria-hidden>
           <img
             src={imageUrl(hoveredProject.path, hoveredProject.indexImage || hoveredProject.images[0], true)}
             alt=""
+            decoding="async"
+            fetchpriority="high"
             onError={(e) => {
               e.target.src = imageUrl(hoveredProject.path, hoveredProject.indexImage || hoveredProject.images[0], false);
             }}
           />
         </div>
+      )}
+
+      {!desktopLoaderDone && (
+        <DesktopIndexLoader imagesReady={imagesReady} onComplete={() => setDesktopLoaderDone(true)} />
       )}
     </div>
   );

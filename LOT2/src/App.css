@@ -167,7 +167,7 @@
   justify-self: end;
 }
 
-/* ----- Index row hover preview: center of screen, 1/6 viewport ----- */
+/* ----- Index row hover preview: center of screen (instant — images preloaded) ----- */
 .index-preview {
   position: fixed;
   left: 50%;
@@ -181,7 +181,7 @@
   border: 1px solid var(--border);
   overflow: hidden;
   background: rgba(0, 0, 0, 0.4);
-  animation: index-preview-in 0.2s var(--ease-out) forwards;
+  opacity: 1;
 }
 .index-preview img {
   width: 100%;
@@ -190,15 +190,33 @@
   max-height: 72vh;
   display: block;
 }
-@keyframes index-preview-in {
-  from {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(0.96);
-  }
-  to {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
-  }
+
+/* Desktop: full-screen LOT2 while index images preload */
+.desktop-index-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  opacity: 0;
+  transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: auto;
+}
+.desktop-index-loader--entered {
+  opacity: 1;
+}
+.desktop-index-loader--exit {
+  opacity: 0;
+  transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.desktop-index-loader__logo {
+  font-family: var(--font-sans);
+  font-size: clamp(48px, 8vw, 96px);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--fg);
 }
 
 /* ----- Info page (amsterdamberlin.com/info layout) ----- */
@@ -709,6 +727,11 @@
 @media (prefers-reduced-motion: reduce) {
   .index-row { transition: none; }
   .index-preview { animation: none; }
+  .desktop-index-loader,
+  .desktop-index-loader--entered,
+  .desktop-index-loader--exit {
+    transition-duration: 0.01ms !important;
+  }
   .layout-index .index-main { transition: none; opacity: 1; transform: none; }
   .swipe-indicator { display: none; }
   .index-sheet__backdrop,
