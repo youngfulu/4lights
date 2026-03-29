@@ -1,4 +1,4 @@
-# Deploy 4lights to GitHub Pages at https://youngfulu.github.io/4lights/
+# Deploy LOT2 to GitHub Pages at https://youngfulu.github.io/lot2/
 name: Deploy to GitHub Pages
 
 on:

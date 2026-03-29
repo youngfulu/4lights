@@ -638,6 +638,15 @@ function InfoPage() {
               <li>Concept Development</li>
             </ul>
           </div>
+          <div className="info-col">
+            <h3 className="info-col-heading">We are</h3>
+            <ul className="info-col-list">
+              <li>Alex Alnx</li>
+              <li>Alinna Tikhonova</li>
+              <li>Ilyaz Duganov</li>
+              <li>Skander Ben Yahia</li>
+            </ul>
+          </div>
         </div>
 
         <div className="info-footer-contact">
@@ -795,6 +804,12 @@ function ProjectDetail({ projects }) {
   );
 }
 
+/* React Router v6 — opt into v7 behavior to silence future-flag console warnings */
+const ROUTER_FUTURE = {
+  v7_startTransition: true,
+  v7_relativeSplatPath: true,
+};
+
 /* ------------------------------------------------------------------ */
 /*  App root                                                          */
 /* ------------------------------------------------------------------ */
@@ -805,7 +820,7 @@ function App() {
     [folders],
   );
   return (
-    <BrowserRouter basename={import.meta.env.BASE_URL}>
+    <BrowserRouter basename={import.meta.env.BASE_URL} future={ROUTER_FUTURE}>
       <Routes>
         <Route path="/" element={<Home projects={sorted} />} />
         <Route path="/info" element={<InfoPage />} />

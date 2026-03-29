@@ -43,3 +43,9 @@ Alternative version of the 4lights portfolio site. **Does not modify the origina
 - `/project/:pathEnc` — Project detail: sticky info (parsed from about.txt) + image gallery
 
 Original folder is never written to; LOT2 only reads (dev) or copies on build.
+
+## GitHub Pages
+
+Production build uses base path `/lot2/` so assets resolve at **https://youngfulu.github.io/lot2/**.
+
+For that URL to work, the GitHub **repository name** must be `lot2` (Pages path matches the repo name). Rename the repo under **Settings → General → Repository name**, then push; the workflow deploys `LOT2/dist` as usual.
