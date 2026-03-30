@@ -54,9 +54,9 @@
       "indexImage": "ind_bp IMG_2470.png"
     },
     {
-      "path": "Bluebeard Castle #stage design",
-      "name": "Bluebeard Castle #stage design",
-      "rawName": "Bluebeard Castle #stage design",
+      "path": "Bluebeard Castle #stage",
+      "name": "Bluebeard Castle",
+      "rawName": "Bluebeard Castle #stage",
       "images": [
         "1f8621a766d563d6bbc3a36dbd1d04fa.jpg",
         "4.jpg",
@@ -159,9 +159,7 @@
       "name": "Gate",
       "rawName": "Gate #instal",
       "images": [
-        "ComfyUI_00075_.png",
         "GATE.jpg",
-        "gate4.jpg",
         "ind_ComfyUI_00077_.png",
         "Screenshot 2026-02-22 at 15.52.12.png"
       ],
@@ -336,9 +334,9 @@
       "indexImage": "Lenny Kravitz.webp"
     },
     {
-      "path": "Mirag Club #stage #tech",
+      "path": "Mirag Club #stage",
       "name": "Mirag Club",
-      "rawName": "Mirag Club #stage #tech",
+      "rawName": "Mirag Club #stage",
       "images": [
         "ind_photo_2022-08-04_18-43-59.jpg",
         "layout.jpg",
@@ -350,8 +348,7 @@
       "hasAbout": true,
       "hasMore": true,
       "tags": [
-        "stage",
-        "tech"
+        "stage"
       ],
       "location": "Saint-Petersburg, Russia.",
       "city": "Saint-Petersburg",
@@ -475,9 +472,9 @@
       "indexImage": "ind_rhcp.jpg"
     },
     {
-      "path": "Red September #spatial design",
-      "name": "Red September #spatial design",
-      "rawName": "Red September #spatial design",
+      "path": "Red September #spatial",
+      "name": "Red September",
+      "rawName": "Red September #spatial",
       "images": [
         "0000 (v1~recovered)dg.png",
         "ing_Снимок экрана 2023-10-30 в 20.48.24.png",
@@ -519,9 +516,9 @@
       "indexImage": "ind_496709872_18008736773727365_777694170845982356_n.jpg"
     },
     {
-      "path": "The Safe Yard  #spatial design",
-      "name": "The Safe Yard  #spatial design",
-      "rawName": "The Safe Yard  #spatial design",
+      "path": "The Safe Yard  #spatial",
+      "name": "The Safe Yard",
+      "rawName": "The Safe Yard  #spatial",
       "images": [
         "frame_003.png",
         "frame_005.png",
