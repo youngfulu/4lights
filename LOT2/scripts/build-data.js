@@ -45,6 +45,24 @@ function parseAboutForIndex(aboutPath) {
   return { location, city, year };
 }
 
+/** All web images under project folder, with paths relative to project (nested ok). Skips `thumb/` trees. */
+function collectWebImagesRecursive(absDir, relPrefix = '') {
+  const out = [];
+  if (!fs.existsSync(absDir)) return out;
+  for (const f of fs.readdirSync(absDir, { withFileTypes: true })) {
+    if (f.name === '.DS_Store') continue;
+    const rel = relPrefix ? `${relPrefix}/${f.name}` : f.name;
+    const full = path.join(absDir, f.name);
+    if (f.isDirectory()) {
+      if (f.name === 'thumb') continue;
+      out.push(...collectWebImagesRecursive(full, rel));
+    } else if (WEB_EXT.has(path.extname(f.name).toLowerCase())) {
+      out.push(rel.split(path.sep).join('/'));
+    }
+  }
+  return out;
+}
+
 function scanFolders(dir, basePath = '') {
   const list = [];
   if (!fs.existsSync(dir)) return list;
@@ -54,27 +72,26 @@ function scanFolders(dir, basePath = '') {
     const full = path.join(dir, e.name);
     const rel = basePath ? basePath + '/' + e.name : e.name;
     if (e.isDirectory()) {
-      const images = [];
       let hasAbout = false;
       let hasMore = false;
       for (const f of fs.readdirSync(full, { withFileTypes: true })) {
-        if (f.isDirectory()) continue;
-        const ext = path.extname(f.name).toLowerCase();
-        if (WEB_EXT.has(ext)) images.push(f.name);
+        if (!f.isFile()) continue;
         if (f.name === 'about.txt') hasAbout = true;
         if (f.name === 'more.txt') hasMore = true;
       }
+      const images = collectWebImagesRecursive(full);
       if (images.length) {
         const aboutPath = path.join(full, 'about.txt');
         images.sort((a, b) => a.localeCompare(b));
         const { location, city, year } = parseAboutForIndex(aboutPath);
         // Index preview priority:
-        // 1) filename starts with "ind_" (requested marker)
-        // 2) legacy marker containing "ind_name"
+        // 1) any image whose leaf name starts with "ind_" (nested paths ok)
+        // 2) legacy marker "ind_name" in leaf name
         // 3) first image in sorted list
+        const leaf = (p) => (p.includes('/') ? p.split('/').pop() : p) || p;
         const indexImage =
-          images.find((img) => /^ind_/i.test(img)) ||
-          images.find((img) => img.toLowerCase().includes('ind_name')) ||
+          images.find((img) => /^ind_/i.test(leaf(img))) ||
+          images.find((img) => leaf(img).toLowerCase().includes('ind_name')) ||
           images[0];
         list.push({
           path: rel,

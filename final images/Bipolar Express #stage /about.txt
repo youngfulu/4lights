@@ -2,8 +2,9 @@ name: (Bipolar Express for Burning Man)
 #
 Project type: (Stage Design, Control System Programming)
 year: (2024)
+Location: Nevada, USA
 Client: (NDA)
 Agency:(in-house)
 Status: (Finished)
-Contributor: (Ilya Duganov, Maksim Harin)
+Contributor: (Ilya Duganov, Cristobal Bachler, Maksim Harin)
 

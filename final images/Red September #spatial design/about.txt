@@ -1,0 +1,10 @@
+name: (Red September)
+#
+Project type: (Set design, Spatial design)
+year: (2024)
+Location: Milano, Italy
+Client: (Red September)
+Agency:(Nob)
+Status: (finished)
+Contributor: Alnx
+year: (2024)

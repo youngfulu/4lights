@@ -6,5 +6,5 @@ Location: Los-Angeles, USA.
 Client: (RHCP)
 Agency:(Setup)
 Status: (Finished)
-Contributor: (Ilya Duganov)
+Contributor: (Pavel Zmunchella, Ilya Duganov)
 

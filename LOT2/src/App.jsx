@@ -19,7 +19,9 @@ const ENTRANCE_BASE = `${BASE}/entrance`;
 function useProjects() {
   const [data, setData] = useState({ folders: [], imageBase: IMAGE_BASE });
   useEffect(() => {
-    fetch(PROJECTS_JSON_URL)
+    fetch(PROJECTS_JSON_URL, {
+      cache: import.meta.env.DEV ? 'no-store' : 'default',
+    })
       .then((r) => r.json())
       .then((json) =>
         setData({

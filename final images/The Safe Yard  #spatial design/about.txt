@@ -1,0 +1,9 @@
+name: (The Safe Yard)
+#
+Project type: (Spatial design)
+year: (2021)
+Location: Saint Petersburg, Russia
+Client: (New Holland)
+Agency:(In-house)
+Status: (Concept)
+Contributor: (Polina Tverdaya, Alnx)

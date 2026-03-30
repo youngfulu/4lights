@@ -5,6 +5,7 @@
       "name": "Addon 26",
       "rawName": "Addon 26 #instal",
       "images": [
+        "addon26.png",
         "IMG_3654.png",
         "IMG_3659.png",
         "ind_addon pc.png",
@@ -28,28 +29,27 @@
       "indexImage": "ind_addon pc.png"
     },
     {
-      "path": "Bipolar Express #stage #tech",
+      "path": "Bipolar Express #stage ",
       "name": "Bipolar Express",
-      "rawName": "Bipolar Express #stage #tech",
+      "rawName": "Bipolar Express #stage ",
       "images": [
         "Express.jpg",
         "IMG_2695.png",
-        "IMG_2742.png",
         "ind_bp IMG_2470.png",
         "Screenshot 2026-01-07 at 17.41.20.png",
         "Screenshot 2026-01-07 at 17.41.35.png",
         "Screenshot 2026-01-07 at 17.41.47.png",
         "Screenshot 2026-01-08 at 11.44.28.png",
-        "Screenshot 2026-03-03 at 15.02.44.png"
+        "Screenshot 2026-03-03 at 15.02.44.png",
+        "Screenshot 2026-03-30 at 13.52.47.png"
       ],
       "hasAbout": true,
       "hasMore": true,
       "tags": [
-        "stage",
-        "tech"
+        "stage"
       ],
-      "location": "",
-      "city": "",
+      "location": "Nevada, USA",
+      "city": "Nevada",
       "year": "2024",
       "indexImage": "ind_bp IMG_2470.png"
     },
@@ -82,8 +82,8 @@
       "name": "Circular Repetition",
       "rawName": "Circular Repetition   #instal",
       "images": [
+        "ComfyUI_00006_bw.png",
         "CR.png",
-        "ind_anim-post Screenshot 2026-03-06 at 13.29.47-color-denoise-enhance-1.8x.jpeg",
         "la bienalle.png",
         "Screenshot 2026-03-06 at 13.46.40.png"
       ],
@@ -95,7 +95,7 @@
       "location": "Vince, Italy",
       "city": "Vince",
       "year": "2019",
-      "indexImage": "ind_anim-post Screenshot 2026-03-06 at 13.29.47-color-denoise-enhance-1.8x.jpeg"
+      "indexImage": "ComfyUI_00006_bw.png"
     },
     {
       "path": "Dom Dolla Coachella #stage",
@@ -293,9 +293,9 @@
       "indexImage": "ind_kedr2.jpg"
     },
     {
-      "path": "la fleurs  #spatial",
-      "name": "la fleurs",
-      "rawName": "la fleurs  #spatial",
+      "path": "La fleurs  #spatial",
+      "name": "La fleurs",
+      "rawName": "La fleurs  #spatial",
       "images": [
         "ComfyUI_00012_.png",
         "ComfyUI_00015_.png",
@@ -316,6 +316,24 @@
       "city": "NDA",
       "year": "2024",
       "indexImage": "ind_ComfyUI_00013_.png"
+    },
+    {
+      "path": "Lenny Kravitz #stage",
+      "name": "Lenny Kravitz",
+      "rawName": "Lenny Kravitz #stage",
+      "images": [
+        "Lenny Kravitz.webp",
+        "lenny kravitz2.webp"
+      ],
+      "hasAbout": true,
+      "hasMore": false,
+      "tags": [
+        "stage"
+      ],
+      "location": "Worldwide",
+      "city": "Worldwide",
+      "year": "2024",
+      "indexImage": "Lenny Kravitz.webp"
     },
     {
       "path": "Mirag Club #stage #tech",
@@ -369,10 +387,10 @@
       "name": "One Tower",
       "rawName": "One Tower #spatial #concept",
       "images": [
-        "1 (5).png",
         "ComfyUI_00030_.png",
         "ComfyUI_00031_.png",
         "concept zabor.jpg",
+        "ind_1 (5).png",
         "Screenshot 2026-03-15 at 20.11.36.png",
         "zabor pttrns (dragged).jpg",
         "zabor.jpg",
@@ -388,7 +406,7 @@
       "location": "Moscow, Russia.",
       "city": "Moscow",
       "year": "2024",
-      "indexImage": "1 (5).png"
+      "indexImage": "ind_1 (5).png"
     },
     {
       "path": "Phillaronie de Luxemburg  #stage",
@@ -398,7 +416,7 @@
         "449681302_862376975938475_809333232580353241_n.jpg",
         "449693476_862376902605149_1496274342160015583_n.jpg",
         "96.gif",
-        "lux.jpg"
+        "ind_lux.jpg"
       ],
       "hasAbout": true,
       "hasMore": true,
@@ -408,7 +426,7 @@
       "location": "Luxembourg",
       "city": "Luxembourg",
       "year": "2024",
-      "indexImage": "449681302_862376975938475_809333232580353241_n.jpg"
+      "indexImage": "ind_lux.jpg"
     },
     {
       "path": "Port #stage",
@@ -457,27 +475,25 @@
       "indexImage": "ind_rhcp.jpg"
     },
     {
-      "path": "Signal Festival  #spatial #installation",
-      "name": "Signal Festival",
-      "rawName": "Signal Festival  #spatial #installation",
+      "path": "Red September #spatial design",
+      "name": "Red September #spatial design",
+      "rawName": "Red September #spatial design",
       "images": [
-        "ComfyUI_00008_.png",
-        "pasted-image-2.png",
-        "pasted-image-3.png",
-        "pasted-image.png",
-        "signal2.jpg",
-        "TDMovieOut.0.jpg"
+        "0000 (v1~recovered)dg.png",
+        "ing_Снимок экрана 2023-10-30 в 20.48.24.png",
+        "Снимок экрана 2023-10-30 в 20.48.24 copy.png",
+        "Снимок_экрана_2024-12-07_в_22.50.16.webp",
+        "эмиль0485цвет вариант рет_fin_upd.jpg"
       ],
       "hasAbout": true,
       "hasMore": true,
       "tags": [
-        "installation",
         "spatial"
       ],
-      "location": "Kaluga Region, Russia",
-      "city": "Kaluga Region",
-      "year": "2022",
-      "indexImage": "ComfyUI_00008_.png"
+      "location": "Milano, Italy",
+      "city": "Milano",
+      "year": "2024",
+      "indexImage": "0000 (v1~recovered)dg.png"
     },
     {
       "path": "Sophie #stage",
@@ -501,6 +517,38 @@
       "city": "Malaga",
       "year": "2025",
       "indexImage": "ind_496709872_18008736773727365_777694170845982356_n.jpg"
+    },
+    {
+      "path": "The Safe Yard  #spatial design",
+      "name": "The Safe Yard  #spatial design",
+      "rawName": "The Safe Yard  #spatial design",
+      "images": [
+        "frame_003.png",
+        "frame_005.png",
+        "frame_006.png",
+        "frame_007.png",
+        "frame_008.png",
+        "frame_009.png",
+        "frame_010.png",
+        "frame_011.png",
+        "frame_012.png",
+        "frame_014.png",
+        "frame_015.png",
+        "frame_016.png",
+        "frame_017.png",
+        "frame_018.png",
+        "frame_020.png",
+        "ind_frame_002.png"
+      ],
+      "hasAbout": true,
+      "hasMore": true,
+      "tags": [
+        "spatial"
+      ],
+      "location": "Saint Petersburg, Russia",
+      "city": "Saint Petersburg",
+      "year": "2021",
+      "indexImage": "ind_frame_002.png"
     },
     {
       "path": "THK #installation",
@@ -541,27 +589,6 @@
       "city": "Tallinn",
       "year": "2023",
       "indexImage": "43edf180-0aa1-438c-bad4-c5fdaa7208e89.png"
-    },
-    {
-      "path": "View Point  #spatial",
-      "name": "View Point",
-      "rawName": "View Point  #spatial",
-      "images": [
-        "14.png",
-        "45.png",
-        "53.png",
-        "Snimok-ehkrana-2023-09-01-v-14.16.47 (1).png",
-        "Snimok-ehkrana-2023-09-01-v-14.18.05.png"
-      ],
-      "hasAbout": true,
-      "hasMore": true,
-      "tags": [
-        "spatial"
-      ],
-      "location": "Saint-Petersburg, Russia.",
-      "city": "Saint-Petersburg",
-      "year": "2023",
-      "indexImage": "14.png"
     },
     {
       "path": "Wish Circles #spatial #installation",

@@ -4,5 +4,5 @@ Project type: (Spatial design)
 Client: (Missoni)
 Agency:(Neu.team)
 Status: (unreleased)
-Contributor: Ilya Duganov, Lada 
+Contributor: Ilya Duganov, Lada LD
 year: (2024)
