@@ -545,6 +545,7 @@ function IndexRowCells({ project }) {
 
 function Home({ projects }) {
   const mobileTouch = useMobileTouchIndex();
+  const goTo = useTransitionNavigate();
   const [hoveredProject, setHoveredProject] = useState(null);
   const imagesReady = usePreloadIndexImages(projects);
   const [desktopLoaderDone, setDesktopLoaderDone] = useState(false);
@@ -567,6 +568,14 @@ function Home({ projects }) {
       firstCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
   }, []);
+
+  const handleSwipeIndexToInfo = useCallback(() => goTo('/info'), [goTo]);
+  const swipeFromIndexEnabled =
+    (!mobileTouch && desktopLoaderDone) || (mobileTouch && !showStart);
+  const swipeFromIndex = useSwipeNavigation(
+    swipeFromIndexEnabled ? handleSwipeIndexToInfo : null,
+    null,
+  );
 
   if (mobileTouch) {
     return (
@@ -625,6 +634,8 @@ function Home({ projects }) {
         </footer>
 
         {showStart && <StartScreen onDismiss={dismissStart} />}
+
+        <SwipeIndicator indicator={swipeFromIndex} />
       </div>
     );
   }
@@ -678,6 +689,8 @@ function Home({ projects }) {
       {!desktopLoaderDone && (
         <DesktopIndexLoader imagesReady={imagesReady} onComplete={() => setDesktopLoaderDone(true)} />
       )}
+
+      <SwipeIndicator indicator={swipeFromIndex} />
     </div>
   );
 }
@@ -686,6 +699,10 @@ function Home({ projects }) {
 /*  Info page (amsterdamberlin.com/info layout)                       */
 /* ------------------------------------------------------------------ */
 function InfoPage() {
+  const goTo = useTransitionNavigate();
+  const handleSwipeInfoToIndex = useCallback(() => goTo('/'), [goTo]);
+  const swipeFromInfo = useSwipeNavigation(null, handleSwipeInfoToIndex);
+
   return (
     <div className="layout layout-info">
       <SiteHeader />
@@ -729,6 +746,8 @@ function InfoPage() {
           <a href="mailto:hello@weare.io">hello@weare.io</a>
         </div>
       </main>
+
+      <SwipeIndicator indicator={swipeFromInfo} />
     </div>
   );
 }
@@ -878,9 +897,10 @@ function ProjectDetail({ projects }) {
   );
 }
 
-/* React Router v6 — opt into v7 behavior to silence future-flag console warnings */
+/* v7_relativeSplatPath: silence Router warning. v7_startTransition stays false so location
+   updates commit synchronously — required for View Transitions + flushSync to capture DOM. */
 const ROUTER_FUTURE = {
-  v7_startTransition: true,
+  v7_startTransition: false,
   v7_relativeSplatPath: true,
 };
 
