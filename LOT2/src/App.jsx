@@ -37,7 +37,9 @@ function useProjects() {
 function useEntranceFrames() {
   const [frames, setFrames] = useState([]);
   useEffect(() => {
-    fetch(ENTRANCE_FRAMES_URL)
+    fetch(ENTRANCE_FRAMES_URL, {
+      cache: import.meta.env.DEV ? 'no-store' : 'default',
+    })
       .then((r) => (r.ok ? r.json() : { frames: [] }))
       .then((j) => setFrames(Array.isArray(j?.frames) ? j.frames : []))
       .catch(() => setFrames([]));
@@ -88,8 +90,7 @@ function useMobileTouchIndex() {
   return matches;
 }
 
-function StartScreen({ onDismiss }) {
-  const frames = useEntranceFrames();
+function StartScreen({ frames = [], onDismiss }) {
   const [frameIdx, setFrameIdx] = useState(0);
   const [bgOn, setBgOn] = useState(false);
   const startRef = useRef({ y0: 0, active: false });
@@ -120,9 +121,8 @@ function StartScreen({ onDismiss }) {
   }, []);
 
   useEffect(() => {
-    // LOT takes 2s. Then "2" appears after +0.5s.
-    // Background should start after "2" finishes => ~2.5s total.
-    const t = setTimeout(() => setBgOn(true), 2500);
+    // LOT2 on screen ~30% longer than prior: GIF starts when "2" begins (1.56s).
+    const t = setTimeout(() => setBgOn(true), 1560);
     return () => clearTimeout(t);
   }, []);
 
@@ -229,15 +229,16 @@ function preloadOneUrl(src, high = false) {
   });
 }
 
-/** Same URL strategy as hover preview: thumb first, then full size. */
+/** Thumb must be ready for hover; full size warms in background (does not block index). */
 function preloadIndexPreviewForProject(p, high = false) {
   const file = p.indexImage || p.images[0];
   const thumb = imageUrl(p.path, file, true);
   const full = imageUrl(p.path, file, false);
-  return preloadOneUrl(thumb, high).then(() => {
-    // Warm full size too so onError path and sharper cache hits are instant.
-    if (full !== thumb) return preloadOneUrl(full, false);
+  const thumbDone = preloadOneUrl(thumb, high);
+  thumbDone.then(() => {
+    if (full !== thumb) preloadOneUrl(full, false);
   });
+  return thumbDone;
 }
 
 function usePreloadIndexImages(projects) {
@@ -248,8 +249,8 @@ function usePreloadIndexImages(projects) {
     let cancelled = false;
 
     const headLinks = [];
-    const PRIORITY_PRELOADS = 8;
-    for (let i = 0; i < Math.min(PRIORITY_PRELOADS, projects.length); i++) {
+    const HIGH_PRIORITY = 16;
+    for (let i = 0; i < projects.length; i++) {
       const p = projects[i];
       const file = p.indexImage || p.images[0];
       const href = imageUrl(p.path, file, true);
@@ -257,14 +258,14 @@ function usePreloadIndexImages(projects) {
       link.rel = 'preload';
       link.as = 'image';
       link.href = href;
-      link.setAttribute('fetchpriority', 'high');
+      link.setAttribute('fetchpriority', i < HIGH_PRIORITY ? 'high' : 'low');
       document.head.appendChild(link);
       headLinks.push(link);
     }
 
     (async () => {
       await Promise.all(
-        projects.map((p, i) => preloadIndexPreviewForProject(p, i < PRIORITY_PRELOADS)),
+        projects.map((p, i) => preloadIndexPreviewForProject(p, i < HIGH_PRIORITY)),
       );
       if (!cancelled) setReady(true);
     })();
@@ -545,7 +546,7 @@ function IndexRowCells({ project }) {
   );
 }
 
-function Home({ projects }) {
+function Home({ projects, entranceFrames }) {
   const mobileTouch = useMobileTouchIndex();
   const goTo = useTransitionNavigate();
   const [hoveredProject, setHoveredProject] = useState(null);
@@ -635,7 +636,7 @@ function Home({ projects }) {
           </div>
         </footer>
 
-        {showStart && <StartScreen onDismiss={dismissStart} />}
+        {showStart && <StartScreen frames={entranceFrames} onDismiss={dismissStart} />}
 
         <SwipeIndicator indicator={swipeFromIndex} />
       </div>
@@ -675,12 +676,13 @@ function Home({ projects }) {
       </main>
 
       {hoveredProject && (
-        <div key={hoveredProject.path} className="index-preview" aria-hidden>
+        <div className="index-preview" aria-hidden>
           <img
             src={imageUrl(hoveredProject.path, hoveredProject.indexImage || hoveredProject.images[0], true)}
             alt=""
-            decoding="async"
+            decoding="sync"
             fetchpriority="high"
+            loading="eager"
             onError={(e) => {
               e.target.src = imageUrl(hoveredProject.path, hoveredProject.indexImage || hoveredProject.images[0], false);
             }}
@@ -911,14 +913,30 @@ const ROUTER_FUTURE = {
 /* ------------------------------------------------------------------ */
 function App() {
   const { folders } = useProjects();
+  const entranceFrames = useEntranceFrames();
   const sorted = useMemo(
     () => sortByYear((folders || []).filter((p) => !isExcludedFromIndex(p))),
     [folders],
   );
+  const firstEntranceFrame = entranceFrames[0];
+
+  useEffect(() => {
+    if (!firstEntranceFrame) return;
+    const href = `${ENTRANCE_BASE}/${encodeURIComponent(firstEntranceFrame)}`;
+    const link = document.createElement('link');
+    link.rel = 'preload';
+    link.as = 'image';
+    link.href = href;
+    document.head.appendChild(link);
+    return () => {
+      link.remove();
+    };
+  }, [firstEntranceFrame]);
+
   return (
     <BrowserRouter basename={import.meta.env.BASE_URL} future={ROUTER_FUTURE}>
       <Routes>
-        <Route path="/" element={<Home projects={sorted} />} />
+        <Route path="/" element={<Home projects={sorted} entranceFrames={entranceFrames} />} />
         <Route path="/info" element={<InfoPage />} />
         <Route path="/project/:pathEnc" element={<ProjectDetail projects={sorted} />} />
       </Routes>
