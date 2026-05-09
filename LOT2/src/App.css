@@ -64,16 +64,27 @@
   color: var(--fg);
 }
 
-/* Info only: full-viewport decorative bg — fixed, no layout impact */
-.layout-info .info-bg {
+/*
+ * Info bg: portaled to document.body so iOS Safari keeps position:fixed to the
+ * visual viewport while scrolling (fixed inside #root / view-transition subtree
+ * often glitches). Stable height uses svh to reduce URL-bar resize stretch.
+ */
+.lot2-info-bg {
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  height: 100svh;
+  min-height: 100%;
   z-index: 0;
   pointer-events: none;
   overflow: hidden;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 /* ~1.08 viewport box, centered; scale(0.7) from element center (same anchor as before) */
-.layout-info .info-bg__img {
+.lot2-info-bg .info-bg__img {
   position: absolute;
   left: 50%;
   top: 50%;
@@ -87,7 +98,7 @@
   filter: blur(56px);
   will-change: filter;
 }
-.layout-info .info-bg__img--reveal {
+.lot2-info-bg .info-bg__img--reveal {
   animation: info-bg-unblur 6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 @keyframes info-bg-unblur {
@@ -794,8 +805,8 @@
 
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
-  .layout-info .info-bg__img,
-  .layout-info .info-bg__img--reveal {
+  .lot2-info-bg .info-bg__img,
+  .lot2-info-bg .info-bg__img--reveal {
     animation: none !important;
     filter: blur(0);
     will-change: auto;

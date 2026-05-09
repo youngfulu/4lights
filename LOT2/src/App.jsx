@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
-import { flushSync } from 'react-dom';
+import { flushSync, createPortal } from 'react-dom';
 import {
   BrowserRouter,
   Routes,
@@ -21,7 +21,8 @@ function useProjects() {
   const [data, setData] = useState({ folders: [], imageBase: IMAGE_BASE });
   useEffect(() => {
     fetch(PROJECTS_JSON_URL, {
-      cache: import.meta.env.DEV ? 'no-store' : 'default',
+      /* default cache keeps stale projects.json on mobile Safari after deploy */
+      cache: 'no-store',
     })
       .then((r) => r.json())
       .then((json) =>
@@ -39,7 +40,7 @@ function useEntranceFrames() {
   const [frames, setFrames] = useState([]);
   useEffect(() => {
     fetch(ENTRANCE_FRAMES_URL, {
-      cache: import.meta.env.DEV ? 'no-store' : 'default',
+      cache: 'no-store',
     })
       .then((r) => (r.ok ? r.json() : { frames: [] }))
       .then((j) => setFrames(Array.isArray(j?.frames) ? j.frames : []))
@@ -720,17 +721,22 @@ function InfoPage() {
   }, [startBgReveal]);
 
   return (
-    <div className="layout layout-info">
-      <div className="info-bg" aria-hidden>
-        <img
-          ref={bgImgRef}
-          className={bgImgReady ? 'info-bg__img info-bg__img--reveal' : 'info-bg__img'}
-          src={INFO_BG_URL}
-          alt=""
-          decoding="async"
-          onLoad={startBgReveal}
-        />
-      </div>
+    <>
+      {typeof document !== 'undefined' &&
+        createPortal(
+          <div className="lot2-info-bg" aria-hidden>
+            <img
+              ref={bgImgRef}
+              className={bgImgReady ? 'info-bg__img info-bg__img--reveal' : 'info-bg__img'}
+              src={INFO_BG_URL}
+              alt=""
+              decoding="async"
+              onLoad={startBgReveal}
+            />
+          </div>,
+          document.body,
+        )}
+      <div className="layout layout-info">
       <SiteHeader />
       <main className="main info-main">
         <p className="info-lead">
@@ -770,6 +776,7 @@ function InfoPage() {
 
       <SwipeIndicator indicator={swipeFromInfo} />
     </div>
+    </>
   );
 }
 
