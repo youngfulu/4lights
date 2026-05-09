@@ -98,7 +98,7 @@
     filter: blur(0);
   }
 }
-.layout-info .info-main {
+.layout-info .main.info-main {
   position: relative;
   z-index: 1;
 }
@@ -288,7 +288,8 @@
 }
 
 /* ----- Info page (amsterdamberlin.com/info layout) ----- */
-.info-main {
+/* .main.info-main beats later .main so padding / max-width stay correct on all viewports */
+.main.info-main {
   padding: calc(var(--header-h) + 56px) 16px 80px;
   display: flex;
   flex-direction: column;
@@ -676,7 +677,7 @@
     opacity: 1;
   }
 
-  .info-main { padding: calc(var(--header-h) + 28px) 16px 56px; }
+  .main.info-main { padding: calc(var(--header-h) + 28px) 16px 56px; }
   .info-lead {
     font-size: clamp(22px, 6vw, 28px);
     margin-bottom: 48px;

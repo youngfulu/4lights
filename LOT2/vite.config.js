@@ -61,6 +61,14 @@ export default defineConfig(({ command }) => {
           });
         },
         closeBundle() {
+          if (isProd) {
+            const distDir = path.resolve(process.cwd(), 'dist');
+            const indexHtml = path.join(distDir, 'index.html');
+            if (fs.existsSync(indexHtml)) {
+              fs.copyFileSync(indexHtml, path.join(distDir, '404.html'));
+              console.log('LOT2: wrote dist/404.html (GitHub Pages SPA fallback)');
+            }
+          }
           if (!isProd || !fs.existsSync(IMAGE_SOURCE)) return;
           const outImg = path.resolve(process.cwd(), 'dist', 'img');
           const outEntrance = path.resolve(process.cwd(), 'dist', 'entrance');
