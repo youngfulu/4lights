@@ -1,6 +1,6 @@
 name: (Wish Circles)
 #
-Project type: (Interactive Installation)
+Project type: (Interactive Installation design, Software development, Sound design)
 year: (2025)
 Location: Bali, Indonesia.
 Client: (Nuanu)

@@ -1,10 +1,11 @@
 name: (Red Hot Chili Peppers tour 2022)
 #
-Project type: (Generative video engine design, video content mmanagement)
+Project type: (Touch designer Engine design, video content managment)
 year: (2022)
 Location: Los-Angeles, USA.
 Client: (RHCP)
 Agency:(Setup)
 Status: (Finished)
-Contributor: (Pavel Zmunchella, Ilya Duganov)
+Stage Design (Pavel Zmunchila, Stepan Novikov)
+Contributor: (Ilya Duganov)
 

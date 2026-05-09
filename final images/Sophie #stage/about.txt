@@ -1,10 +1,11 @@
 name: (Sophie)
 #
-Project type: (Show Operation, Generative video content)
+Project type: (Show Operation, Generative Engine)
 year: (2025)
 Location: Malaga, Spain.
 Client: (Sophie)
 Agency:(Setup)
 Status: (Finished)
-Contributor: (Ilya Duganov, Alina Tikhonova)
+Stage Design: (Nikita Kratiuk, Pavel Zmunchila)
+Contributor: (Ilya Duganov, Alina Tikhonova, Yan Kolberzin)
 
