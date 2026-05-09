@@ -15,9 +15,7 @@ const IMAGE_BASE = `${BASE}/img`;
 const PROJECTS_JSON_URL = `${BASE}/data/projects.json`;
 const ENTRANCE_FRAMES_URL = `${BASE}/data/entrance.json`;
 const ENTRANCE_BASE = `${BASE}/entrance`;
-/** Unsplash parking-garage image (photo-1470880587080-599f3e4f0913) — B&W + blur in CSS */
-const INFO_PAGE_BG =
-  'https://images.unsplash.com/photo-1470880587080-599f3e4f0913?auto=format&fit=crop&w=1920&q=85';
+const INFO_BG_URL = `${BASE}/info-bg-garage.png`;
 
 function useProjects() {
   const [data, setData] = useState({ folders: [], imageBase: IMAGE_BASE });
@@ -709,20 +707,39 @@ function InfoPage() {
   const goTo = useTransitionNavigate();
   const handleSwipeInfoToIndex = useCallback(() => goTo('/'), [goTo]);
   const swipeFromInfo = useSwipeNavigation(null, handleSwipeInfoToIndex);
+  const bgImgRef = useRef(null);
+  const [bgImgReady, setBgImgReady] = useState(false);
+
+  const startBgReveal = useCallback(() => {
+    setBgImgReady(true);
+  }, []);
+
+  useEffect(() => {
+    const el = bgImgRef.current;
+    if (el?.complete && el.naturalWidth > 0) startBgReveal();
+  }, [startBgReveal]);
 
   return (
     <div className="layout layout-info">
-      <div className="info-page-bg" aria-hidden>
-        <img src={INFO_PAGE_BG} alt="" decoding="async" />
+      <div className="info-bg" aria-hidden>
+        <img
+          ref={bgImgRef}
+          className={bgImgReady ? 'info-bg__img info-bg__img--reveal' : 'info-bg__img'}
+          src={INFO_BG_URL}
+          alt=""
+          decoding="async"
+          onLoad={startBgReveal}
+        />
       </div>
       <SiteHeader />
       <main className="main info-main">
         <p className="info-lead">
           LOT2 is a metaphor for the temporality of empty space, as a perfect foundation to create
           on top of it a sensation of physical space through audio, visual, and material mediums.
-        </p>
-        <p className="info-lead info-lead--secondary">
+          <br />
+          <br />
           Hi, my name is Ilya, and I&apos;m working with spatial design in all its possible forms.
+          <br />
           Welcome to contact me for Q&amp;A.
         </p>
 
