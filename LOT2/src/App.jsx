@@ -15,6 +15,9 @@ const IMAGE_BASE = `${BASE}/img`;
 const PROJECTS_JSON_URL = `${BASE}/data/projects.json`;
 const ENTRANCE_FRAMES_URL = `${BASE}/data/entrance.json`;
 const ENTRANCE_BASE = `${BASE}/entrance`;
+/** Unsplash parking-garage image (photo-1470880587080-599f3e4f0913) — B&W + blur in CSS */
+const INFO_PAGE_BG =
+  'https://images.unsplash.com/photo-1470880587080-599f3e4f0913?auto=format&fit=crop&w=1920&q=85';
 
 function useProjects() {
   const [data, setData] = useState({ folders: [], imageBase: IMAGE_BASE });
@@ -630,8 +633,8 @@ function Home({ projects, entranceFrames }) {
             </a>
           </div>
           <div className="mobile-index-footer__line">
-            <a className="mobile-index-footer__link" href="mailto:hello@weare.io">
-              hello@weare.io
+            <a className="mobile-index-footer__link" href="mailto:hello@lot2.com">
+              hello@lot2.com
             </a>
           </div>
         </footer>
@@ -709,12 +712,18 @@ function InfoPage() {
 
   return (
     <div className="layout layout-info">
+      <div className="info-page-bg" aria-hidden>
+        <img src={INFO_PAGE_BG} alt="" decoding="async" />
+      </div>
       <SiteHeader />
       <main className="main info-main">
         <p className="info-lead">
-          LOT2 is an independent creative studio that designs and produces experiences.
-          The cross-disciplinary team works at the intersection of spatial design,
-          technology and storytelling to translate abstract narratives into tangible moments.
+          LOT2 is a metaphor for the temporality of empty space, as a perfect foundation to create
+          on top of it a sensation of physical space through audio, visual, and material mediums.
+        </p>
+        <p className="info-lead info-lead--secondary">
+          Hi, my name is Ilya, and I&apos;m working with spatial design in all its possible forms.
+          Welcome to contact me for Q&amp;A.
         </p>
 
         <div className="info-columns">
@@ -733,21 +742,12 @@ function InfoPage() {
               <li>Concept Development</li>
             </ul>
           </div>
-          <div className="info-col">
-            <h3 className="info-col-heading">We are</h3>
-            <ul className="info-col-list">
-              <li>Alex Alnx</li>
-              <li>Alinna Tikhonova</li>
-              <li>Ilyaz Duganov</li>
-              <li>Skander Ben Yahia</li>
-            </ul>
-          </div>
         </div>
 
         <div className="info-footer-contact">
           <p className="info-address">44 Rue Beauregard, 75002 Paris, France</p>
           <a href="tel:+33623973028" className="info-phone">+33 6 23 97 30 28</a>
-          <a href="mailto:hello@weare.io">hello@weare.io</a>
+          <a href="mailto:hello@lot2.com">hello@lot2.com</a>
         </div>
       </main>
 
@@ -785,6 +785,7 @@ function parseAboutText(text) {
 }
 
 function ProjectDetail({ projects }) {
+  const mobileTouch = useMobileTouchIndex();
   const { pathEnc } = useParams();
   const goTo = useTransitionNavigate();
   const folderPath = pathEnc ? decodeURIComponent(pathEnc) : '';
@@ -837,16 +838,21 @@ function ProjectDetail({ projects }) {
   }, [project]);
 
   const handleSwipeLeft = useCallback(() => {
+    if (mobileTouch) {
+      goTo('/');
+      return;
+    }
     if (nextProject) goTo(`/project/${encodeURIComponent(nextProject.path)}`);
-  }, [nextProject, goTo]);
+  }, [mobileTouch, nextProject, goTo]);
 
   const handleSwipeRight = useCallback(() => {
     if (prevProject) goTo(`/project/${encodeURIComponent(prevProject.path)}`);
     else goTo('/');
   }, [prevProject, goTo]);
 
+  const swipeLeftEnabled = mobileTouch || nextProject;
   const swipe = useSwipeNavigation(
-    nextProject ? handleSwipeLeft : null,
+    swipeLeftEnabled ? handleSwipeLeft : null,
     handleSwipeRight,
   );
 
