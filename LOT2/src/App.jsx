@@ -37,16 +37,21 @@ function useProjects() {
 }
 
 function useEntranceFrames() {
-  const [frames, setFrames] = useState([]);
+  const [state, setState] = useState({ frames: [], ready: false });
   useEffect(() => {
     fetch(ENTRANCE_FRAMES_URL, {
       cache: 'no-store',
     })
       .then((r) => (r.ok ? r.json() : { frames: [] }))
-      .then((j) => setFrames(Array.isArray(j?.frames) ? j.frames : []))
-      .catch(() => setFrames([]));
+      .then((j) =>
+        setState({
+          frames: Array.isArray(j?.frames) ? j.frames : [],
+          ready: true,
+        }),
+      )
+      .catch(() => setState({ frames: [], ready: true }));
   }, []);
-  return frames;
+  return state;
 }
 
 function imageUrl(folderPath, filename, thumb = false) {
@@ -92,15 +97,30 @@ function useMobileTouchIndex() {
   return matches;
 }
 
-function StartScreen({ frames = [], onDismiss }) {
+function preloadEntranceFrame(src) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    const done = () => resolve();
+    img.onload = done;
+    img.onerror = done;
+    img.src = src;
+    if (img.complete && img.naturalWidth > 0) done();
+  });
+}
+
+function StartScreen({ frames = [], entranceListReady = false, onDismiss }) {
   const [frameIdx, setFrameIdx] = useState(0);
-  const [bgOn, setBgOn] = useState(false);
+  /** Logo “2” timing: carousel only after this + all frames decoded (avoids jank). */
+  const [logoRevealDone, setLogoRevealDone] = useState(false);
+  const [entranceFramesReady, setEntranceFramesReady] = useState(false);
   const startRef = useRef({ y0: 0, active: false });
   const [dragY, setDragY] = useState(0);
   const [dismissing, setDismissing] = useState(false);
   const dragYRef = useRef(0);
   const touchT0Ref = useRef(0);
   const dismissDirRef = useRef(-1); // -1 = swipe up, +1 = swipe down
+
+  const bgOn = logoRevealDone && entranceFramesReady;
 
   useEffect(() => {
     const el = document.documentElement;
@@ -123,10 +143,26 @@ function StartScreen({ frames = [], onDismiss }) {
   }, []);
 
   useEffect(() => {
-    // LOT2 on screen ~30% longer than prior: GIF starts when "2" begins (1.56s).
-    const t = setTimeout(() => setBgOn(true), 1560);
+    const t = setTimeout(() => setLogoRevealDone(true), 1560);
     return () => clearTimeout(t);
   }, []);
+
+  useEffect(() => {
+    if (!entranceListReady) return;
+    if (!frames.length) {
+      setEntranceFramesReady(true);
+      return;
+    }
+    setEntranceFramesReady(false);
+    let cancelled = false;
+    const urls = frames.map((f) => `${ENTRANCE_BASE}/${encodeURIComponent(f)}`);
+    Promise.all(urls.map((src) => preloadEntranceFrame(src))).then(() => {
+      if (!cancelled) setEntranceFramesReady(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [frames, entranceListReady]);
 
   useEffect(() => {
     if (!bgOn || !frames.length) return;
@@ -548,7 +584,7 @@ function IndexRowCells({ project }) {
   );
 }
 
-function Home({ projects, entranceFrames }) {
+function Home({ projects, entranceFrames, entranceListReady }) {
   const mobileTouch = useMobileTouchIndex();
   const goTo = useTransitionNavigate();
   const [hoveredProject, setHoveredProject] = useState(null);
@@ -638,7 +674,13 @@ function Home({ projects, entranceFrames }) {
           </div>
         </footer>
 
-        {showStart && <StartScreen frames={entranceFrames} onDismiss={dismissStart} />}
+        {showStart && (
+          <StartScreen
+            frames={entranceFrames}
+            entranceListReady={entranceListReady}
+            onDismiss={dismissStart}
+          />
+        )}
 
         <SwipeIndicator indicator={swipeFromIndex} />
       </div>
@@ -943,7 +985,7 @@ const ROUTER_FUTURE = {
 /* ------------------------------------------------------------------ */
 function App() {
   const { folders } = useProjects();
-  const entranceFrames = useEntranceFrames();
+  const { frames: entranceFrames, ready: entranceListReady } = useEntranceFrames();
   const sorted = useMemo(
     () => sortByYear((folders || []).filter((p) => !isExcludedFromIndex(p))),
     [folders],
@@ -966,7 +1008,16 @@ function App() {
   return (
     <BrowserRouter basename={import.meta.env.BASE_URL} future={ROUTER_FUTURE}>
       <Routes>
-        <Route path="/" element={<Home projects={sorted} entranceFrames={entranceFrames} />} />
+        <Route
+          path="/"
+          element={
+            <Home
+              projects={sorted}
+              entranceFrames={entranceFrames}
+              entranceListReady={entranceListReady}
+            />
+          }
+        />
         <Route path="/info" element={<InfoPage />} />
         <Route path="/project/:pathEnc" element={<ProjectDetail projects={sorted} />} />
       </Routes>

@@ -610,7 +610,7 @@ function layoutAlignedEmojisDesktop(animate = true) {
     // Desktop selection:
     // - Images have equal WIDTH (scale proportionally)
     // - Selection occupies the LEFT 2/3 of the screen
-    // - Images scaled so row height = 2/5 of vertical screen space
+    // - Images scaled so row height = 2/3 of vertical screen space
     const horizontalGap = 35;
     const centerX = canvas.width / 2;
     const centerY = canvas.height / 2;
@@ -618,19 +618,12 @@ function layoutAlignedEmojisDesktop(animate = true) {
     const regionLeft = 40;
     const regionRight = (canvas.width * 2) / 3 - 40;
     const regionWidth = Math.max(1, regionRight - regionLeft);
-    const SELECTION_ROW_HEIGHT_FRACTION = (2 / 5) * 1.25; // row height = 2/5 of viewport, +25% min size
+    const SELECTION_ROW_HEIGHT_FRACTION = 2 / 3;
     const targetRowHeightScreen = canvas.height * SELECTION_ROW_HEIGHT_FRACTION;
 
-    // Find max aspect ratio so we can cap width if row would overflow region
-    let maxAspectRatio = 0;
-    alignedEmojis.forEach(point => {
-        const imageData = imageCache[point.imagePath];
-        const ar = (imageData && imageData.aspectRatio) ? imageData.aspectRatio : 1;
-        maxAspectRatio = Math.max(maxAspectRatio, ar > 0 ? ar : 1);
-    });
-    // Use 2/5 of screen height; scale down only if row would exceed region width
-    const targetHeightScreen = Math.min(targetRowHeightScreen, regionWidth / maxAspectRatio);
-    const targetHeightWorld = targetHeightScreen; // zoom=1 baseline; we will zoom out if needed
+    // Row image height = 2/3 viewport; zoom/pan fits the strip (wide panoramas no longer shrink height)
+    const targetHeightScreen = targetRowHeightScreen;
+    const targetHeightWorld = targetHeightScreen; // zoom=1 baseline; we pan/zoom to fit
 
     const imageHeights = [];
     const imageWidths = [];
@@ -817,9 +810,8 @@ function scheduleAlignedMobileRelayoutIfNeeded(changedImagePath = null) {
 
 /**
  * Lays out aligned emojis in a vertical column for mobile selection mode.
- * Images are aligned to the left edge (35px margin), have equal max dimensions,
- * and are limited to 65% of screen width. All images are scaled to the same
- * maximum dimension (width or height, whichever is larger).
+ * Images use the horizontal content width but are capped so height is at most
+ * 2/3 of the viewport (then width scales with aspect ratio).
  * 
  * @param {boolean} [animate=true] - Whether to animate the layout transition
  */
@@ -835,24 +827,27 @@ function layoutAlignedEmojisMobileVertical(animate = true) {
     const marginScreen = Math.max(14, canvas.width * 0.04);
     const paddingScreen = marginScreen;
     const targetWidthScreen = canvas.width - 2 * marginScreen;
+    const maxImageHeightScreen = canvas.height * (2 / 3);
     const gapScreen = MOBILE_SELECTION_VERTICAL_GAP;
     const topPaddingScreen = marginScreen;
 
-    const targetWidthWorld = targetWidthScreen / selectedZoom;
     const gapWorld = gapScreen / selectedZoom;
     const topPaddingWorld = topPaddingScreen / selectedZoom;
     const centerX = canvas.width / 2;
 
     const widths = [];
     const heights = [];
-    // Mobile: no +25% (desktop keeps +25% in layoutAlignedEmojisDesktop)
     alignedEmojis.forEach(point => {
         const imageData = imageCache[point.imagePath];
         const ar = (imageData && imageData.aspectRatio) ? imageData.aspectRatio : 1;
-        const widthWorld = targetWidthWorld;
-        const heightWorld = widthWorld / (ar > 0 ? ar : 1);
-        widths.push(widthWorld);
-        heights.push(heightWorld);
+        let widthScreen = targetWidthScreen;
+        let heightScreen = widthScreen / (ar > 0 ? ar : 1);
+        if (heightScreen > maxImageHeightScreen) {
+            heightScreen = maxImageHeightScreen;
+            widthScreen = heightScreen * ar;
+        }
+        widths.push(widthScreen / selectedZoom);
+        heights.push(heightScreen / selectedZoom);
     });
 
     // Measure about block (name + info) height for slot above first image
@@ -1954,7 +1949,7 @@ function generatePoints(count, minDistance) {
 }
 
 // Grid point count: cap so all points fit with minDistance
-const GRID_POINT_COUNT = Math.min(imagePaths.length, 500);
+const GRID_POINT_COUNT = imagePaths.length;
 const points = generatePoints(GRID_POINT_COUNT, 50);
 
 // Initialize current sizes and opacity for all points
@@ -3067,6 +3062,47 @@ function exitConnectionMode() {
     updateBackButtonVisibility();
 }
 
+/** Folder path for an image path (root files → "final images"). */
+function normalizeFolderPathFromImagePath(imagePath) {
+    if (!imagePath || !imagePath.includes('/')) return 'final images';
+    const folder = imagePath.substring(0, imagePath.lastIndexOf('/'));
+    if (folder === '' || folder === imagePath) return 'final images';
+    return folder;
+}
+
+/**
+ * Folder selection shows every file under Artsy for that folder (imagePaths), not only grid points.
+ * @param {string} folderPath
+ * @param {object[]} folderPoints — points from the main grid in this folder
+ */
+function mergeFolderImagesWithAllPaths(folderPath, folderPoints) {
+    const inGrid = new Set(folderPoints.map((p) => p.imagePath));
+    const allInFolder = imagePaths.filter((path) => normalizeFolderPathFromImagePath(path) === folderPath);
+    const extras = [];
+    allInFolder.forEach((path) => {
+        if (inGrid.has(path)) return;
+        extras.push({
+            imagePath: path,
+            folderPath,
+            isAligned: true,
+            isInactive: true,
+            layer: 'layer_1',
+            currentAlignedX: 0,
+            currentAlignedY: 0,
+            currentSize: baseEmojiSize * alignedSizeMultiplier,
+            targetX: 0,
+            targetY: 0,
+            targetSize: baseEmojiSize * alignedSizeMultiplier,
+            targetOpacity: 1.0,
+            originalBaseX: 0,
+            originalBaseY: 0,
+            emojiIndex: -1,
+        });
+    });
+    const order = new Map(allInFolder.map((p, i) => [p, i]));
+    return [...folderPoints, ...extras].sort((a, b) => (order.get(a.imagePath) ?? 1e9) - (order.get(b.imagePath) ?? 1e9));
+}
+
 // Handle emoji click - align all emojis from same folder
 function handleEmojiClick(clickedPoint) {
     // Disable image clicks in mobile version (only category navigation is active)
@@ -3090,62 +3126,15 @@ function handleEmojiClick(clickedPoint) {
     }
     // Only handle alignment if nothing is currently aligned (unaligning is handled by mouseDown)
     // Align all emojis from the same folder
-    let clickedFolderPath = clickedPoint.folderPath;
-    if (!clickedFolderPath) {
-        clickedFolderPath = clickedPoint.imagePath.substring(0, clickedPoint.imagePath.lastIndexOf('/'));
-        // If no '/' found, it's in root - use 'final images' as folder
-        if (clickedFolderPath === clickedPoint.imagePath || clickedFolderPath === '') {
-            clickedFolderPath = 'final images';
-        }
-    }
+    const clickedFolderPath = clickedPoint.folderPath || normalizeFolderPathFromImagePath(clickedPoint.imagePath);
     
     alignedEmojiIndex = clickedPoint.emojiIndex; // Keep for compatibility
-    alignedEmojis = points.filter(p => {
-        let pFolder = p.folderPath;
-        if (!pFolder) {
-            pFolder = p.imagePath.substring(0, p.imagePath.lastIndexOf('/'));
-            // If no '/' found, it's in root - use 'final images' as folder
-            if (pFolder === p.imagePath || pFolder === '') {
-                pFolder = 'final images';
-            }
-        }
+    const folderPoints = points.filter((p) => {
+        const pFolder = p.folderPath || normalizeFolderPathFromImagePath(p.imagePath);
         return pFolder === clickedFolderPath;
     });
-    
-    // Also find all images from the folder that might not be in points yet
-    // (in case we have more images than points)
-    const allImagesFromFolder = imagePaths.filter(path => {
-        let pathFolder = path.substring(0, path.lastIndexOf('/'));
-        if (pathFolder === path || pathFolder === '') {
-            pathFolder = 'final images';
-        }
-        return pathFolder === clickedFolderPath;
-    });
-    
-    // Add any images from folder that aren't in points yet
-    allImagesFromFolder.forEach(path => {
-        const alreadyInPoints = points.some(p => p.imagePath === path);
-        if (!alreadyInPoints) {
-            // Create a temporary point for this image (will be added to alignedEmojis but not points)
-            const tempPoint = {
-                imagePath: path,
-                folderPath: clickedFolderPath,
-                isAligned: true,
-                currentAlignedX: 0,
-                currentAlignedY: 0,
-                currentSize: baseEmojiSize * alignedSizeMultiplier,
-                targetX: 0,
-                targetY: 0,
-                targetSize: baseEmojiSize * alignedSizeMultiplier,
-                targetOpacity: 1.0,
-                originalBaseX: 0,
-                originalBaseY: 0,
-                emojiIndex: -1
-            };
-            alignedEmojis.push(tempPoint);
-        }
-    });
-    
+    alignedEmojis = mergeFolderImagesWithAllPaths(clickedFolderPath, folderPoints);
+
     alignedFolderPath = clickedFolderPath;
     selectionFocusPointForPhase2 = clickedPoint; // Phase 2: pan to clicked image
     
@@ -3698,13 +3687,12 @@ function selectIndexFolder(folderPath, folderName) {
         });
     }
     
-    // Find all images in this folder
-    const folderImages = points.filter(p => {
-        const pFolder = p.folderPath || p.imagePath.substring(0, p.imagePath.lastIndexOf('/'));
+    const folderPointsSel = points.filter((p) => {
+        const pFolder = p.folderPath || normalizeFolderPathFromImagePath(p.imagePath);
         return pFolder === folderPath;
     });
-    
-    if (folderImages.length === 0) {
+    const hasImagesInList = imagePaths.some((path) => normalizeFolderPathFromImagePath(path) === folderPath);
+    if (folderPointsSel.length === 0 && !hasImagesInList) {
         console.warn(`No images found in folder: ${folderPath}`);
         return;
     }
@@ -3716,53 +3704,54 @@ function selectIndexFolder(folderPath, folderName) {
     // This is a modified version of handleEmojiClick that works smoothly from index mode
     // For mobile: snap layout (no animation) to avoid stuck small images
     if (isMobileDevice()) {
-        enterSelectionModeForFolder(folderPath, folderImages, false);
+        enterSelectionModeForFolder(folderPath, folderPointsSel, false);
     } else {
-        enterSelectionModeForFolder(folderPath, folderImages, true);
+        enterSelectionModeForFolder(folderPath, folderPointsSel, true);
     }
 }
 
 // Enter selection mode for a folder (called from index mode)
-function enterSelectionModeForFolder(folderPath, folderImages, animateLayout = true) {
-    // Set up alignment state
-    alignedEmojiIndex = folderImages[0].emojiIndex;
-    alignedEmojis = folderImages;
+function enterSelectionModeForFolder(folderPath, folderPoints, animateLayout = true) {
+    const merged = mergeFolderImagesWithAllPaths(folderPath, folderPoints);
+    alignedEmojiIndex =
+        folderPoints[0]?.emojiIndex ??
+        (merged[0]?.emojiIndex >= 1 ? merged[0].emojiIndex : 1);
+    alignedEmojis = merged;
     alignedFolderPath = folderPath;
     
     if (isMobileDevice()) {
         // Mobile: align in a simple vertical column (10% left padding, 60% width), non-interactive
-    folderImages.forEach(p => {
+    folderPoints.forEach(p => {
         p.isAligned = true;
             p.isInactive = true; // non-clickable
         p.targetOpacity = 1.0;
     });
         // Fade out others
     points.forEach(p => {
-        if (!folderImages.includes(p)) {
+        if (!folderPoints.includes(p)) {
             p.targetOpacity = 0.0;
             p.isInactive = true;
         }
     });
-    alignedEmojis = folderImages;
     layoutAlignedEmojisMobileVertical(false); // snap into place
     if (isMobileDevice()) {
         setMobileNavVisibility(false); // keep nav/buttons hidden during selection
     }
     } else {
         // DESKTOP: keep existing behavior
-        folderImages.forEach(p => {
+        folderPoints.forEach(p => {
             p.isAligned = true;
             p.isInactive = true; // keep inactive / unclickable
             p.targetOpacity = 1.0;
         });
         points.forEach(p => {
-            if (!folderImages.includes(p)) {
+            if (!folderPoints.includes(p)) {
                 p.targetOpacity = 0.0;
                 p.isInactive = true;
             }
         });
         selectionFocusPointForPhase2 = null; // From menu: phase 2 will pick center-closest
-        layoutAlignedEmojisDesktop(true);
+        layoutAlignedEmojisDesktop(animateLayout);
     }
     
     // Load and display about.txt
@@ -3946,22 +3935,21 @@ function clearFilter() {
 function handleFilteredImageClick(clickedPoint) {
     if (!isFilterMode || !clickedPoint.isFiltered) return;
     
-    // Get all images from the same folder
-    const folderPath = clickedPoint.filteredFolder || clickedPoint.imagePath.substring(0, clickedPoint.imagePath.lastIndexOf('/'));
-    const folderImages = points.filter(p => {
-        const pFolder = p.imagePath.substring(0, p.imagePath.lastIndexOf('/'));
+    const folderPath = clickedPoint.filteredFolder || normalizeFolderPathFromImagePath(clickedPoint.imagePath);
+    const folderPointsF = points.filter((p) => {
+        const pFolder = p.folderPath || normalizeFolderPathFromImagePath(p.imagePath);
         return pFolder === folderPath;
     });
     
-    if (folderImages.length === 0) return;
+    if (folderPointsF.length === 0 && !imagePaths.some((path) => normalizeFolderPathFromImagePath(path) === folderPath)) return;
     
     // Clear current filter and align folder images
     clearFilter();
     
     // Align folder images (desktop horizontal layout; relayouts as images load)
     selectionFocusPointForPhase2 = clickedPoint; // Phase 2: pan to clicked image
-    alignedEmojiIndex = clickedPoint.imageIndex;
-    alignedEmojis = folderImages;
+    alignedEmojiIndex = clickedPoint.imageIndex ?? folderPointsF[0]?.emojiIndex ?? 1;
+    alignedEmojis = mergeFolderImagesWithAllPaths(folderPath, folderPointsF);
     alignedFolderPath = folderPath;
     layoutAlignedEmojisDesktop(true);
     
