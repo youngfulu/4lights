@@ -55,8 +55,8 @@ function useEntranceFrames() {
 }
 
 function imageUrl(folderPath, filename, thumb = false) {
-  const prefix = thumb ? 'thumb/' : '';
-  const p = `${prefix}${folderPath}/${filename}`;
+  // Thumbs are webp built by scripts/build-thumbs.js, named "<original name>.webp".
+  const p = thumb ? `thumb/${folderPath}/${filename}.webp` : `${folderPath}/${filename}`;
   return `${IMAGE_BASE}/${p.split('/').map(encodeURIComponent).join('/')}`;
 }
 
@@ -267,16 +267,10 @@ function preloadOneUrl(src, high = false) {
   });
 }
 
-/** Thumb must be ready for hover; full size warms in background (does not block index). */
+/** Only the thumb is warmed — full-res is fetched on demand by hover/detail views. */
 function preloadIndexPreviewForProject(p, high = false) {
   const file = p.indexImage || p.images[0];
-  const thumb = imageUrl(p.path, file, true);
-  const full = imageUrl(p.path, file, false);
-  const thumbDone = preloadOneUrl(thumb, high);
-  thumbDone.then(() => {
-    if (full !== thumb) preloadOneUrl(full, false);
-  });
-  return thumbDone;
+  return preloadOneUrl(imageUrl(p.path, file, true), high);
 }
 
 function usePreloadIndexImages(projects) {
@@ -286,31 +280,36 @@ function usePreloadIndexImages(projects) {
     if (!projects.length) return;
     let cancelled = false;
 
+    // The index is a text table — reveal it as soon as the above-the-fold
+    // previews are in, then warm the rest in the background.
+    const REVEAL_COUNT = 8;
     const headLinks = [];
-    const HIGH_PRIORITY = 16;
-    for (let i = 0; i < projects.length; i++) {
+    for (let i = 0; i < Math.min(projects.length, REVEAL_COUNT); i++) {
       const p = projects[i];
       const file = p.indexImage || p.images[0];
-      const href = imageUrl(p.path, file, true);
       const link = document.createElement('link');
       link.rel = 'preload';
       link.as = 'image';
-      link.href = href;
-      link.setAttribute('fetchpriority', i < HIGH_PRIORITY ? 'high' : 'low');
+      link.href = imageUrl(p.path, file, true);
+      link.setAttribute('fetchpriority', 'high');
       document.head.appendChild(link);
       headLinks.push(link);
     }
 
     (async () => {
       await Promise.all(
-        projects.map((p, i) => preloadIndexPreviewForProject(p, i < HIGH_PRIORITY)),
+        projects.slice(0, REVEAL_COUNT).map((p) => preloadIndexPreviewForProject(p, true)),
       );
       if (!cancelled) setReady(true);
+      for (const p of projects.slice(REVEAL_COUNT)) {
+        if (cancelled) break;
+        preloadIndexPreviewForProject(p, false);
+      }
     })();
 
     const timeout = setTimeout(() => {
       if (!cancelled) setReady(true);
-    }, 12000);
+    }, 2500);
 
     return () => {
       cancelled = true;
@@ -641,13 +640,13 @@ function Home({ projects, entranceFrames, entranceListReady }) {
                   <img
                     ref={i === 0 ? firstCardRef : undefined}
                     className="mobile-index-card__img"
-                    src={imageUrl(p.path, file, false)}
+                    src={imageUrl(p.path, file, true)}
                     alt=""
                     loading={i < 3 ? 'eager' : 'lazy'}
                     decoding="async"
                     fetchpriority={i < 3 ? 'high' : undefined}
                     onError={(e) => {
-                      e.currentTarget.src = imageUrl(p.path, file, true);
+                      e.currentTarget.src = imageUrl(p.path, file, false);
                     }}
                   />
                   <div className="mobile-index-card__text">

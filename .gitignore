@@ -4,6 +4,8 @@ node_modules/
 # Build output
 dist/
 build/
+# Generated thumbnails (rebuilt by `npm run build-thumbs` during prebuild)
+LOT2/.thumbs/
 
 # Environment
 .env
