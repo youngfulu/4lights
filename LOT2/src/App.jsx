@@ -301,10 +301,16 @@ function usePreloadIndexImages(projects) {
         projects.slice(0, REVEAL_COUNT).map((p) => preloadIndexPreviewForProject(p, true)),
       );
       if (!cancelled) setReady(true);
-      for (const p of projects.slice(REVEAL_COUNT)) {
-        if (cancelled) break;
-        preloadIndexPreviewForProject(p, false);
-      }
+      // Warm the rest one at a time during idle gaps so hover stays instant
+      // without the previews competing with the visible page for bandwidth.
+      const rest = projects.slice(REVEAL_COUNT);
+      const whenIdle = window.requestIdleCallback || ((fn) => setTimeout(fn, 200));
+      let i = 0;
+      const warmNext = () => {
+        if (cancelled || i >= rest.length) return;
+        preloadIndexPreviewForProject(rest[i++], false).then(() => whenIdle(warmNext));
+      };
+      whenIdle(warmNext);
     })();
 
     const timeout = setTimeout(() => {

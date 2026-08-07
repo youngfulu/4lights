@@ -19,8 +19,13 @@ const IMAGE_SOURCE = path.resolve(LOT2_ROOT, '..', 'final images');
 const THUMB_OUT = path.resolve(LOT2_ROOT, '.thumbs');
 
 const SRC_EXT = new Set(['.jpg', '.jpeg', '.png', '.gif', '.webp']);
-const THUMB_WIDTH = 480;
-const THUMB_QUALITY = 72;
+// Sized for the largest place a thumb is shown: the desktop hover preview is
+// min(680px, 44vw) wide, so ~1360 device px on a 2x screen. Anything much
+// smaller visibly upscales. Height cap keeps portraits from losing width.
+const THUMB_WIDTH = 1000;
+const THUMB_HEIGHT = 1400;
+const THUMB_QUALITY = 82;
+const THUMB_FALLBACK_QUALITY = 68;
 const CONCURRENCY = 8;
 
 /** Source files needing a thumb, paired with their output path. */
@@ -48,15 +53,28 @@ function isFresh(src, dest) {
   return fs.statSync(dest).mtimeMs >= fs.statSync(src).mtimeMs;
 }
 
-async function makeThumb(job) {
-  fs.mkdirSync(path.dirname(job.dest), { recursive: true });
-  await sharp(job.src, { failOn: 'none' })
+function encode(src, quality) {
+  return sharp(src, { failOn: 'none' })
     .rotate()
     // Bound both sides so tall panoramas can't produce a huge "thumb".
-    .resize({ width: THUMB_WIDTH, height: THUMB_WIDTH, fit: 'inside', withoutEnlargement: true })
-    .webp({ quality: THUMB_QUALITY })
-    .toFile(job.dest);
-  return fs.statSync(job.dest).size;
+    .resize({ width: THUMB_WIDTH, height: THUMB_HEIGHT, fit: 'inside', withoutEnlargement: true })
+    .webp({ quality, effort: 5 })
+    .toBuffer();
+}
+
+async function makeThumb(job) {
+  let buf = await encode(job.src, THUMB_QUALITY);
+  // Flat/graphic sources (screenshots, renders) can compress better as the
+  // original PNG than as lossy webp. A thumb must never cost more than what
+  // it stands in for, so back off the quality when that happens.
+  const srcSize = fs.statSync(job.src).size;
+  if (buf.length >= srcSize) {
+    const fallback = await encode(job.src, THUMB_FALLBACK_QUALITY);
+    if (fallback.length < buf.length) buf = fallback;
+  }
+  fs.mkdirSync(path.dirname(job.dest), { recursive: true });
+  fs.writeFileSync(job.dest, buf);
+  return buf.length;
 }
 
 async function runPool(jobs) {
