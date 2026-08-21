@@ -1,0 +1,9 @@
+name: (Mainline:RUS/Fr.CA/DE)
+#
+Project type: (Set Design)
+year: (2021)
+Location: Moscow, Russia.
+Client: (Mainline:RUS/Fr.CA/DE)
+Status: (Finished)
+Contributor: (Ekaterina Starostina, Alexandra Budarina, Alnx )
+

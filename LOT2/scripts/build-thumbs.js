@@ -101,12 +101,44 @@ async function runPool(jobs) {
   return { built, failed, bytes };
 }
 
+/**
+ * Drop thumbs whose source is gone (project renamed, hidden with `0_`, or image
+ * replaced). Without this they keep shipping to dist/img/thumb forever.
+ * Only ever deletes inside THUMB_OUT — never touches the image source.
+ */
+function pruneOrphans(expected) {
+  if (!fs.existsSync(THUMB_OUT)) return { removed: 0, bytes: 0 };
+  const keep = new Set(expected.map((j) => path.resolve(j.dest)));
+  let removed = 0;
+  let bytes = 0;
+  (function walk(dir) {
+    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, e.name);
+      if (e.isDirectory()) {
+        walk(full);
+        if (!fs.readdirSync(full).length) fs.rmdirSync(full);
+      } else if (!keep.has(path.resolve(full))) {
+        bytes += fs.statSync(full).size;
+        fs.unlinkSync(full);
+        removed++;
+      }
+    }
+  })(THUMB_OUT);
+  return { removed, bytes };
+}
+
 async function main() {
   if (!fs.existsSync(IMAGE_SOURCE)) {
     console.warn('LOT2: no image source at', IMAGE_SOURCE, '- skipping thumbs');
     return;
   }
   const all = collectJobs(IMAGE_SOURCE);
+  const pruned = pruneOrphans(all);
+  if (pruned.removed) {
+    console.log(
+      `LOT2: pruned ${pruned.removed} orphaned thumbs (${(pruned.bytes / 1024 / 1024).toFixed(2)} MB)`,
+    );
+  }
   const stale = all.filter((j) => !isFresh(j.src, j.dest));
   if (!stale.length) {
     console.log('LOT2:', all.length, 'thumbs already up to date in', THUMB_OUT);

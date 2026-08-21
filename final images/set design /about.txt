@@ -1,0 +1,8 @@
+name: (Various Projects)
+#
+Project type: (Set design, Spatial design)
+year: (2021-2024)
+Location: Paris, Italy, Tokyo, Berlin
+Status: (finished)
+Contributor: Alnx
+

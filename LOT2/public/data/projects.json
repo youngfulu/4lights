@@ -5,14 +5,14 @@
       "name": "Addon 26",
       "rawName": "Addon 26 #instal",
       "images": [
+        "addon pc.png",
         "addon26.png",
         "IMG_3654.png",
         "IMG_3659.png",
-        "ind_addon pc.png",
+        "ind_addon.png",
         "ind_Screenshot 2026-01-03 at 15.53.30.png",
         "photo_2021-04-06_03-24-48.jpg",
         "poster.jpg",
-        "Screenshot 2026-01-03 at 15.53.45.png",
         "Screenshot 2026-01-03 at 15.54.20.png",
         "TDMovieOut.0.png",
         "TDMovieOut.10.png",
@@ -26,7 +26,7 @@
       "location": "Paris, France.",
       "city": "Paris",
       "year": "2025",
-      "indexImage": "ind_addon pc.png"
+      "indexImage": "ind_addon.png"
     },
     {
       "path": "Bipolar Express #stage ",
@@ -76,27 +76,6 @@
       "city": "Festspielhaus Baden-Baden",
       "year": "2023",
       "indexImage": "ind_7d0a27ca170dc646851659dac4ab005b.jpg"
-    },
-    {
-      "path": "Common Space #spatial #stage",
-      "name": "Common Space",
-      "rawName": "Common Space #spatial #stage",
-      "images": [
-        "ComfyUI_00025_.png",
-        "ComfyUI_00026_.png",
-        "photo_2022-06-17_15-23-43.jpg",
-        "taktik0004.jpg"
-      ],
-      "hasAbout": true,
-      "hasMore": true,
-      "tags": [
-        "stage",
-        "spatial"
-      ],
-      "location": "Moscow, Russia.",
-      "city": "Moscow",
-      "year": "2022",
-      "indexImage": "ComfyUI_00025_.png"
     },
     {
       "path": "Dom Dolla Coachella #stage",
@@ -335,6 +314,25 @@
       "indexImage": "Lenny Kravitz.webp"
     },
     {
+      "path": "Mainline",
+      "name": "Mainline",
+      "rawName": "Mainline",
+      "images": [
+        "1.jpg",
+        "photo_2026-08-12_19-29-39 (2).jpg",
+        "photo_2026-08-12_19-29-39.jpg",
+        "photo_2026-08-12_19-29-40 (2).jpg",
+        "photo_2026-08-12_19-29-40.jpg"
+      ],
+      "hasAbout": true,
+      "hasMore": false,
+      "tags": [],
+      "location": "Moscow, Russia.",
+      "city": "Moscow",
+      "year": "2021",
+      "indexImage": "1.jpg"
+    },
+    {
       "path": "Mirag Club #stage",
       "name": "Mirag Club",
       "rawName": "Mirag Club #stage",
@@ -382,37 +380,14 @@
       "indexImage": "ind_image-812c1c48-2c83-4863-a30b-14a0a2ae77f3.webp"
     },
     {
-      "path": "Nina Kravitz #stage",
-      "name": "Nina Kravitz",
-      "rawName": "Nina Kravitz #stage",
-      "images": [
-        "1767412367827-89738e9a-6d9b-42f3-80b0-81b3d7a50cdc.png",
-        "ComfyUI_00009_.png",
-        "god_rays11.png",
-        "photo_2022-11-11_15-45-01.jpg",
-        "photo_2022-11-12_14-26-35.jpg",
-        "photo_2022-11-12_18-19-42.jpg",
-        "photo_2022-11-17_13-32-40.jpg"
-      ],
-      "hasAbout": true,
-      "hasMore": true,
-      "tags": [
-        "stage"
-      ],
-      "location": "Bali, Indonesia.",
-      "city": "Bali",
-      "year": "2022",
-      "indexImage": "1767412367827-89738e9a-6d9b-42f3-80b0-81b3d7a50cdc.png"
-    },
-    {
       "path": "Obol #spatial",
       "name": "Obol",
       "rawName": "Obol #spatial",
       "images": [
+        "0.jpg",
         "1.png",
         "2.png",
         "3.jpg",
-        "4.jpg",
         "5.jpg",
         "6.jpg",
         "651922999_18085810037237178_5464649747419635139_n.jpg"
@@ -425,7 +400,7 @@
       "location": "Japan, Tokyo",
       "city": "Japan",
       "year": "2026",
-      "indexImage": "1.png"
+      "indexImage": "0.jpg"
     },
     {
       "path": "One Tower #spatial #concept",
@@ -542,6 +517,28 @@
       "indexImage": "0000 (v1~recovered)dg.png"
     },
     {
+      "path": "set design ",
+      "name": "set design",
+      "rawName": "set design ",
+      "images": [
+        "avgust ? .gif",
+        "king kong magazine.webp",
+        "original_baa2ba62ea47b39dbca086047b7070a5.gif",
+        "photo_2024-12-04_01.31.59.webp",
+        "photo_2024-12-04_01.32.29.webp",
+        "photo_2024-12-04_01.32.50.webp",
+        "photo_2024-12-10_18.15.36.webp",
+        "Гифка_с_Gifius.ru_(3).gif"
+      ],
+      "hasAbout": true,
+      "hasMore": true,
+      "tags": [],
+      "location": "Paris, Italy, Tokyo, Berlin",
+      "city": "Paris",
+      "year": "2021-2024",
+      "indexImage": "avgust ? .gif"
+    },
+    {
       "path": "Sophie #stage",
       "name": "Sophie",
       "rawName": "Sophie #stage",
@@ -581,38 +578,6 @@
       "city": "Moscow",
       "year": "2022",
       "indexImage": "ComfyUI_00021_.png"
-    },
-    {
-      "path": "The Safe Yard  #spatial",
-      "name": "The Safe Yard",
-      "rawName": "The Safe Yard  #spatial",
-      "images": [
-        "frame_003.png",
-        "frame_005.png",
-        "frame_006.png",
-        "frame_007.png",
-        "frame_008.png",
-        "frame_009.png",
-        "frame_010.png",
-        "frame_011.png",
-        "frame_012.png",
-        "frame_014.png",
-        "frame_015.png",
-        "frame_016.png",
-        "frame_017.png",
-        "frame_018.png",
-        "frame_020.png",
-        "ind_frame_002.png"
-      ],
-      "hasAbout": true,
-      "hasMore": true,
-      "tags": [
-        "spatial"
-      ],
-      "location": "Saint Petersburg, Russia",
-      "city": "Saint Petersburg",
-      "year": "2021",
-      "indexImage": "ind_frame_002.png"
     },
     {
       "path": "THK #installation",

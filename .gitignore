@@ -84,3 +84,6 @@ docs/
 scripts/*.txt
 scripts/*.sh
 scripts/*-list.json
+
+# Local backup archives (never commit — GitHub caps blobs at 100 MB)
+*.zip

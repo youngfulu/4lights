@@ -787,13 +787,10 @@ function InfoPage() {
       <SiteHeader />
       <main className="main info-main">
         <p className="info-lead">
-          LOT2 is a metaphor for the temporality of empty space, as a perfect foundation to create
-          on top of it a sensation of physical space through audio, visual, and material mediums.
-          <br />
-          <br />
-          Hi, my name is Ilya, and I&apos;m working with spatial design in all its possible forms.
-          <br />
-          Welcome to contact me for Q&amp;A.
+          LOT 2 is a metaphor for the temporarily empty space - a perfect foundation to build upon,
+          adding a new layer through audio, visual, and material media. We are a group of individual
+          contributors working in different mediums to shape spaces in all their possible forms. We
+          welcome inquiries.
         </p>
 
         <div className="info-columns">
